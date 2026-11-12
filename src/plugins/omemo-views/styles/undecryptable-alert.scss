@@ -1,0 +1,24 @@
+// The frame and button come from composer-panel.scss. This is only what the
+// notice says about itself.
+converse-omemo-undecryptable-alert {
+    display: block;
+
+    .omemo-undecryptable__line {
+        display: block;
+        font-size: 0.85em;
+        color: var(--foreground-color);
+    }
+
+    .omemo-undecryptable__line--strong {
+        font-weight: 600;
+    }
+
+    // Space between the earlier and the recent block.
+    .omemo-undecryptable__line + .omemo-undecryptable__line--strong {
+        margin-top: 0.4em;
+    }
+
+    .omemo-undecryptable__ok {
+        white-space: nowrap;
+    }
+}

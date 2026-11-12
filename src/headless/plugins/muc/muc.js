@@ -2181,7 +2181,9 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
                 // OMEMO message which we already decrypted before
                 return false;
             } else if (attrs.error_condition === 'not-encrypted-for-this-device') {
-                return false;
+                // Not shown as a line: the OMEMO plugin counts these in the
+                // beforeMessageCreated hook, which is reached only if we let it through.
+                return true;
             }
         } else if (attrs.error_condition === 'not-acceptable' && (await this.rejoinIfNecessary())) {
             return false;

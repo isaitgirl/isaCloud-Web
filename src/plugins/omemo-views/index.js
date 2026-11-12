@@ -4,6 +4,7 @@
  * @module plugins-omemo-index
  */
 import { _converse, api, converse, log } from '@converse/headless';
+import { html } from 'lit';
 import './fingerprints.js';
 import './profile.js';
 import 'shared/modals/user-details.js';
@@ -16,7 +17,12 @@ import {
     onChatComponentInitialized,
 } from './utils.js';
 
+import UndecryptableAlert from './undecryptable-alert.js';
+
 import './styles/omemo.scss';
+
+// Among the composer panels, smallest at the top. Below the time warning.
+const UNDECRYPTABLE_ALERT_ORDER = 110;
 
 converse.plugins.add('converse-omemo-views', {
     /**
@@ -43,6 +49,20 @@ converse.plugins.add('converse-omemo-views', {
         api.listen.on('profileModalInitialized', () => {
             const bare_jid = _converse.session.get('bare_jid');
             generateFingerprints(bare_jid).catch((e) => log.error(e));
+        });
+
+        // Defined here rather than at module level, so that blacklisting this
+        // plugin also leaves the element undefined and the panel unmounted.
+        api.elements.define('converse-omemo-undecryptable-alert', UndecryptableAlert);
+        api.listen.on('getComposerPanels', (container, panels) => {
+            panels.push({
+                name: 'omemo-undecryptable-alert',
+                order: UNDECRYPTABLE_ALERT_ORDER,
+                template: html`<converse-omemo-undecryptable-alert
+                    .model=${container.model}
+                ></converse-omemo-undecryptable-alert>`,
+            });
+            return panels;
         });
     },
 });

@@ -49,6 +49,17 @@ export type OMEMOStoreAttributes = ModelAttributes & {
     signed_prekey: SerializedPreKey;
     /** Whether the current bundle has been successfully published to the server. */
     bundle_published?: boolean;
+    /** When this device's OMEMO store was generated (ISO 8601). Absent in older stores. */
+    created_at?: string;
+};
+
+export type UndecryptableState = {
+    /** Stanza ids of messages from before this device existed, or archived. */
+    history: string[];
+    /** Stanza ids of messages which arrived live. */
+    recent: string[];
+    /** The history + recent total the user last acknowledged. */
+    dismissed_total: number;
 };
 
 export type EncryptedMessage = {

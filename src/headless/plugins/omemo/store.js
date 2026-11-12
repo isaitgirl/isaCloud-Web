@@ -422,6 +422,8 @@ class OMEMOStore extends Model {
             },
             // A freshly generated bundle hasn't reached the server yet.
             bundle_published: false,
+            // Lets undecryptable messages from before this device existed be told apart.
+            created_at: new Date().toISOString(),
         });
 
         // Generate both legacy and v2 signed prekeys (signatures differ in key encoding).

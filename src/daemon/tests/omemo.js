@@ -171,24 +171,16 @@ describe('OMEMO', () => {
     });
 
     describe('messages', () => {
-        it('keeps an encrypted message it cannot read, with the reason, rather than leaving a gap', async () => {
+        it('counts an encrypted message it cannot read, rather than adding a line for it', async () => {
             receiveEncryptedForSomeoneElse(JULIET);
-            const { messages } = await u.waitUntil(async () => {
-                const result = await full.request('messages.list', { conversation: JULIET });
-                return result.messages.some((m) => m.encryption) ? result : null;
+            const chat = await u.waitUntil(() => {
+                const model = _converse.state.chatboxes.get(JULIET);
+                return model?.get('omemo_undecryptable')?.recent.length ? model : null;
             });
-            const message = messages.find((m) => m.encryption);
+            expect(chat.get('omemo_undecryptable').recent.length).toBe(1);
 
-            expect(message).toMatchObject({
-                from: JULIET,
-                direction: 'incoming',
-                body: null,
-                encryption: {
-                    scheme: 'omemo',
-                    status: 'undecryptable',
-                    error: expect.stringContaining('not encrypted for this device'),
-                },
-            });
+            const { messages } = await full.request('messages.list', { conversation: JULIET });
+            expect(messages.some((m) => m.encryption)).toBe(false);
         });
 
         it('refuses to send in an encrypted conversation when there is nothing to encrypt for', async () => {

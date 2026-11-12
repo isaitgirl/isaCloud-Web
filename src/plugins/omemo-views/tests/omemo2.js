@@ -28,20 +28,6 @@ afterEach(() => {
 // genuine failure reports as itself rather than as the whole test timing out.
 const DECRYPT_WAIT = 5000;
 
-/**
- * Override the read-only `document.visibilityState` and fire a
- * `visibilitychange` event, so focus-dependent behaviour can be tested.
- * @param {DocumentVisibilityState} state
- */
-function setVisibilityState(state) {
-    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
-    document.dispatchEvent(new Event('visibilitychange'));
-}
-
-function restoreVisibilityState() {
-    delete (/** @type {any} */ (document).visibilityState);
-}
-
 describe('OMEMO 2 message reception', function () {
     it(
         'decrypts an incoming omemo:2 message and renders the plaintext',
@@ -399,23 +385,16 @@ describe('OMEMO 2 message reception', function () {
     );
 
     it(
-        'shows an error for an undecryptable message that has no fallback body',
+        'counts an undecryptable message that has no fallback body, instead of creating a message line',
         // Regression test for https://github.com/conversejs/converse.js/issues/2097
         // An OMEMO message that we can't decrypt (here: not encrypted for this
         // device) and which carries no fallback <body> must still be surfaced to
-        // the user instead of being silently dropped.
+        // the user, now as a count above the composer rather than a message line.
         mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             const { api } = _converse;
             await mock.waitForRoster(_converse, 'current', 1);
             const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
             await mock.initializedOMEMO(_converse);
-
-            // Stub out IntersectionObserver so the message's visibility is driven
-            // manually below, instead of the observer firing as soon as the
-            // (visible) message is rendered.
-            spyOn(window, 'IntersectionObserver').and.returnValue(
-                /** @type {any} */ ({ observe() {}, unobserve() {}, disconnect() {} }),
-            );
 
             await mock.openChatBoxFor(_converse, contact_jid);
             const view = _converse.chatboxviews.get(contact_jid);
@@ -442,47 +421,14 @@ describe('OMEMO 2 message reception', function () {
             </message>`;
             conn._dataRecv(mock.createRequest(_converse, stanza));
 
-            await u.waitUntil(() => view.model.messages.length === 1);
-            const message = view.model.messages.at(0);
-            expect(message.get('is_error')).toBe(true);
-            expect(message.get('type')).toBe('error');
-            expect(message.get('error_condition')).toBe('not-encrypted-for-this-device');
+            const state = await u.waitUntil(() => view.model.get('omemo_undecryptable'));
+            expect(state.recent.length).toBe(1);
+            expect(view.model.messages.length).toBe(0);
 
-            await u.waitUntil(() => view.querySelector('.chat-info__message'));
-            expect(view.querySelector('.chat-info .reason').textContent).toContain('could not be decrypted');
-
-            // The ephemeral auto-destruct countdown must not start until the
-            // message has been seen, so we're confident the user saw it. See #2097.
-            expect(message.get('is_ephemeral')).toBe(true);
-            expect(message.get('defer_ephemeral_timer')).toBe(true);
-            expect(message.ephemeral_timer).toBeFalsy();
-
-            // The message opts into focus-aware visibility, so being scrolled
-            // into view on a *background* tab must not start the countdown.
-            const message_el = view.querySelector('converse-chat-message');
-            expect(message_el.observableRequireFocus).toBe(true);
-            try {
-                setVisibilityState('hidden');
-                message_el.handleIntersectionCallback([/** @type {any} */ ({ intersectionRatio: 1 })]);
-                expect(message.ephemeral_timer).toBeFalsy();
-
-                // It then scrolls back out of view (e.g. pushed up by later
-                // messages) while still on the background tab.
-                message_el.handleIntersectionCallback([/** @type {any} */ ({ intersectionRatio: 0 })]);
-
-                // Returning to the tab must NOT start the countdown, because the
-                // message is no longer in view — the current intersection state
-                // is re-checked, not the stale first sighting.
-                setVisibilityState('visible');
-                expect(message.ephemeral_timer).toBeFalsy();
-
-                // Only once it's actually in view AND the tab is focused does the
-                // countdown start.
-                message_el.handleIntersectionCallback([/** @type {any} */ ({ intersectionRatio: 1 })]);
-                expect(message.ephemeral_timer).toBeTruthy();
-            } finally {
-                restoreVisibilityState();
-            }
+            await u.waitUntil(() => view.querySelector('.omemo-undecryptable__content'));
+            expect(view.querySelector('.omemo-undecryptable__content').textContent).toContain(
+                'Recent messages that were not encrypted for this browser: 1',
+            );
         }),
     );
 

@@ -3477,6 +3477,21 @@ msgstr "%1$s e %2$s"
 msgid "Add Reaction"
 msgstr "Adicionar contacto"
 
+msgid "Earlier messages that cannot be read in this browser: %1$s"
+msgstr "Mensagens anteriores que não podem ser lidas neste navegador: %1$s"
+
+msgid "They were encrypted before this login joined your set of OMEMO devices. They can still be read on the devices you were already using."
+msgstr "Elas foram cifradas antes de este login entrar no seu conjunto de dispositivos OMEMO. Continuam legíveis nos aparelhos que você já usava."
+
+msgid "Recent messages that were not encrypted for this browser: %1$s"
+msgstr "Mensagens recentes que não foram cifradas para este navegador: %1$s"
+
+msgid "Ask the sender to refresh your device list or to trust your new device."
+msgstr "Peça para quem enviou atualizar a sua lista de dispositivos ou confiar no seu novo dispositivo."
+
+msgid "Got it"
+msgstr "Entendi"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

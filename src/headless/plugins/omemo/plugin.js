@@ -8,6 +8,7 @@ import Devices from './devices.js';
 import OMEMOStore from './store.js';
 import omemo_api from './api.js';
 import { parseEncryptedMessage } from './parsers.js';
+import { clearUndecryptable, recordUndecryptable } from './undecryptable.js';
 import {
     createMessageStanzaHandler,
     encryptFile,
@@ -65,6 +66,9 @@ converse.plugins.add('converse-omemo', {
             api.disco.own.features.add(`${Strophe.NS.OMEMO_DEVICELIST}+notify`);
             api.disco.own.features.add(`${Strophe.NS.OMEMO2_DEVICELIST}+notify`);
         });
+
+        api.listen.on('beforeMessageCreated', recordUndecryptable);
+        api.listen.on('afterMessageCreated', clearUndecryptable);
 
         api.listen.on('parseMessage', parseEncryptedMessage);
         api.listen.on('parseMUCMessage', parseEncryptedMessage);
