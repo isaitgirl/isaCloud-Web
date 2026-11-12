@@ -1,0 +1,304 @@
+// isaCloud themes, in the colours of https://isacloud.com.br
+//
+// `isacloud` is the light theme, `isacloud-dark` the one used when the
+// browser prefers a dark colour scheme (set `dark_theme: 'isacloud-dark'`).
+
+&[data-converse-theme='isacloud'],
+&[data-bs-theme='isacloud'] {
+    $theme: 'isacloud' !default;
+
+    color-scheme: light;
+
+    // isaCloud palette
+    // ----------------
+    --pink: #ff006f;
+    --pink-rgb: 255, 0, 111;
+    --pink-dark: #d6005c;
+    --pink-dark-rgb: 214, 0, 92;
+    --pink-soft: #fff0f6;
+    --blue: #1780ad;
+    --blue-rgb: 23, 128, 173;
+    --dark-blue: #0f6285;
+    --blue-soft: #eaf5fa;
+    --ink: #14202b;
+    --ink-soft: #4a5a68;
+    --line: #e4eaef;
+    --red: #c62828;
+    --red-rgb: 198, 40, 40;
+    --green: #1e9652;
+    --green-rgb: 30, 150, 82;
+    --orange: #e7a151;
+    --orange-rgb: 231, 161, 81;
+    --gray: #7a8792;
+
+    // Base variables
+    // --------------
+    --foreground-color: var(--ink);
+    --background-color: #f6f8fa;
+    --background-color-rgb: 246, 248, 250;
+
+    --chat-rgb: var(--blue-rgb);
+    --muc-rgb: var(--pink-dark-rgb);
+
+    // Bootstrap variables
+    --primary-color: var(--blue) !important;
+    --primary-rgb: var(--blue-rgb);
+    --secondary-color: var(--pink-dark) !important;
+    --secondary-rgb: var(--pink-dark-rgb);
+    --success-color: var(--green);
+    --success-color-rgb: var(--green-rgb);
+    --danger-color: var(--red);
+    --danger-color-rgb: var(--red-rgb);
+    --warning-color: var(--orange);
+    --info-color: var(--blue);
+    --info-color-rgb: var(--blue-rgb);
+
+    --converse-info: var(--info-color);
+    --converse-info-rgb: var(--info-color-rgb);
+    --converse-link-color: var(--link-color) !important;
+    --converse-link-hover-color: var(--link-color-hover) !important;
+    --converse-success: var(--success-color);
+    --converse-success-rgb: var(--success-color-rgb);
+    --converse-danger: var(--danger-color);
+    --converse-danger-rgb: var(--danger-color-rgb);
+
+    --converse-body-bg: var(--background-color);
+    --converse-body-color: var(--foreground-color) !important;
+    --converse-highlight-color: var(--blue);
+
+    ::placeholder,
+    .form-control::placeholder {
+        color: var(--gray) !important;
+    }
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    .navbar-nav {
+        --converse-nav-link-color: var(--link-color) !important;
+        --converse-nav-link-hover-color: var(--link-color-hover) !important;
+    }
+    .popover {
+        --converse-popover-header-color: #fff !important;
+        --converse-popover-header-bg: var(--info-color) !important;
+    }
+    .modal {
+        --converse-modal-color: var(--foreground-color) !important;
+    }
+    .toast {
+        --converse-toast-color: #fff;
+        --converse-toast-bg: var(--blue) !important;
+    }
+
+    // Online status indicators
+    --chat-status-away: var(--orange);
+    --chat-status-busy: var(--red);
+    --chat-status-offline: var(--gray);
+    --chat-status-online: var(--green);
+
+    --controlbox-color: var(--blue);
+    --disabled-color: var(--gray);
+    --error-color: var(--red);
+    --focus-color: var(--pink);
+    --heading-color: var(--blue);
+    --link-color: var(--dark-blue);
+    --subdued-color: var(--ink-soft);
+
+    // The background when selecting text with your mouse
+    --selection-color: var(--ink);
+
+    // Used to indicate selected or open items in lists.
+    --highlight-color: var(--blue-soft);
+    --highlight-color-hover: var(--blue-soft);
+
+    // 1:1 Chat-related colors
+    --chat-color: var(--blue);
+    --chat-header-fg-color: #fff;
+    --chat-header-subdued-color: color-mix(in srgb, var(--chat-header-fg-color) 80%, var(--chat-header-bg-color));
+    --chat-header-bg-color: var(--chat-color);
+
+    // MUC-related colors
+    --muc-color: var(--pink-dark);
+    --muc-header-fg-color: #fff;
+    --muc-header-subdued-color: color-mix(in srgb, var(--muc-header-fg-color) 80%, var(--muc-header-bg-color));
+    --muc-header-bg-color: var(--muc-color);
+
+    // Headlines related colors
+    --headlines-color: var(--dark-blue);
+    --headlines-header-fg-color: #fff;
+    --headlines-header-bg-color: var(--headlines-color);
+
+    // Derived colors
+    // --------------
+    --brand-heading-color: var(--pink);
+    --chat-color-hover: var(--dark-blue);
+    --danger-color-hover: var(--danger-color);
+    --global-background-color: var(--background-color);
+    --link-color-hover: var(--blue);
+    --muc-color-hover: var(--pink-dark);
+    --primary-color-hover: var(--dark-blue);
+    --secondary-color-hover: var(--pink);
+    --warning-color-hover: #d2842b;
+}
+
+&[data-converse-theme='isacloud-dark'],
+&[data-bs-theme='isacloud-dark'] {
+    $theme: 'isacloud-dark' !default;
+
+    color-scheme: dark;
+
+    // isaCloud palette, lifted for a dark background
+    // ----------------------------------------------
+    --pink: #ff4d94;
+    --pink-rgb: 255, 77, 148;
+    --blue: #4fb3e0;
+    --blue-rgb: 79, 179, 224;
+    --dark-blue: #2a8fbd;
+    --ink: #14202b;
+    --ink-raised: #1d2c3a;
+    --ink-line: #2c3e4f;
+    --red: #ff6b6b;
+    --red-rgb: 255, 107, 107;
+    --green: #4cd18a;
+    --green-rgb: 76, 209, 138;
+    --orange: #ffb86c;
+    --orange-rgb: 255, 184, 108;
+    --gray: #8a9aa8;
+
+    // Base variables
+    // --------------
+    --background-color: var(--ink);
+    --background-color-rgb: 20, 32, 43;
+    --foreground-color: #e8eef3;
+
+    --chat-rgb: var(--blue-rgb);
+    --muc-rgb: var(--pink-rgb);
+
+    // Bootstrap variables
+    --primary-color: var(--blue) !important;
+    --primary-rgb: var(--blue-rgb);
+    --secondary-color: var(--pink) !important;
+    --secondary-rgb: var(--pink-rgb);
+    --success-color: var(--green);
+    --success-color-rgb: var(--green-rgb);
+    --danger-color: var(--red);
+    --danger-color-rgb: var(--red-rgb);
+    --warning-color: var(--orange);
+    --info-color: var(--blue);
+    --info-color-rgb: var(--blue-rgb);
+
+    --converse-info: var(--info-color);
+    --converse-info-rgb: var(--info-color-rgb);
+    --converse-link-color: var(--link-color) !important;
+    --converse-link-hover-color: var(--link-color-hover) !important;
+    --converse-success: var(--success-color);
+    --converse-success-rgb: var(--success-color-rgb);
+    --converse-danger: var(--danger-color);
+    --converse-danger-rgb: var(--danger-color-rgb);
+
+    --converse-body-bg-rgb: var(--background-color-rgb);
+    --converse-body-bg: var(--background-color);
+    --converse-body-color: var(--foreground-color) !important;
+    --converse-highlight-color: var(--blue) !important;
+    --converse-secondary-color: var(--secondary-color);
+
+    ::placeholder,
+    .form-control::placeholder {
+        color: var(--gray) !important;
+    }
+    .form-check-input:checked {
+        background-color: var(--blue);
+        border-color: var(--blue);
+    }
+    .navbar-nav {
+        --converse-nav-link-color: var(--link-color) !important;
+        --converse-nav-link-hover-color: var(--link-color-hover) !important;
+    }
+    .popover {
+        --converse-popover-header-color: var(--background-color) !important;
+        --converse-popover-header-bg: var(--info-color) !important;
+    }
+    .modal {
+        --converse-modal-color: var(--foreground-color) !important;
+    }
+    .list-group-item {
+        --converse-list-group-color: var(--foreground-color);
+        &.active {
+            --converse-list-group-active-color: var(--background-color) !important;
+        }
+    }
+    .toast {
+        --converse-toast-color: var(--background-color);
+        --converse-toast-bg: var(--blue) !important;
+    }
+
+    // Online status indicators
+    --chat-status-away: var(--orange);
+    --chat-status-busy: var(--red);
+    --chat-status-offline: var(--gray);
+    --chat-status-online: var(--green);
+
+    --controlbox-color: var(--blue);
+    --disabled-color: var(--gray);
+    --error-color: var(--red);
+    --focus-color: var(--pink);
+    --heading-color: var(--blue);
+    --link-color: var(--blue);
+    --subdued-color: var(--gray);
+
+    // The background when selecting text with your mouse
+    --selection-color: black;
+
+    // Used to indicate selected or open items in lists.
+    --highlight-color: var(--ink-line);
+    --highlight-color-hover: var(--ink-raised);
+
+    // 1:1 Chat-related colors
+    --chat-color: var(--blue);
+    --chat-header-fg-color: var(--chat-color);
+    --chat-header-subdued-color: color-mix(in srgb, var(--subdued-color) 60%, var(--foreground-color));
+    --chat-header-bg-color: var(--background-color);
+
+    // MUC-related colors
+    --muc-color: var(--pink);
+    --muc-header-fg-color: var(--muc-color);
+    --muc-header-bg-color: var(--background-color);
+
+    // Headlines related colors
+    --headlines-color: var(--orange);
+    --headlines-header-fg-color: var(--headlines-color);
+    --headlines-header-bg-color: var(--background-color);
+
+    // Derived colors
+    // --------------
+    --brand-heading-color: var(--pink);
+    --chat-color-hover: var(--chat-color);
+    --danger-color-hover: var(--danger-color);
+    --global-background-color: var(--background-color);
+    --link-color-hover: var(--pink);
+    --muc-color-hover: var(--muc-color);
+    --primary-color-hover: var(--dark-blue);
+    --secondary-color-hover: var(--secondary-color);
+    --warning-color-hover: var(--orange);
+}
+
+// isaCloud wordmark, small, under the login form
+.isacloud-footer-brand {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25em;
+    margin-bottom: 1em;
+    text-decoration: none;
+}
+.isacloud-footer-wordmark {
+    height: 2.2em;
+    width: auto;
+}
+.isacloud-footer-byline {
+    color: var(--subdued-color);
+    font-size: 0.85em;
+}
+.brand-heading {
+    opacity: 1 !important;
+}

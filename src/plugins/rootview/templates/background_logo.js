@@ -26,10 +26,6 @@ export default (el) => html`
                   <div class="inner-content converse-brand row">
                       <div class="converse-brand__heading">
                           <converse-logo></converse-logo>
-                          <span class="converse-brand__text">
-                              <span>converse<span class="subdued">.js</span></span>
-                              <p class="byline">messaging freedom</p>
-                          </span>
                       </div>
                       ${
                           api.settings.get('view_mode') === 'overlayed'

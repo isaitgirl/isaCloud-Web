@@ -18,13 +18,9 @@ export class ConverseBrandLogo extends CustomElement {
     render() {
         const is_fullscreen = api.settings.get('view_mode') === 'fullscreen';
         return html`
-            <a class="brand-heading" href="https://conversejs.org" target="_blank" rel="noopener">
+            <a class="brand-heading" href="https://isacloud.com.br" target="_blank" rel="noopener">
                 <span class="brand-name-wrapper ${is_fullscreen ? 'brand-name-wrapper--fullscreen' : ''}">
                     <converse-logo class="converse-svg-logo"></converse-logo>
-                    <span class="brand-name">
-                        <span class="brand-name__text">converse<span class="subdued">.js</span></span>
-                        ${is_fullscreen && !this.hide_byline ? html` <p class="byline">messaging freedom</p> ` : ''}
-                    </span>
                 </span>
             </a>
         `;

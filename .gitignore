@@ -72,3 +72,7 @@ node_modules
 # Vitest browser-mode generated artifacts
 .vitest-attachments/
 **/__screenshots__/
+
+# isaCloud static build
+isacloud/out/
+isacloud/isacloud-web.tar.gz

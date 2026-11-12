@@ -10,26 +10,26 @@ export default (el) => {
                 <div class="collapse navbar-collapse">
                     <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" href="#" @click=${el.openAboutDialog}>About</a>
+                            <a class="nav-link" target="_blank" rel="noopener" href="https://isacloud.com.br"
+                                >isaCloud</a
+                            >
                         </li>
                         <li class="nav-item">
                             <a
                                 class="nav-link"
                                 target="_blank"
                                 rel="noopener"
-                                href="https://github.com/conversejs/converse.js"
-                                >Github</a
+                                href="https://github.com/isaitgirl/isaCloud-Web"
+                                >Código-fonte</a
                             >
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" target="_blank" rel="noopener" href="https://conversejs.org/docs/"
-                                >Documentation</a
+                            <a class="nav-link" target="_blank" rel="noopener" href="https://liberapay.com/isacloud"
+                                >Apoie</a
                             >
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" target="_blank" rel="noopener" href="https://opkode.com/contact.html"
-                                >Contact</a
-                            >
+                            <a class="nav-link" href="#" @click=${el.openAboutDialog}>Sobre</a>
                         </li>
                     </ul>
                 </div>

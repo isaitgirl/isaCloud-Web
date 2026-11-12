@@ -43,7 +43,11 @@ export default class Toast extends CustomElement {
             ${
                 this.title
                     ? html`<div class="toast-header">
-                          <img src="/logo/conversejs-filled.svg" class="rounded me-2" alt="${__('Converse logo')}" />
+                          <img
+                              src="${api.settings.get('assets_path')}/images/isacloud/icon-192.png"
+                              class="rounded me-2"
+                              alt="isaCloud"
+                          />
                           <strong class="me-auto">${this.title ?? ''}</strong>
                           <button
                               @click="${this.hide}"
