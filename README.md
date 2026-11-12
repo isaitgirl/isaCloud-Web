@@ -47,8 +47,7 @@ XEP-0198 reconnection fix; once 15.0 is released, the fork goes back to followin
 
 Changes in this fork are **branding, configuration and usability** improvements, kept in a few
 files (theme, page and configuration) so that upstream merges stay cheap. Upstream updates
-continue to be merged. Fixes that help every Converse user are offered back upstream as pull
-requests.
+continue to be merged.
 
 ## Features
 
@@ -97,8 +96,9 @@ Then open http://localhost:8097. The isaCloud files are:
 - `images/isacloud/` — icons and logo.
 
 For development, tests and everything else, the Converse documentation applies:
-[conversejs.org/docs](https://conversejs.org/docs/). Run `npm run dev` before the tests (Vitest
-runs against the built bundle).
+[conversejs.org/docs](https://conversejs.org/docs/). For the fork's changes there is a reduced
+test suite, about a minute long: `./isacloud/test.sh` (it builds with `npm run dev` first, since
+Vitest runs against the built bundle).
 
 ## Security and privacy
 
@@ -122,5 +122,5 @@ runs against the built bundle).
 
 Found a bug or have an idea? Open an issue on
 [GitHub](https://github.com/isaitgirl/isaCloud-Web/issues). Every change starts on a new branch
-from `isacloud` and comes back through a pull request to `isacloud`. Bugs that also exist in
-Converse are best reported [upstream](https://github.com/conversejs/converse.js/issues).
+from `isacloud` and comes back through a pull request to `isacloud`. This fork does not send
+pull requests to the Converse upstream; changes stay here.

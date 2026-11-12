@@ -48,8 +48,7 @@ lançadas.
 
 As mudanças deste fork são de **marca, configuração e usabilidade**, concentradas em poucos
 arquivos (tema, página e configuração) para que trazer as novidades do upstream continue barato.
-As atualizações do upstream continuam sendo mescladas. Correções que ajudam todo mundo que usa o
-Converse são oferecidas ao upstream como pull requests.
+As atualizações do upstream continuam sendo mescladas.
 
 ## Recursos
 
@@ -98,8 +97,9 @@ Depois abra http://localhost:8097. Os arquivos do isaCloud são:
 - `images/isacloud/`: ícones e logotipo.
 
 Para desenvolvimento, testes e todo o resto vale a documentação do Converse:
-[conversejs.org/docs](https://conversejs.org/docs/). Rode `npm run dev` antes dos testes (o
-Vitest roda sobre o bundle gerado).
+[conversejs.org/docs](https://conversejs.org/docs/). Para as mudanças do fork há uma suíte de
+testes reduzida, de cerca de um minuto: `./isacloud/test.sh` (ela gera o build com `npm run dev`
+antes, porque o Vitest roda sobre o bundle gerado).
 
 ## Segurança e privacidade
 
@@ -123,5 +123,5 @@ Vitest roda sobre o bundle gerado).
 
 Achou um bug ou teve uma ideia? Abra uma issue no
 [GitHub](https://github.com/isaitgirl/isaCloud-Web/issues). Toda mudança começa numa branch nova a
-partir da `isacloud` e volta por um pull request para a `isacloud`. Bugs que também existem no
-Converse são melhor reportados [no upstream](https://github.com/conversejs/converse.js/issues).
+partir da `isacloud` e volta por um pull request para a `isacloud`. Este fork não envia pull
+requests para o Converse; as mudanças ficam aqui.
