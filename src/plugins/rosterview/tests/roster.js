@@ -1125,7 +1125,7 @@ describe('The Contacts Roster', function () {
             mock.initConverse(
                 converse,
                 [],
-                { roster_groups: false, show_self_in_roster: false, lazy_load_vcards: false },
+                { show_self_in_roster: false, lazy_load_vcards: false },
                 async function (_converse) {
                     await _addContacts(_converse);
                     const rosterview = document.querySelector('converse-roster');

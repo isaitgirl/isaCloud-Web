@@ -246,9 +246,13 @@ export function shouldShowGroup(group, model) {
  */
 export function populateContactsMap(contacts_map, contact) {
     const { labels } = _converse;
-    const contact_groups = /** @type {string[]} */ (
-        u.unique(/** @type {string[]} */ (contact.get('groups') ?? [])).filter((n) => n?.trim())
-    );
+    // With `roster_groups` off the contact's own groups are ignored, so that
+    // every saved contact is listed once, under the current contacts header.
+    const contact_groups = api.settings.get('roster_groups')
+        ? /** @type {string[]} */ (
+              u.unique(/** @type {string[]} */ (contact.get('groups') ?? [])).filter((n) => n?.trim())
+          )
+        : [];
 
     if (u.isOwnJID(contact.get('jid')) && !contact_groups.length) {
         contact_groups.push(/** @type {string} */ (labels.HEADER_UNGROUPED));

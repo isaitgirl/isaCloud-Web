@@ -193,14 +193,14 @@ describe('Presence subscriptions', function () {
 
                     // Check that the user is now properly shown as a pending contact in the roster.
                     await u.waitUntil(() => {
-                        const header = sizzle('a:contains("My Buddies")', rosterview).pop();
+                        const header = sizzle('a:contains("Pending contacts")', rosterview).pop();
                         const contacts = Array.from(header?.parentElement.querySelectorAll('li') ?? []).filter(
                             u.isVisible,
                         );
                         return contacts.length;
                     }, 600);
 
-                    let header = sizzle('a:contains("My Buddies")', rosterview).pop();
+                    let header = sizzle('a:contains("Pending contacts")', rosterview).pop();
                     let contacts = header.parentElement.querySelectorAll('li .open-chat');
                     expect(contacts.length).toBe(1);
                     expect(u.isVisible(contacts[0])).toBe(true);
