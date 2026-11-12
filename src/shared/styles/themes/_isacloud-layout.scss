@@ -32,8 +32,9 @@
         background-color: var(--isa-surface-bg);
 
         // Surfaces. The panes that paint the page background themselves take
-        // the card colour, so each card reads as one surface.
-        .chatbox .flyout {
+        // the card colour, so each card reads as one surface. The login screen
+        // (#controlbox.logged-out) keeps Converse's own full-page layout.
+        .chatbox:not(.logged-out) .flyout {
             background-color: var(--isa-card-bg);
             overflow: hidden;
         }
@@ -99,7 +100,7 @@
     // whole screen and get no gap, radius or shadow.
     @media screen and (min-width: 768px) {
         converse-app-chat.converse-fullscreen {
-            .chatbox .flyout {
+            .chatbox:not(.logged-out) .flyout {
                 top: var(--isa-gap);
                 bottom: var(--isa-gap);
                 height: auto;
@@ -131,7 +132,7 @@
 
     @media screen and (max-width: 767.98px) {
         converse-app-chat.converse-fullscreen {
-            .chatbox .flyout {
+            .chatbox:not(.logged-out) .flyout {
                 border-radius: 0;
                 box-shadow: none;
             }
