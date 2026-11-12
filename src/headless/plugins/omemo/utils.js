@@ -436,12 +436,12 @@ async function buildSession(device, version = Strophe.NS.OMEMO) {
         identityKey: base64ToArrayBuffer(bundle.identity_key),
         signedPreKey: {
             // Bundles stored by older versions can have string ids.
-            keyId: parseInt(bundle.signed_prekey.id, 10),
+            keyId: parseInt(String(bundle.signed_prekey.id), 10),
             publicKey: base64ToArrayBuffer(bundle.signed_prekey.public_key),
             signature: base64ToArrayBuffer(bundle.signed_prekey.signature),
         },
         preKey: {
-            keyId: parseInt(prekey.id, 10),
+            keyId: parseInt(String(prekey.id), 10),
             publicKey: base64ToArrayBuffer(prekey.key),
         },
     });
