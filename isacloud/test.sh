@@ -30,6 +30,7 @@ MAIN_SPECS=(
 
 HEADLESS_SPECS=(
     src/headless/plugins/muc/tests/messages.js
+    src/headless/plugins/muc/tests/muc.js
     src/headless/plugins/reactions/tests/
 )
 

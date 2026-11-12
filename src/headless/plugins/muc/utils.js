@@ -128,8 +128,16 @@ export async function openChatRoom(jid, settings) {
  * @param {Element} message - The message stanza containing the invitation.
  */
 export async function onDirectMUCInvitation(message) {
-    const x_el = sizzle('x[xmlns="jabber:x:conference"]', message).pop(),
-        from = Strophe.getBareJidFromJid(message.getAttribute('from')),
+    // Only an invitation addressed to us now: Strophe's handler also matches
+    // the namespace deep inside a stanza, so MAM results and carbons that
+    // forward an old invitation arrive here too. Those would ask again after
+    // every reload (the archive is fetched again), from an empty sender.
+    const x_el = Array.from(message.children).find(
+        (el) => el.localName === 'x' && el.getAttribute('xmlns') === 'jabber:x:conference',
+    );
+    if (!x_el) return;
+
+    const from = Strophe.getBareJidFromJid(message.getAttribute('from')),
         room_jid = x_el.getAttribute('jid'),
         reason = x_el.getAttribute('reason');
 
