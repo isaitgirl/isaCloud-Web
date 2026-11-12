@@ -220,7 +220,61 @@ describe('Groupchats', function () {
                 expect(
                     hook_calls.filter((e) => e.args[0] == 'confirmDirectMUCInvitation' && e.args[1].jid == muc_jid),
                 ).toHaveSize(0);
-                expect(rooms_get_calls.filter((e) => e.args[0] == muc_jid)).toHaveSize(1);
+                // An invitation forwarded inside a MAM result is not acted upon at all.
+                expect(rooms_get_calls.filter((e) => e.args[0] == muc_jid)).toHaveSize(0);
+            }),
+        );
+
+        it(
+            'does not ask again about an archived invitation to a groupchat not yet joined',
+            mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+                const { api } = _converse;
+                // The invitation handler is registered once connected.
+                await mock.waitForRoster(_converse, 'current', 0);
+                const muc_jid = 'archived-invite@conference.montague.lit';
+                spyOn(_converse.exports, 'onDirectMUCInvitation').and.callThrough();
+                spyOn(api, 'hook').and.callThrough();
+
+                // Fetching the archive again (on every reload) brings back the
+                // invitation, wrapped in a MAM result without a sender.
+                const stanza = stx`
+                <message to='${_converse.bare_jid}' xmlns='jabber:client'>
+                    <result queryid='q1' xmlns='urn:xmpp:mam:2' id='archived-1'>
+                        <forwarded xmlns='urn:xmpp:forward:0'>
+                            <delay xmlns='urn:xmpp:delay' stamp='2026-11-01T10:00:00Z' />
+                            <message to='${_converse.bare_jid}' id='invite-1'
+                                from='mercutio@montague.lit/phone' xmlns='jabber:client'>
+                                <x jid='${muc_jid}' xmlns='jabber:x:conference' />
+                            </message>
+                        </forwarded>
+                    </result>
+                </message>`;
+                api.connection.get()._dataRecv(mock.createRequest(_converse, stanza));
+                await u.waitUntil(() => _converse.exports.onDirectMUCInvitation.calls.count());
+                await _converse.exports.onDirectMUCInvitation.calls.all()[0].returnValue;
+                expect(api.hook.calls.all().filter((c) => c.args[0] === 'confirmDirectMUCInvitation')).toHaveSize(0);
+                expect(_converse.state.chatboxes.get(muc_jid)).toBeUndefined();
+            }),
+        );
+
+        it(
+            'asks about an invitation received directly',
+            mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+                const { api } = _converse;
+                // The invitation handler is registered once connected.
+                await mock.waitForRoster(_converse, 'current', 0);
+                const muc_jid = 'new-invite@conference.montague.lit';
+                const confirm = vi.fn().mockResolvedValue(false);
+                api.listen.on('confirmDirectMUCInvitation', confirm);
+
+                const stanza = stx`
+                <message to='${_converse.bare_jid}' from='mercutio@montague.lit/phone' id='invite-2'
+                    xmlns='jabber:client'>
+                    <x jid='${muc_jid}' xmlns='jabber:x:conference' reason='Vem!' />
+                </message>`;
+                api.connection.get()._dataRecv(mock.createRequest(_converse, stanza));
+                await u.waitUntil(() => confirm.mock.calls.length);
+                expect(confirm.mock.calls[0][0]).toEqual(expect.objectContaining({ jid: muc_jid, reason: 'Vem!' }));
             }),
         );
     });
