@@ -9,6 +9,9 @@
 
     color-scheme: light;
 
+    --normal-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
     // isaCloud palette
     // ----------------
     --pink: #ff006f;
@@ -146,6 +149,9 @@
     $theme: 'isacloud-dark' !default;
 
     color-scheme: dark;
+
+    --normal-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --heading-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
     // isaCloud palette, lifted for a dark background
     // ----------------------------------------------
