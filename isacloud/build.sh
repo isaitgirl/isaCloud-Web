@@ -13,5 +13,5 @@ cp -R dist "$OUT/dist"
 # Not needed by the chat page
 rm -rf "$OUT/dist/website.css" "$OUT/dist/website.min.css" "$OUT/dist/images/logo"
 cp isacloud/index.html isacloud/init.js isacloud/manifest.json "$OUT/"
-tar -czf isacloud/isacloud-web.tar.gz -C "$OUT" .
+COPYFILE_DISABLE=1 tar --no-xattrs -czf isacloud/isacloud-web.tar.gz -C "$OUT" .
 echo "Done: $OUT ($(du -sh "$OUT" | cut -f1)) and isacloud/isacloud-web.tar.gz"
