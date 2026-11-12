@@ -1141,6 +1141,70 @@ describe('OMEMO 2 sending', function () {
             expect(sizzle(`key[rid="${shared_id}"]`, legacy_enc).length).toBe(1);
         }),
     );
+
+    it(
+        'adds an EME hint to a message with a body, but not to chat state or marker stanzas',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.initializedOMEMO(_converse);
+            mock.deferV2DeviceList(contact_jid); // we answer this contact's v2 list ourselves
+            await mock.openChatBoxFor(_converse, contact_jid);
+
+            const view = _converse.chatboxviews.get(contact_jid);
+            view.model.set('omemo_active', true);
+            const conn = _converse.api.connection.get();
+
+            // Warm the device-list, bundle and session caches with one normal send,
+            // so the chat state and marker below need no further IQ round-trips.
+            const rendered = mock.sendMessage(_converse, view, 'prewarm');
+            await mock.deviceListFetched(_converse, contact_jid, ['555']);
+            await answerV2DeviceList(_converse, contact_jid, ['555']);
+            await mock.bundleFetched(_converse, {
+                jid: _converse.bare_jid,
+                device_id: '482886413b977930064a5888b92134fe',
+                identity_key: '300000',
+                signed_prekey_id: '4224',
+                signed_prekey_public: '100000',
+                signed_prekey_sig: '200000',
+                prekeys: ['1991', '1992', '1993'],
+            });
+            await answerV2Bundle(_converse, contact_jid, '555');
+            await rendered;
+
+            const messagesSentSince = (before) =>
+                conn.sent_stanzas.slice(before).filter((s) => s.nodeName === 'message');
+
+            // A message with a body keeps its EME hint (XEP-0380).
+            const message_stanza = await u.waitUntil(() =>
+                conn.sent_stanzas.filter((s) => s.nodeName === 'message' && s.querySelector('payload')).pop(),
+            );
+            expect(
+                sizzle(`encryption[xmlns="${Strophe.NS.EME}"][namespace="${Strophe.NS.OMEMO2}"]`, message_stanza)
+                    .length,
+            ).toBe(1);
+
+            // The XEP-0085 chat state for the OMEMO:2 contact has no body, so no EME hint.
+            let before = conn.sent_stanzas.length;
+            view.model.set('chat_state', 'composing');
+            const chat_state_stanza = await u.waitUntil(() => messagesSentSince(before).pop());
+            expect(sizzle(`encrypted[xmlns="${Strophe.NS.OMEMO2}"]`, chat_state_stanza).length).toBe(1);
+            expect(sizzle(`encryption[xmlns="${Strophe.NS.EME}"]`, chat_state_stanza).length).toBe(0);
+
+            // The XEP-0333 chat marker has no body either, so no EME hint.
+            before = conn.sent_stanzas.length;
+            await _converse.api.hook('sendMarker', view.model, {
+                to_jid: contact_jid,
+                id: 'incoming-message-id',
+                type: 'displayed',
+                msg_type: 'chat',
+                handled: false,
+            });
+            const marker_stanza = await u.waitUntil(() => messagesSentSince(before).pop());
+            expect(sizzle(`encrypted[xmlns="${Strophe.NS.OMEMO2}"]`, marker_stanza).length).toBe(1);
+            expect(sizzle(`encryption[xmlns="${Strophe.NS.EME}"]`, marker_stanza).length).toBe(0);
+        }),
+    );
 });
 
 describe('The OMEMO session store', function () {

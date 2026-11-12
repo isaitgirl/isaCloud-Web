@@ -884,6 +884,8 @@ async function getOMEMO2HeartbeatElement(devices) {
  * rule. The message carries no `<body>`, so it produces no visible/stored chat
  * message. We reuse the normal send-path session setup so every (trusted,
  * active) device gets the heartbeat and any missing sessions are (re)built.
+ * No EME hint is added, since there is no body: XEP-0380 hints tell a
+ * non-supporting client that a message could not be decrypted.
  * @param {import('../../shared/chatbox.js').default} chat
  * @param {import('./types').OMEMOVersion} version
  */
@@ -903,7 +905,6 @@ export async function sendOMEMOHeartbeat(chat, version) {
             type="${is_muc ? 'groupchat' : 'chat'}"
             id="${u.getUniqueId()}">
         ${encrypted_el}
-        <encryption xmlns="${Strophe.NS.EME}" namespace="${is_v2 ? Strophe.NS.OMEMO2 : Strophe.NS.OMEMO}"/>
         <store xmlns="${Strophe.NS.HINTS}"/>
     </message>`;
     api.send(stanza);
@@ -922,6 +923,9 @@ export async function sendOMEMOHeartbeat(chat, version) {
  *   other clients do for legacy OMEMO.
  * - Mixed session (both v2 and legacy devices) → encrypted only; legacy
  *   devices in a mixed session do not receive a CSN.
+ *
+ * No EME hint is added, since the stanza has no body: XEP-0380 hints tell a
+ * non-supporting client that a message could not be decrypted.
  *
  * @param {import('../../shared/chatbox.js').default} chatbox
  */
@@ -966,7 +970,6 @@ async function sendOMEMO2ChatState(chatbox) {
                     type="${type}"
                     id="${u.getUniqueId()}">
                 ${el}
-                <encryption xmlns="${Strophe.NS.EME}" namespace="${Strophe.NS.OMEMO2}"/>
                 <no-store xmlns="${Strophe.NS.HINTS}"/>
                 <no-permanent-store xmlns="${Strophe.NS.HINTS}"/>
             </message>`,
@@ -996,6 +999,9 @@ async function sendOMEMO2ChatState(chatbox) {
  * - Mixed session (both v2 and legacy devices) → encrypted only; legacy
  *   devices in a mixed session do not receive the marker.
  *
+ * No EME hint is added, since the stanza has no body: XEP-0380 hints tell a
+ * non-supporting client that a message could not be decrypted.
+ *
  * @param {import('../../shared/chatbox.js').default} chatbox
  * @param {string} to_jid
  * @param {string} msg_id - the `id` of the message being marked
@@ -1020,7 +1026,6 @@ export async function sendOMEMO2Marker(chatbox, to_jid, msg_id, type, msg_type) 
                     type="${stanza_type}"
                     id="${u.getUniqueId()}">
                 ${el}
-                <encryption xmlns="${Strophe.NS.EME}" namespace="${Strophe.NS.OMEMO2}"/>
             </message>`,
         );
     } else if (legacy.length) {

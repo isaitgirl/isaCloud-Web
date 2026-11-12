@@ -219,6 +219,8 @@ describe('The OMEMO heartbeat', function () {
             expect(sizzle(`keys[jid="${contact_jid}"] key[rid="555"]`, enc).length).toBe(1);
             expect(enc.querySelector('payload')).toBe(null);
             expect(sizzle(`store[xmlns="${Strophe.NS.HINTS}"]`, heartbeat).length).toBe(1);
+            // No body, so no EME hint (XEP-0380 is only for messages).
+            expect(sizzle(`encryption[xmlns="${Strophe.NS.EME}"]`, heartbeat).length).toBe(0);
         }),
     );
 
@@ -290,6 +292,8 @@ describe('The OMEMO heartbeat', function () {
             expect(enc.querySelector('iv')).toBeTruthy();
             expect(enc.querySelector('payload')).toBe(null);
             expect(sizzle(`store[xmlns="${Strophe.NS.HINTS}"]`, heartbeat).length).toBe(1);
+            // No body, so no EME hint (XEP-0380 is only for messages).
+            expect(sizzle(`encryption[xmlns="${Strophe.NS.EME}"]`, heartbeat).length).toBe(0);
         }),
     );
 
