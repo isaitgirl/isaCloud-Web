@@ -16,6 +16,53 @@ describe('The OMEMO module', function () {
     );
 
     it(
+        'builds a session with numeric key ids from a stored bundle with string ids',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.initializedOMEMO(_converse);
+            await mock.openChatBoxFor(_converse, contact_jid);
+            await u.waitUntil(() => mock.deviceListFetched(_converse, contact_jid, ['555']));
+            const devicelist = _converse.state.devicelists.get({ 'jid': contact_jid });
+            await u.waitUntil(() => devicelist.devices.length === 1);
+
+            // Older versions stored bundles with string ids
+            devicelist.devices.get('555').save('bundle', {
+                identity_key: '3333',
+                signed_prekey: { id: '4223', public_key: '1111', signature: '2222' },
+                prekeys: [{ id: '1001', key: '1001' }],
+            });
+
+            const processPreKey = vi.fn(() => Promise.resolve());
+            vi.spyOn(window.libomemo, 'SessionBuilder').mockImplementation(function () {
+                this.processPreKey = processPreKey;
+            });
+
+            const view = _converse.chatboxviews.get(contact_jid);
+            view.model.set('omemo_active', true);
+            await mock.setComposerText(view, 'This message will be encrypted');
+            await mock.pressComposerKey(view, 'Enter');
+
+            await u.waitUntil(() =>
+                mock.bundleFetched(_converse, {
+                    jid: _converse.bare_jid,
+                    device_id: '482886413b977930064a5888b92134fe',
+                    identity_key: '300000',
+                    signed_prekey_id: '4224',
+                    signed_prekey_public: '100000',
+                    signed_prekey_sig: '200000',
+                    prekeys: ['1991', '1992', '1993'],
+                }),
+            );
+            const call = await u.waitUntil(() =>
+                processPreKey.mock.calls.map(([d]) => d).find((d) => d.signedPreKey.keyId === 4223),
+            );
+            expect(call.signedPreKey.keyId).toBe(4223);
+            expect(call.preKey.keyId).toBe(1001);
+        }),
+    );
+
+    it(
         'enables encrypted messages to be sent and received',
         mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 1);
@@ -409,6 +456,7 @@ describe('The OMEMO module', function () {
                 .get(_converse.bare_jid)
                 .devices.get(_converse.state.omemo_store.get('device_id'));
             expect(own_device.get('bundle').prekeys.length).toBe(5);
+            expect(own_device.get('bundle').prekeys.every((p) => typeof p.id === 'number')).toBe(true);
             expect(_converse.state.omemo_store.generateMissingPreKeys).toHaveBeenCalled();
 
             _converse.NUM_PREKEYS = 100;

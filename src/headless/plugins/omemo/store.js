@@ -354,7 +354,7 @@ class OMEMOStore extends Model {
 
         const prekeys = this.getPreKeys();
         const marshalled_keys = Object.keys(prekeys).map((id) => ({
-            id,
+            id: parseInt(id, 10),
             key: prekeys[id].pubKey,
         }));
 
