@@ -17,6 +17,8 @@ fi
 MAIN_SPECS=(
     src/plugins/omemo-views/tests/
     src/plugins/reactions-views/tests/
+    src/plugins/recent-list/tests/recent-list.js
+    src/plugins/rosterview/tests/
     src/plugins/chatview/tests/composer-panels.js
     src/plugins/chatview/tests/markers.js
     src/plugins/chatview/tests/messages.js

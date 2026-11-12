@@ -3492,6 +3492,54 @@ msgstr "Peça para quem enviou atualizar a sua lista de dispositivos ou confiar 
 msgid "Got it"
 msgstr "Entendi"
 
+msgid "Conversations"
+msgstr "Conversas"
+
+msgid "Back to conversations"
+msgstr "Voltar às conversas"
+
+msgid "All"
+msgstr "Todas"
+
+msgid "Channels"
+msgstr "Canais"
+
+msgid "Unread chats"
+msgstr "Não lidas"
+
+msgid "You"
+msgstr "Eu"
+
+msgid "Yesterday"
+msgstr "Ontem"
+
+msgid "Image"
+msgstr "Imagem"
+
+msgid "Video"
+msgstr "Vídeo"
+
+msgid "Audio"
+msgstr "Áudio"
+
+msgid "File"
+msgstr "Arquivo"
+
+msgid "Encrypted message"
+msgstr "Mensagem criptografada"
+
+msgid "Remove from list"
+msgstr "Remover da lista"
+
+msgid "No conversations yet"
+msgstr "Nenhuma conversa ainda"
+
+msgid "Remove this conversation from the list?"
+msgstr "Remover esta conversa da lista?"
+
+msgid "Click to open this conversation"
+msgstr "Clique para abrir esta conversa"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

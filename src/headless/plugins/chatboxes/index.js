@@ -53,7 +53,7 @@ converse.plugins.add('converse-chatboxes', {
         // XXX: Would be nice to keep track of the last open chat and to show that again.
         api.listen.on('chatBoxClosed', () => {
             if (isUniView()) {
-                _converse.state.chatboxes.find((c) => c.get('jid'))?.maybeShow();
+                _converse.state.chatboxes.find((c) => c.get('jid') && !c.get('closed'))?.maybeShow();
             }
         });
     },
