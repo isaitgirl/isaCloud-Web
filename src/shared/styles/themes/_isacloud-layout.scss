@@ -91,7 +91,11 @@
 
         // Occupants of a room: an inner panel instead of a column split off
         // by a rule, with rows styled like the conversation list.
+        // muc-sidebar gives it `height: 100%`; the margins come off it, so the
+        // panel ends on the composer's bottom line instead of under the card's
+        // edge.
         .chatbox converse-muc-sidebar {
+            height: calc(100% - var(--isa-gap) * 2);
             margin: var(--isa-gap) var(--isa-gap) var(--isa-gap) 0;
             border-radius: 12px;
             background-color: var(--isa-inset-bg);
@@ -238,6 +242,7 @@
             }
             // The occupants take the whole screen here, like the chat.
             .chatbox converse-muc-sidebar {
+                height: 100%;
                 margin: 0;
                 border-radius: 0;
             }
