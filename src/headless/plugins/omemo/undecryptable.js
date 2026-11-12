@@ -59,17 +59,42 @@ export function recordUndecryptable(chatbox, attrs, data) {
     // listeners (e.g. dangling reactions) never see them.
     if (attrs.error_condition !== NOT_FOR_THIS_DEVICE) return attrs;
 
-    const id = getIdentifier(attrs);
     const state = getState(chatbox);
-    const is_known = id && (state.history.includes(id) || state.recent.includes(id));
-    if (id && !is_known) {
-        const key = isHistory(attrs) ? 'history' : 'recent';
-        state[key] = [...state[key], id].slice(-MAX_IDS);
-        chatbox.save({ omemo_undecryptable: state });
-    }
+    if (addToState(state, attrs)) chatbox.save({ omemo_undecryptable: state });
     // Every listener gets this same object, so a listener registered after us
     // which hands back its own `data` argument can't undo the handling.
     return Object.assign(data, { handled: true });
+}
+
+/**
+ * Counts one undecryptable message in `state`, unless it is already counted.
+ * @param {UndecryptableState} state
+ * @param {Record<string, any>} attrs
+ * @returns {boolean} Whether `state` changed.
+ */
+function addToState(state, attrs) {
+    const id = getIdentifier(attrs);
+    if (!id || state.history.includes(id) || state.recent.includes(id)) return false;
+    const key = isHistory(attrs) ? 'history' : 'recent';
+    state[key] = [...state[key], id].slice(-MAX_IDS);
+    return true;
+}
+
+/**
+ * Listener for `afterMessagesFetched`. Earlier versions stored each
+ * undecryptable message as an error line in the chat. When the archive delivers
+ * such a message again it matches the stored line, so it never reaches
+ * {@link recordUndecryptable}. Count those stored lines and remove them.
+ * @param {ChatBox} chatbox
+ */
+export function absorbStoredUndecryptable(chatbox) {
+    const stored = chatbox.messages?.filter((m) => m.get('error_condition') === NOT_FOR_THIS_DEVICE) ?? [];
+    if (!stored.length) return;
+
+    const state = getState(chatbox);
+    const changed = stored.map((m) => addToState(state, m.attributes)).some(Boolean);
+    if (changed) chatbox.save({ omemo_undecryptable: state });
+    stored.forEach((m) => m.destroy());
 }
 
 /**

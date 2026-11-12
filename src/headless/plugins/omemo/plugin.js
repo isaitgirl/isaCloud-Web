@@ -8,7 +8,7 @@ import Devices from './devices.js';
 import OMEMOStore from './store.js';
 import omemo_api from './api.js';
 import { parseEncryptedMessage } from './parsers.js';
-import { clearUndecryptable, recordUndecryptable } from './undecryptable.js';
+import { absorbStoredUndecryptable, clearUndecryptable, recordUndecryptable } from './undecryptable.js';
 import {
     createMessageStanzaHandler,
     encryptFile,
@@ -69,6 +69,7 @@ converse.plugins.add('converse-omemo', {
 
         api.listen.on('beforeMessageCreated', recordUndecryptable);
         api.listen.on('afterMessageCreated', clearUndecryptable);
+        api.listen.on('afterMessagesFetched', absorbStoredUndecryptable);
 
         api.listen.on('parseMessage', parseEncryptedMessage);
         api.listen.on('parseMUCMessage', parseEncryptedMessage);

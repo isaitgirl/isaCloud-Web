@@ -54,6 +54,37 @@ function getAlertContent(view) {
 
 describe('The undecryptable OMEMO notice', function () {
     it(
+        'absorbs the error lines that earlier versions stored, counting them once',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            const view = await openChatWithOMEMO(_converse, contact_jid);
+            const error_attrs = {
+                error_condition: 'not-encrypted-for-this-device',
+                error_type: 'Decryption',
+                is_error: true,
+                type: 'error',
+                is_archived: true,
+                from: contact_jid,
+            };
+            view.model.messages.create({ ...error_attrs, msgid: 'old-1', time: '2026-11-03T10:00:00Z' });
+            view.model.messages.create({ ...error_attrs, msgid: 'old-2', time: '2026-11-03T10:01:00Z' });
+            // The same message stored twice still counts once.
+            view.model.messages.create({ ...error_attrs, msgid: 'old-2', time: '2026-11-03T10:01:00Z' });
+            view.model.messages.create({ type: 'chat', msgid: 'kept', body: 'hello', from: contact_jid });
+
+            _converse.api.trigger('afterMessagesFetched', view.model);
+
+            await u.waitUntil(() => view.model.get('omemo_undecryptable')?.history.length === 2);
+            expect(view.model.messages.filter((m) => m.get('is_error')).length).toBe(0);
+            expect(view.model.messages.pluck('msgid')).toContain('kept');
+            await u.waitUntil(() => getAlertContent(view));
+            expect(getAlertContent(view).textContent).toContain(
+                'Earlier messages that cannot be read in this browser: 2',
+            );
+        }),
+    );
+
+    it(
         'counts two different undecryptable messages without creating lines for them',
         mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
