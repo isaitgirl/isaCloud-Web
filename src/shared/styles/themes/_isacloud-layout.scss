@@ -90,12 +90,82 @@
         }
 
         // Occupants of a room: an inner panel instead of a column split off
-        // by a rule.
+        // by a rule, with rows styled like the conversation list.
         .chatbox converse-muc-sidebar {
             margin: var(--isa-gap) var(--isa-gap) var(--isa-gap) 0;
             border-radius: 12px;
             background-color: var(--isa-inset-bg);
             overflow: hidden;
+        }
+        // The resize handle was a thick line in the room colour: transparent
+        // until hovered, the panel's edge already separates the two.
+        .chatbox converse-split-resize,
+        .chatbox converse-split-resize .gutter {
+            background-color: transparent;
+            transition: background-color 0.15s ease;
+
+            &:hover {
+                background-color: var(--isa-border);
+            }
+        }
+        .chatbox converse-muc-sidebar {
+            .occupants .occupants-header--title {
+                align-items: center;
+                padding: 12px 10px 6px 14px;
+            }
+            .sidebar-heading {
+                color: var(--foreground-color);
+                font-family: var(--normal-font);
+                font-size: 16px;
+                font-weight: 700;
+            }
+            .occupants .items-list.occupant-list {
+                padding: 0 6px 8px;
+            }
+            .occupants .items-list .list-item.occupant {
+                margin-bottom: 2px;
+                padding: 6px 8px;
+                border-radius: 10px;
+                font-size: 14px;
+
+                &:hover {
+                    background-color: var(--isa-card-bg);
+                }
+
+                .col-auto {
+                    position: relative;
+                    margin-inline-end: 10px;
+                }
+                // Presence: a dot on the avatar's corner, ringed with the
+                // panel colour, as on the unread badges of the list.
+                .chat-status--avatar {
+                    position: absolute;
+                    right: -4px;
+                    bottom: -3px;
+                    margin: 0;
+                    border: 2px solid var(--isa-inset-bg);
+                    border-radius: 50%;
+                    background-color: var(--isa-inset-bg);
+                    line-height: 0;
+                }
+                .msgs-indicator {
+                    top: -4px;
+                    right: -6px;
+                    margin: 0;
+                }
+                .occupant-nick {
+                    font-weight: 500;
+                    white-space: nowrap;
+                }
+                .occupant-badges .badge {
+                    height: auto;
+                    padding: 2px 6px;
+                    border-radius: 999px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    line-height: 1.2;
+                }
+            }
         }
     }
 
@@ -132,6 +202,26 @@
         }
     }
 
+    // Wider occupants panel on large screens: muc-views gives it 2 of 12
+    // columns of the chat card from xl up (about 170px). The `col-*` classes
+    // are Bootstrap's; a width dragged with the resize handle is an inline
+    // style and still wins.
+    @media screen and (min-width: 1200px) {
+        converse-app-chat.converse-fullscreen .chatbox {
+            converse-muc-sidebar.col-xl-2 {
+                flex: 0 0 clamp(260px, 26%, 320px);
+                width: clamp(260px, 26%, 320px);
+                max-width: none;
+            }
+            .chat-area.col-xl-10 {
+                flex: 1 1 0;
+                width: auto;
+                max-width: none;
+                min-width: 0;
+            }
+        }
+    }
+
     @media screen and (max-width: 767.98px) {
         converse-app-chat.converse-fullscreen {
             .chatbox:not(.logged-out) .flyout {
@@ -143,6 +233,11 @@
                 border-radius: 8px;
             }
             .chatbox converse-composer-panels .composer-panel {
+                margin: 0;
+                border-radius: 0;
+            }
+            // The occupants take the whole screen here, like the chat.
+            .chatbox converse-muc-sidebar {
                 margin: 0;
                 border-radius: 0;
             }
