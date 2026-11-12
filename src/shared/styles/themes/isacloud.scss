@@ -302,3 +302,14 @@
 .brand-heading {
     opacity: 1 !important;
 }
+// The heading is only the balloon now, without the name beside it:
+// drop the spacing meant for the name so the balloon sits centred.
+.brand-heading {
+    .brand-name-wrapper {
+        padding-inline: 0 !important;
+    }
+    converse-logo,
+    .converse-svg-logo {
+        margin-inline: 0 !important;
+    }
+}

@@ -1,4 +1,4 @@
-import { _converse, api } from '@converse/headless';
+import { api } from '@converse/headless';
 import { html } from 'lit';
 import { CustomElement } from './element.js';
 
@@ -24,7 +24,7 @@ export class ConverseFooter extends CustomElement {
                                 />
                                 <span class="isacloud-footer-byline">comunidade brasileira de XMPP</span>
                             </a>
-                            <p class="brand-subtitle mb-2 subdued">Versão: ${_converse.VERSION_NAME}</p>
+                            <p class="brand-subtitle mb-2 subdued">Versão: ConverseJS master-fork</p>
                             <p class="brand-subtitle mb-2">
                                 Feito com
                                 <a target="_blank" rel="noopener" href="https://conversejs.org">Converse</a>
