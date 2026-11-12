@@ -109,7 +109,9 @@ describe('The conversation list', function () {
 
             await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
             await mock.openAndEnterMUC(_converse, GARDEN, 'romeo');
-            _converse.state.chatboxes.get(GARDEN).features.set({ publicroom: true });
+            // A group is members-only and non-anonymous; any other room is a channel.
+            _converse.state.chatboxes.get(LOUNGE).features.set({ membersonly: true, nonanonymous: true });
+            _converse.state.chatboxes.get(GARDEN).features.set({ membersonly: false, publicroom: true });
 
             const list = await getRecentList(_converse);
             await u.waitUntil(() => rowJIDs(list).length === 4);

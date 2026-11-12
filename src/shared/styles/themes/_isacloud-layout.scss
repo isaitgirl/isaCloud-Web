@@ -7,8 +7,8 @@
 // `.conversejs, converse-bg` block, so `&` is that root.
 //
 // The sidebar and the chat are absolutely positioned flyouts, one element each
-// (`.flyout.box-flyout`). Their horizontal split follows the columns of
-// chatview and controlbox: 4/8, 3/9 and 2/10 of 12, from md up.
+// (`.flyout.box-flyout`). The sidebar is wider than Converse's columns, so
+// the conversation list has room: 40%, a third, then a quarter capped at 400px.
 //
 // Selectors carry an extra `.chatbox` where a rule of chatview or muc-views
 // already matches the same element at the same specificity, so the order in
@@ -19,10 +19,13 @@
         left: var(--isa-gap);
         width: calc(#{$share} - var(--isa-gap) * 1.5);
     }
-    .chatbox:not(#controlbox) .flyout {
+    // `.box-flyout` too: chatview sizes this flyout with Bootstrap's column
+    // widths at the same specificity, which pushed the card past the right edge.
+    .chatbox:not(#controlbox) .flyout.box-flyout {
         left: calc(#{$share} + var(--isa-gap) * 0.5);
         right: var(--isa-gap);
         width: auto;
+        max-width: none;
     }
 }
 
@@ -114,18 +117,17 @@
             }
         }
 
-        // Breakpoints match the column widths in chatview and controlbox.
         converse-app-chat.converse-fullscreen {
-            @include isa-split(33.3333%);
+            @include isa-split(40%);
         }
         @media screen and (min-width: 992px) {
             converse-app-chat.converse-fullscreen {
-                @include isa-split(25%);
+                @include isa-split(33.3333%);
             }
         }
         @media screen and (min-width: 1200px) {
             converse-app-chat.converse-fullscreen {
-                @include isa-split(16.6667%);
+                @include isa-split(clamp(300px, 25%, 400px));
             }
         }
     }

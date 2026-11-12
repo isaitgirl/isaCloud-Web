@@ -23,9 +23,11 @@ export function isConversation(model) {
  */
 export function getConversationKind(model) {
     if (model.get('type') !== CHATROOMS_TYPE) return 'chat';
-    const is_public = !!model.features?.get('publicroom');
-    const is_members_only = !!model.features?.get('membersonly');
-    return is_public && !is_members_only ? 'channel' : 'group';
+    // The rule of the isaCloud iOS app (Monal) and of
+    // https://docs.modernxmpp.org/client/groupchat/: a group is members-only
+    // and non-anonymous; every other room is a channel.
+    const features = model.features;
+    return features?.get('membersonly') && features?.get('nonanonymous') ? 'group' : 'channel';
 }
 
 /**

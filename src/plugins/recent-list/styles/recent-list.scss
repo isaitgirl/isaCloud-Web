@@ -29,7 +29,7 @@ $blue: #1780ad;
             justify-content: space-between;
             gap: 8px;
             flex: 0 0 auto;
-            padding: 4px 12px 8px;
+            padding: 4px 10px 8px;
         }
 
         &.recent-list--contacts .recent-list__header {
@@ -81,7 +81,7 @@ $blue: #1780ad;
             flex: 0 0 auto;
             flex-wrap: wrap;
             gap: 6px;
-            padding: 0 12px 10px;
+            padding: 0 10px 10px;
             scrollbar-width: none;
 
             &::-webkit-scrollbar {
@@ -111,7 +111,7 @@ $blue: #1780ad;
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
-            padding: 0 8px 12px;
+            padding: 0 4px 12px;
 
             &--contacts {
                 padding: 0;
@@ -158,7 +158,7 @@ $blue: #1780ad;
             align-items: center;
             gap: 12px;
             min-height: 64px;
-            padding: 8px 12px;
+            padding: 8px 6px;
             color: inherit;
             text-decoration: none;
 
@@ -259,17 +259,17 @@ $blue: #1780ad;
 
         &__kind {
             position: absolute;
-            right: -2px;
-            bottom: -2px;
+            top: -4px;
+            left: -4px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border: 2px solid var(--isa-card-bg, var(--background-color, #fff));
             border-radius: 50%;
             color: #fff;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
             line-height: 1;
 
