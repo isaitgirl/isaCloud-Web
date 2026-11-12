@@ -34,6 +34,17 @@
     --orange-rgb: 231, 161, 81;
     --gray: #7a8792;
 
+    // Layout surfaces, used by _isacloud-layout.scss
+    // -----------------------------------------------
+    --isa-surface-bg: #eef2f6;
+    --isa-card-bg: #ffffff;
+    --isa-inset-bg: #f3f6f9;
+    --isa-border: rgba(20, 32, 43, 0.1);
+    --isa-card-radius: 16px;
+    --isa-card-shadow: 0 2px 12px rgba(20, 32, 43, 0.08), 0 1px 3px rgba(20, 32, 43, 0.06);
+    --isa-form-shadow: 0 1px 2px rgba(20, 32, 43, 0.06);
+    --isa-gap: 12px;
+
     // Base variables
     // --------------
     --foreground-color: var(--ink);
@@ -171,6 +182,17 @@
     --orange-rgb: 255, 184, 108;
     --gray: #8a9aa8;
 
+    // Layout surfaces, used by _isacloud-layout.scss
+    // -----------------------------------------------
+    --isa-surface-bg: #0d161e;
+    --isa-card-bg: #17242f;
+    --isa-inset-bg: #1f2f3d;
+    --isa-border: rgba(255, 255, 255, 0.08);
+    --isa-card-radius: 16px;
+    --isa-card-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+    --isa-form-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    --isa-gap: 12px;
+
     // Base variables
     // --------------
     --background-color: var(--ink);
@@ -287,6 +309,9 @@
     --secondary-color-hover: var(--secondary-color);
     --warning-color-hover: var(--orange);
 }
+
+// Floating cards in the fullscreen layout, for both themes above.
+@import 'isacloud-layout';
 
 // isaCloud wordmark, small, under the login form
 .isacloud-footer-brand {

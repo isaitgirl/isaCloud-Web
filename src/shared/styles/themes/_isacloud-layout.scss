@@ -1,0 +1,148 @@
+// isaCloud fullscreen layout: the panes float as rounded cards on a soft
+// background instead of sitting in frames divided by hard lines.
+//
+// Only the geometry and the surfaces live here. The colours are the
+// `--isa-*` variables that each isaCloud theme block defines in isacloud.scss,
+// so light and dark differ by variables alone. Imported from inside the
+// `.conversejs, converse-bg` block, so `&` is that root.
+//
+// The sidebar and the chat are absolutely positioned flyouts, one element each
+// (`.flyout.box-flyout`). Their horizontal split follows the columns of
+// chatview and controlbox: 4/8, 3/9 and 2/10 of 12, from md up.
+//
+// Selectors carry an extra `.chatbox` where a rule of chatview or muc-views
+// already matches the same element at the same specificity, so the order in
+// which the bundle lists the stylesheets does not decide the outcome.
+
+@mixin isa-split($share) {
+    #controlbox:not(.logged-out) .flyout {
+        left: var(--isa-gap);
+        width: calc(#{$share} - var(--isa-gap) * 1.5);
+    }
+    .chatbox:not(#controlbox) .flyout {
+        left: calc(#{$share} + var(--isa-gap) * 0.5);
+        right: var(--isa-gap);
+        width: auto;
+    }
+}
+
+&.theme-isacloud,
+&.theme-isacloud-dark {
+    converse-app-chat.converse-fullscreen {
+        background-color: var(--isa-surface-bg);
+
+        // Surfaces. The panes that paint the page background themselves take
+        // the card colour, so each card reads as one surface.
+        .chatbox .flyout {
+            background-color: var(--isa-card-bg);
+            overflow: hidden;
+        }
+        .chatbox .chat-body,
+        .chatbox .chatroom-body,
+        .chatbox .chat-content__notifications {
+            background-color: var(--isa-card-bg);
+        }
+
+        // Hard lines: the sidebar's frame, the profile's rule and the heading's
+        // rule. Spacing takes their place.
+        #controlbox .flyout {
+            border: 0;
+        }
+        converse-user-profile {
+            border-bottom: 0;
+        }
+        .chatbox .chat-head {
+            border-bottom: 0;
+        }
+
+        // Composer: a floating pill, inset from the card edges, instead of a
+        // rule with a thick coloured top edge. The MUC composer's own
+        // `!important` top border is cleared here too.
+        .chatbox .chat-message-form {
+            border: 1px solid var(--isa-border) !important;
+            border-radius: 14px;
+            background-color: var(--isa-inset-bg);
+            box-shadow: var(--isa-form-shadow);
+            margin: 0 var(--isa-gap) var(--isa-gap);
+        }
+        .chatbox .chat-message-form .chat-textarea {
+            background-color: transparent;
+        }
+        // The send button sat flush in the corner as a square block; inside the
+        // rounded composer it reads better as a round button.
+        .chatbox .chat-message-form .send-button {
+            border-radius: 50%;
+            margin: 6px;
+        }
+
+        // Composer panels (OMEMO warnings, tool panels): rounded and inset to
+        // the same margins as the composer. `border-left` stays as the accent.
+        .chatbox converse-composer-panels .composer-panel {
+            border-top: 0;
+            border-radius: 12px;
+            margin: var(--isa-gap) var(--isa-gap) 8px;
+            background-color: var(--isa-inset-bg);
+            box-shadow: var(--isa-form-shadow);
+        }
+
+        // Occupants of a room: an inner panel instead of a column split off
+        // by a rule.
+        .chatbox converse-muc-sidebar {
+            margin: var(--isa-gap) var(--isa-gap) var(--isa-gap) 0;
+            border-radius: 12px;
+            background-color: var(--isa-inset-bg);
+            overflow: hidden;
+        }
+    }
+
+    // Desktop: the floating layout proper. Below 768px the panes take the
+    // whole screen and get no gap, radius or shadow.
+    @media screen and (min-width: 768px) {
+        converse-app-chat.converse-fullscreen {
+            .chatbox .flyout {
+                top: var(--isa-gap);
+                bottom: var(--isa-gap);
+                height: auto;
+                border-radius: var(--isa-card-radius);
+                box-shadow: var(--isa-card-shadow);
+            }
+            // controlbox/_controlbox.scss squares the sidebar with
+            // `#controlbox .flyout { border-radius: 0 }`; the id needs matching.
+            #controlbox:not(.logged-out) .flyout {
+                border-radius: var(--isa-card-radius);
+            }
+        }
+
+        // Breakpoints match the column widths in chatview and controlbox.
+        converse-app-chat.converse-fullscreen {
+            @include isa-split(33.3333%);
+        }
+        @media screen and (min-width: 992px) {
+            converse-app-chat.converse-fullscreen {
+                @include isa-split(25%);
+            }
+        }
+        @media screen and (min-width: 1200px) {
+            converse-app-chat.converse-fullscreen {
+                @include isa-split(16.6667%);
+            }
+        }
+    }
+
+    @media screen and (max-width: 767.98px) {
+        converse-app-chat.converse-fullscreen {
+            .chatbox .flyout {
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .chatbox .chat-message-form {
+                margin: 0;
+                border-radius: 8px;
+            }
+            .chatbox converse-composer-panels .composer-panel {
+                margin: 0;
+                border-radius: 0;
+            }
+        }
+    }
+}
