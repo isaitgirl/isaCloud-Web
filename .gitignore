@@ -76,3 +76,6 @@ node_modules
 # isaCloud static build
 isacloud/out/
 isacloud/isacloud-web.tar.gz
+
+# Private docs repo (isaitgirl/isaCloud-Web-docs), cloned here
+isacloud-docs/
