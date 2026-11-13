@@ -77,12 +77,15 @@ const isGroup = (room) => room.isGroup();
  */
 function tplRoomKindSections(el, pinned, unpinned, items) {
     const rooms = [...pinned, ...unpinned];
-    /** @param {string} label */
-    const tplAdd = (label) =>
+    /**
+     * @param {string} label
+     * @param {'group'|'channel'} kind
+     */
+    const tplAdd = (label, kind) =>
         html`<a
-            class="dropdown-item show-add-muc-modal"
+            class="dropdown-item show-add-muc-modal show-add-muc-modal--${kind}"
             role="button"
-            @click="${(ev) => api.modal.show('converse-add-muc-modal', { 'model': el.model }, ev)}"
+            @click="${(ev) => api.modal.show('converse-add-muc-modal', { 'model': el.model, kind }, ev)}"
         >
             <converse-icon class="fa fa-plus" size="1em"></converse-icon>
             ${label}
@@ -94,7 +97,7 @@ function tplRoomKindSections(el, pinned, unpinned, items) {
             toggle_title: __('Click to toggle groups'),
             color: 'var(--chat-color)',
             rooms: rooms.filter(isGroup),
-            btns: [tplAdd(__('Add group')), items.bookmarks],
+            btns: [tplAdd(__('Add group'), 'group'), items.bookmarks],
         },
         {
             kind: 'channels',
@@ -102,7 +105,7 @@ function tplRoomKindSections(el, pinned, unpinned, items) {
             toggle_title: __('Click to toggle channels'),
             color: 'var(--muc-color)',
             rooms: rooms.filter((room) => !isGroup(room)),
-            btns: [tplAdd(__('Add channel')), items.query, items.bookmarks],
+            btns: [tplAdd(__('Add channel'), 'channel'), items.query, items.bookmarks],
         },
     ];
     const collapsed = el.model.get('collapsed_kinds') ?? [];

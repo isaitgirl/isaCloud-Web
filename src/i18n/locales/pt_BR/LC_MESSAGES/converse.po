@@ -3080,7 +3080,7 @@ msgstr "Este campo é obrigatório"
 #. export default
 #: dist/converse-no-dependencies.js:144576
 msgid "Join"
-msgstr "Junte-se"
+msgstr "Entrar"
 
 #: dist/converse-no-dependencies.js:144579
 msgid "Groupchat name"
@@ -3579,6 +3579,26 @@ msgstr "Clique para mostrar/esconder os grupos"
 
 msgid "Click to toggle channels"
 msgstr "Clique para mostrar/esconder os canais"
+
+#: src/plugins/muc-views/modals/add-muc.js
+msgid "New group"
+msgstr "Novo grupo"
+
+#: src/plugins/muc-views/modals/add-muc.js
+msgid "New channel"
+msgstr "Novo canal"
+
+#: src/plugins/muc-views/modals/templates/add-muc.js
+msgid "Create"
+msgstr "Criar"
+
+#: src/plugins/muc-views/modals/templates/add-muc.js
+msgid "Group name"
+msgstr "Nome do grupo"
+
+#: src/plugins/muc-views/modals/templates/add-muc.js
+msgid "A private group: only members can join, and messages can be end-to-end encrypted with OMEMO. Invite people once it is created."
+msgstr "Grupo privado: só entra quem for membro, e as mensagens podem ter criptografia de ponta a ponta (OMEMO). Convide as pessoas depois de criar."
 
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
