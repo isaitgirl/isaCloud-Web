@@ -50,6 +50,7 @@ import './plugins/rootview/index.js';
 import './plugins/rosterview/index.js';
 import './plugins/recent-list/index.js'; // Conversation list in the Chat app's sidebar
 import './plugins/isacloud-stickers/index.js'; // isaCloud: figurinhas
+import './plugins/isacloud-update/index.js'; // isaCloud: aviso de nova versão
 import './plugins/singleton/index.js';
 import './plugins/time-views/index.js'; // Views for XEP-0202 Entity Time
 import './plugins/dragresize/index.js'; // Allows chat boxes to be resized by dragging them
