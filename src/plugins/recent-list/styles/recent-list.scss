@@ -365,12 +365,20 @@ $blue: #1780ad;
     // list's own rules for the same elements.
     #controlbox .recent-list.recent-list--contacts {
         // Section headings: groups and contacts in blue, channels in pink.
+        // The labels are links (the collapse toggles), which take the link
+        // colour unless told otherwise.
         .controlbox-heading.controlbox-heading--groups,
         .controlbox-heading.controlbox-heading--contacts {
-            color: var(--blue, #{$blue});
+            &,
+            .list-toggle {
+                color: var(--blue, #{$blue});
+            }
         }
         .controlbox-heading.controlbox-heading--channels {
-            color: var(--pink, #{$pink});
+            &,
+            .list-toggle {
+                color: var(--pink, #{$pink});
+            }
         }
         // Each section's menu button in the colour of its heading.
         .rooms-kind-heading--groups .dropdown-toggle svg {
