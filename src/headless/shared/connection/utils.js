@@ -2,8 +2,14 @@ import log from '@converse/log';
 import { Strophe } from 'strophe.js';
 import { settings_api } from '../settings/api.js';
 
+/**
+ * isaCloud: the prefix comes from the `resource_prefix` setting (Converse's
+ * default is `converse.js`; the isaCloud page sets `isaCloudWeb`).
+ * @returns {string} A resource to append to a bare JID, with its slash.
+ */
 export function generateResource() {
-    return `/converse.js-${Math.floor(Math.random() * 139749528).toString()}`;
+    const prefix = settings_api.get('resource_prefix') || 'converse.js';
+    return `/${prefix}-${Math.floor(Math.random() * 139749528).toString()}`;
 }
 
 export function setStropheLogLevel() {

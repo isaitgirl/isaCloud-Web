@@ -56,6 +56,7 @@ export const DEFAULT_SETTINGS = {
     i18n: undefined,
     jid: undefined,
     reuse_scram_keys: true,
+    resource_prefix: 'converse.js', // isaCloud: prefix of the generated XMPP resource (`<prefix>-<number>`)
     keepalive: true,
     loglevel: 'info',
     locales: [
