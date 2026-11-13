@@ -48,7 +48,7 @@ export function collapseLineBreaks(text) {
         if (m.length > 2) {
             return `\n${'\u200B'.repeat(m.length - 2)}\n`;
         } else if (m.length === 2) {
-            return '\n\u200B';
+            return m; // A blank line between paragraphs is kept
         } else if (m.length === 1) {
             return '\u200B';
         }
