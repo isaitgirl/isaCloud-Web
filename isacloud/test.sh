@@ -32,6 +32,8 @@ MAIN_SPECS=(
     src/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
     src/plugins/muc-views/tests/muc-messages.js
     src/plugins/muc-views/tests/nickname.js
+    src/plugins/muc-views/tests/occupant-sidebar.js # isaCloud: painel do participante
+    src/plugins/muc-views/tests/muc-private-messages.js
     src/plugins/muc-views/tests/retractions.js
     src/plugins/time-views/tests/entity-time-alert.js
 )

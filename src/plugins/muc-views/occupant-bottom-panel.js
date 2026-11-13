@@ -22,6 +22,8 @@ export default class OccupantBottomPanel extends BottomPanel {
     async initialize() {
         await super.initialize();
         this.listenTo(this.muc.session, 'change:connection_status', () => this.requestUpdate());
+        // Whether this is a private group decides what the panel offers.
+        this.listenTo(this.muc.features, 'change', () => this.requestUpdate());
     }
 
     render() {
