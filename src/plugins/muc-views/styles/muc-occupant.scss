@@ -64,7 +64,9 @@
                     // `converse-icon` resolves its `color` attribute at render
                     // time into an inline style on the <svg>, which only
                     // `!important` can reach past.
-                    .toolbar-buttons converse-icon svg {
+                    // The OMEMO lock keeps its own colour: it tells whether
+                    // the message goes encrypted, not which panel this is.
+                    .toolbar-buttons button:not(.toggle-omemo) converse-icon svg {
                         fill: var(--secondary-color) !important;
                     }
                 }

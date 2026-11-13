@@ -3,6 +3,7 @@ import { __ } from 'i18n';
 import { html } from 'lit';
 import { until } from 'lit/directives/until.js';
 import { _converse, api } from '@converse/headless';
+import { getAffiliationLabel, getRoleLabel } from '../../labels.js';
 
 import '../styles/occupant.scss';
 
@@ -71,7 +72,7 @@ export default (el) => {
                     <li class="row mb-2">
                         <div class="col text-start"><strong>${__('Affiliation')}:</strong></div>
                         <div class="col text-end">
-                            ${affiliation}&nbsp;
+                            ${getAffiliationLabel(affiliation)}&nbsp;
                             ${
                                 may_moderate
                                     ? html` <a
@@ -99,7 +100,7 @@ export default (el) => {
                     <li class="row mb-2">
                         <div class="col text-start"><strong>${__('Role')}:</strong></div>
                         <div class="col text-end">
-                            ${role}&nbsp;
+                            ${getRoleLabel(role)}&nbsp;
                             ${
                                 may_moderate && role
                                     ? html` <a

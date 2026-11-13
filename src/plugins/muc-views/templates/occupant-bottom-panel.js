@@ -17,7 +17,25 @@ export default (el) => {
     const i18n_open_chat_tooltip = __('Open a one-on-one chat with this user');
     const i18n_open_chat = __('Open Chat');
     const i18n_invite = __('Invite');
-    if (conn_status === converse.ROOMSTATUS.ENTERED) {
+    if (conn_status === converse.ROOMSTATUS.ENTERED && el.muc.isGroup() && el.model.get('jid')) {
+        // Private messages through the groupchat are never OMEMO encrypted,
+        // while a private group's members can talk in an encrypted direct chat.
+        const name = el.model.getDisplayName();
+        return html`<div class="bottom-panel bottom-panel--muted bottom-panel--direct-chat">
+            <p class="bottom-panel--muted__msg">
+                ${__("Private messages within the group aren't encrypted. Talk to %1$s in a direct chat, with OMEMO encryption.", name)}
+            </p>
+            <button
+                @click=${el.openChat}
+                type="button"
+                class="btn btn-primary open-direct-chat"
+                title="${i18n_open_chat_tooltip}"
+            >
+                <converse-icon class="fa fa-lock" size="1em" color="#fff"></converse-icon>
+                ${__('Encrypted chat')}
+            </button>
+        </div>`;
+    } else if (conn_status === converse.ROOMSTATUS.ENTERED) {
         return html`${
             el.muc.ui.get('scrolled') && el.model.get('num_unread')
                 ? html`<div class="new-msgs-indicator" @click=${(/** @type {Event} */ ev) => el.viewUnreadMessages(ev)}>

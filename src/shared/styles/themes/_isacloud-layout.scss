@@ -42,6 +42,19 @@
 
 &.theme-isacloud,
 &.theme-isacloud-dark {
+    // The encrypted direct chat offered from a group participant is pink,
+    // like the closed lock of an OMEMO chat, even inside a blue group.
+    converse-occupant-bottom-panel .open-direct-chat {
+        --converse-btn-bg: var(--pink);
+        --converse-btn-border-color: var(--pink);
+        --converse-btn-color: #fff;
+        --converse-btn-hover-bg: var(--pink-dark);
+        --converse-btn-hover-border-color: var(--pink-dark);
+        --converse-btn-hover-color: #fff;
+        --converse-btn-active-bg: var(--pink-dark);
+        --converse-btn-active-border-color: var(--pink-dark);
+    }
+
     // A group (members-only, non-anonymous room) is blue like a 1:1 chat;
     // channels keep the room pink. The class comes from the recent-list
     // plugin. Each variable is set again here: the derived ones were resolved

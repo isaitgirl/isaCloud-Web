@@ -1,6 +1,6 @@
 import { html } from 'lit';
-import { _converse, u } from '@converse/headless';
 import { __ } from 'i18n';
+import { getAffiliationLabel, getRoleLabel } from '../labels.js';
 
 /**
  * @param {import('../occupant').default} el
@@ -13,8 +13,9 @@ export default (el) => {
 
     const jid = el.model?.get('jid');
     const nick = el.model?.get('nick');
-    const role = u.firstCharToUpperCase(el.model?.get('role'));
-    const affiliation = u.firstCharToUpperCase(el.model?.get('affiliation'));
+    const role = getRoleLabel(el.model?.get('role'));
+    const raw_affiliation = el.model?.get('affiliation');
+    const affiliation = getAffiliationLabel(raw_affiliation);
     const hats = el.model?.get('hats')?.length ? el.model.get('hats').map(({ title }) => title) : [];
 
     return html` <span class="sidebar-occupant">
@@ -81,7 +82,7 @@ export default (el) => {
                           </li>
                           <li>
                               ${
-                                  affiliation && affiliation !== 'None'
+                                  raw_affiliation && raw_affiliation !== 'none'
                                       ? html`<span class="badge text-bg-primary">${affiliation}</span>`
                                       : ''
                               }
