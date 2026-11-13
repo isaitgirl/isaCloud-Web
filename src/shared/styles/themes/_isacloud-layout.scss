@@ -42,6 +42,12 @@
 
 &.theme-isacloud,
 &.theme-isacloud-dark {
+    // Our own messages on a light grey plate, to tell them apart.
+    .chat-msg.chat-msg--self {
+        background-color: color-mix(in srgb, var(--text-color) 7%, transparent);
+        border-radius: 10px;
+    }
+
     // The encrypted direct chat offered from a group participant is pink,
     // like the closed lock of an OMEMO chat, even inside a blue group.
     converse-occupant-bottom-panel .open-direct-chat {
