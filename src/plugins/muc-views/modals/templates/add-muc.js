@@ -27,9 +27,12 @@ const nickname_input = () => {
  * @param {import('../add-muc.js').default} el
  */
 export default (el) => {
-    const i18n_join = __('Join');
+    const is_group = el.kind === 'group';
+    const i18n_join = is_group ? __('Create') : __('Join');
     let label_name;
-    if (api.settings.get('locked_muc_domain')) {
+    if (is_group) {
+        label_name = __('Group name');
+    } else if (api.settings.get('locked_muc_domain')) {
         label_name = __('Groupchat name');
     } else {
         label_name = __('Groupchat name or address');
@@ -70,6 +73,16 @@ export default (el) => {
                     : ''
             }
         </div>
+        ${
+            is_group
+                ? html`<p class="add-muc-group-hint">
+                      <converse-icon class="fa fa-lock" size="1em"></converse-icon>
+                      ${__(
+                          'A private group: only members can join, and messages can be end-to-end encrypted with OMEMO. Invite people once it is created.',
+                      )}
+                  </p>`
+                : ''
+        }
         ${!api.settings.get('locked_muc_nickname') ? nickname_input() : ''}
         <input type="submit" class="btn btn-primary mt-3" name="join" value="${i18n_join || ''}" />
     </form>`;

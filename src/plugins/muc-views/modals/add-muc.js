@@ -8,7 +8,34 @@ import '../styles/add-muc-modal.scss';
 const u = converse.env.utils;
 const { Strophe } = converse.env;
 
+/**
+ * The configuration of a private group: only members join, everyone sees the
+ * real addresses (which OMEMO needs), and the server doesn't list it.
+ * Applied only when the room is created, see `auto_configure`.
+ */
+export const PRIVATE_GROUP_CONFIG = {
+    membersonly: true,
+    whois: 'anyone',
+    publicroom: false,
+    persistentroom: true,
+};
+
 export default class AddMUCModal extends BaseModal {
+    static get properties() {
+        return {
+            ...super.properties,
+            // 'group' creates a private group, 'channel' and unset keep the
+            // server's defaults.
+            kind: { type: String },
+        };
+    }
+
+    constructor(options) {
+        super(options);
+        /** @type {'group'|'channel'|undefined} */
+        this.kind = options?.kind;
+    }
+
     initialize() {
         super.initialize();
         this.requestUpdate();
@@ -26,6 +53,8 @@ export default class AddMUCModal extends BaseModal {
     }
 
     getModalTitle() {
+        if (this.kind === 'group') return __('New group');
+        if (this.kind === 'channel') return __('New channel');
         return __('Enter a new Groupchat');
     }
 
@@ -106,6 +135,14 @@ export default class AddMUCModal extends BaseModal {
 
         if (!jid) {
             jid = `${escapeNode(getNodeFromJid(data.jid))}@${getDomainFromJid(data.jid)}`.toLowerCase();
+        }
+
+        if (this.kind === 'group') {
+            settings.auto_configure = true;
+            settings.roomconfig = {
+                ...settings.roomconfig,
+                ...PRIVATE_GROUP_CONFIG,
+            };
         }
 
         api.trigger('openConversation', { view: 'room', jid, attrs: { ...settings, jid } });
