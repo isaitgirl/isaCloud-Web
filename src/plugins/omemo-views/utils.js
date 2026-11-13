@@ -17,7 +17,7 @@ import { MIMETYPES_MAP } from 'utils/file.js';
 import { getFileName } from 'utils/html.js';
 
 const { Strophe } = converse.env;
-const { CHATROOMS_TYPE } = constants;
+const { CHATROOMS_TYPE, PRIVATE_CHAT_TYPE } = constants;
 const { hexToArrayBuffer, isAudioURL, isError, isImageURL, isVideoURL } = u;
 
 /**
@@ -279,6 +279,10 @@ function toggleOMEMO(ev) {
                         'either the groupchat has some anonymity or not all participants support OMEMO.',
                 ),
             ];
+        } else if (toolbar_el.model.get('type') !== PRIVATE_CHAT_TYPE) {
+            // A private message to a groupchat participant: OMEMO only
+            // covers 1:1 chats and eligible groupchats.
+            messages = [__('Private messages to groupchat participants are not end-to-end encrypted.')];
         } else {
             messages = [
                 __(

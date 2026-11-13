@@ -824,7 +824,7 @@ msgstr "Sua imagem de perfil"
 
 #: dist/converse-no-dependencies.js:95215
 msgid "Add to Contacts"
-msgstr "Adicionar aos Contactos"
+msgstr "Adicionar aos contatos"
 
 #: dist/converse-no-dependencies.js:95229
 #: dist/converse-no-dependencies.js:107713
@@ -865,11 +865,11 @@ msgstr "Função"
 
 #: dist/converse-no-dependencies.js:95233
 msgid "Hats"
-msgstr "Chapéus/ bonés"
+msgstr "Chapéus"
 
 #: dist/converse-no-dependencies.js:95235
 msgid "Occupant Id"
-msgstr "Id do ocupante"
+msgstr "ID do participante"
 
 #: dist/converse-no-dependencies.js:95349
 #: dist/converse-no-dependencies.js:96080
@@ -2059,7 +2059,7 @@ msgstr "Convide alguém para se unir a este grupo"
 
 #: dist/converse-no-dependencies.js:128133
 msgid "Open a one-on-one chat with this user"
-msgstr ""
+msgstr "Abrir uma conversa direta com esta pessoa"
 
 #: dist/converse-no-dependencies.js:128134
 msgid "Open Chat"
@@ -2132,14 +2132,12 @@ msgid "Invite someone to join this groupchat"
 msgstr "Convide alguém para se unir a este grupo"
 
 #: dist/converse-no-dependencies.js:129304
-#, fuzzy
 msgid "No participant data found"
-msgstr "Mostrar participantes"
+msgstr "Nenhum dado do participante encontrado"
 
 #: dist/converse-no-dependencies.js:129306
-#, fuzzy
 msgid "Show details"
-msgstr "Mostrar menos"
+msgstr "Mostrar detalhes"
 
 #: dist/converse-no-dependencies.js:130871
 msgid "Change user's affiliation to admin"
@@ -3579,6 +3577,27 @@ msgstr "Clique para mostrar/esconder os grupos"
 
 msgid "Click to toggle channels"
 msgstr "Clique para mostrar/esconder os canais"
+
+#: src/plugins/muc-views/labels.js
+msgid "Outcast"
+msgstr "Banido"
+
+#: src/plugins/muc-views/labels.js
+msgid "None"
+msgstr "Nenhuma"
+
+#: src/plugins/omemo-views/utils.js
+msgid "Private messages to groupchat participants are not end-to-end encrypted."
+msgstr "Mensagens privadas para participantes de um canal ou grupo não têm criptografia de ponta a ponta."
+
+#: src/plugins/muc-views/templates/occupant-bottom-panel.js
+#, javascript-format
+msgid "Private messages within the group aren't encrypted. Talk to %1$s in a direct chat, with OMEMO encryption."
+msgstr "Mensagens privadas pelo grupo não são cifradas. Converse com %1$s numa conversa direta, com criptografia OMEMO."
+
+#: src/plugins/muc-views/templates/occupant-bottom-panel.js
+msgid "Encrypted chat"
+msgstr "Conversa cifrada"
 
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
