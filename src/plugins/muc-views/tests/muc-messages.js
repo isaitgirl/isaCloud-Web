@@ -171,7 +171,7 @@ describe('A Groupchat Message', function () {
             expect(view.model.messages.last().occupant.get('role')).toBe('moderator');
             expect(view.querySelectorAll('.chat-msg').length).toBe(1);
             expect(sizzle('.chat-msg', view).pop().classList.value.trim()).toBe(
-                'message chat-msg groupchat chat-msg--with-avatar moderator owner',
+                'message chat-msg groupchat chat-msg--with-avatar chat-msg--self moderator owner',
             );
             let presence = stx`
             <presence to="romeo@montague.lit/orchard"
@@ -203,7 +203,7 @@ describe('A Groupchat Message', function () {
             expect(view.model.messages.last().occupant.get('affiliation')).toBe('member');
             expect(view.model.messages.last().occupant.get('role')).toBe('participant');
             expect(sizzle('.chat-msg', view).pop().classList.value.trim()).toBe(
-                'message chat-msg groupchat chat-msg--with-avatar participant member',
+                'message chat-msg groupchat chat-msg--with-avatar chat-msg--self participant member',
             );
 
             presence = stx`
@@ -233,7 +233,7 @@ describe('A Groupchat Message', function () {
             await u.waitUntil(
                 () =>
                     sizzle('.chat-msg', view).pop().classList.value.trim() ===
-                    'message chat-msg groupchat chat-msg--with-avatar moderator owner',
+                    'message chat-msg groupchat chat-msg--with-avatar chat-msg--self moderator owner',
             );
 
             msg = stx`

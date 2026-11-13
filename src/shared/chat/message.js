@@ -285,6 +285,7 @@ export default class Message extends ObservableElement {
             this.model.isRetracted() ? 'chat-msg--retracted' : null,
             this.model.get('type'),
             this.shouldShowAvatar() ? 'chat-msg--with-avatar' : null,
+            this.model.get('sender') === 'me' ? 'chat-msg--self' : null,
         ].map((c) => c);
 
         if (this.model.get('type') === 'groupchat') {
