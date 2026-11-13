@@ -1279,7 +1279,7 @@ msgstr "Editar"
 
 #: dist/converse-no-dependencies.js:101525
 msgid "Retract"
-msgstr "Retrair"
+msgstr "Retirar"
 
 #: dist/converse-no-dependencies.js:101544
 msgid "Copy"
@@ -1287,11 +1287,11 @@ msgstr "Copiar"
 
 #: dist/converse-no-dependencies.js:101556
 msgid "Reply"
-msgstr ""
+msgstr "Responder"
 
 #: dist/converse-no-dependencies.js:101566
 msgid "Quote"
-msgstr "Citação"
+msgstr "Citar"
 
 #: dist/converse-no-dependencies.js:101814
 msgid "Image: "
@@ -2470,7 +2470,7 @@ msgstr "Ocultar o tópico do grupo"
 
 #: dist/converse-no-dependencies.js:133415
 msgid "Moderate"
-msgstr "Moderado"
+msgstr "Moderar"
 
 #: dist/converse-no-dependencies.js:133416
 msgid "Moderate this groupchat"
@@ -3472,9 +3472,8 @@ msgid "%1$s and %2$d others"
 msgstr "%1$s e %2$s"
 
 #: dist/converse-no-dependencies.js:152179
-#, fuzzy
 msgid "Add Reaction"
-msgstr "Adicionar contacto"
+msgstr "Reagir"
 
 msgid "Earlier messages that cannot be read in this browser: %1$s"
 msgstr "Mensagens anteriores que não podem ser lidas neste navegador: %1$s"
