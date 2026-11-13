@@ -14,6 +14,8 @@ export const UPDATE_EVENT = 'isacloud-update-available';
 export const update_state = Object.assign(new EventTarget(), {
     /** @type {string|null} The newer published version, once one is found. */
     available: null,
+    /** Whether the reload into the new version is under way. */
+    updating: false,
 });
 
 /**
@@ -71,16 +73,27 @@ export const actions = {
  * goes: the server's clear URL answers with `Clear-Site-Data: "cache"`, which
  * leaves IndexedDB and localStorage (OMEMO keys, history, session, stickers)
  * alone. Any Cache Storage is emptied too, though the page uses none today.
+ *
+ * Chrome holds the clear URL's response until it has cleared the cache, which
+ * can take some 20 seconds, so the reload waits for it at most
+ * `isacloud_update_clear_timeout` milliseconds. The reload brings the new files
+ * anyway (nginx sends `no-cache` for dist/, and the main script has `?v=`):
+ * clearing the cache is a safeguard. Clicks while this runs are ignored, and
+ * the button shows that it is working.
  * @returns {Promise<void>}
  */
 export async function reloadWithNewVersion() {
+    if (update_state.updating) return;
+    update_state.updating = true;
+    update_state.dispatchEvent(new Event(UPDATE_EVENT));
+
     const clear_url = api.settings.get('isacloud_update_clear_url');
     if (clear_url) {
-        try {
-            await fetch(new URL(clear_url, document.baseURI), { cache: 'no-store' });
-        } catch (e) {
-            log.debug(`isacloud-update: could not clear the cache: ${e}`);
-        }
+        const timeout = Number(api.settings.get('isacloud_update_clear_timeout')) || 0;
+        const clearing = fetch(new URL(clear_url, document.baseURI), { cache: 'no-store' }).catch((e) =>
+            log.debug(`isacloud-update: could not clear the cache: ${e}`),
+        );
+        await Promise.race([clearing, new Promise((resolve) => setTimeout(resolve, timeout))]);
     }
     try {
         if (window.caches) {

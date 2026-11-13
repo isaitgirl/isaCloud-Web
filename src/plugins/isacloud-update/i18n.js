@@ -11,6 +11,7 @@ import { __ } from 'i18n';
 /** @type {Record<string, string>} */
 const PT_BR = {
     'New version available, click to update': 'Nova versão disponível, clique para atualizar',
+    'Updating…': 'Atualizando…',
 };
 
 /**
