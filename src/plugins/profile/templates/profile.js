@@ -11,6 +11,9 @@ export default (el) => {
     const presence = el.model.get('presence') || 'online';
     const chat_status = show || presence;
     const status_message = el.model.get('status_message') || __('I am %1$s', getPrettyStatus(chat_status));
+    // The default nickname (not the per-room ones), with the JID under it.
+    const jid = el.model.get('jid');
+    const name = el.model.getNickname() || el.model.getDisplayName();
     const i18n_change_profile = __('Update your profile');
     const i18n_change_status = __('Click to change your chat status');
 
@@ -42,7 +45,7 @@ export default (el) => {
                     width="40"
                 ></converse-avatar>
                 <span class="username align-self-center w-100" role="heading" aria-level="2">
-                    ${el.model.getDisplayName()}
+                    ${name} ${name !== jid ? html`<span class="username__jid">${jid}</span>` : ''}
                 </span>
             </a>
             <converse-controlbox-buttons></converse-controlbox-buttons>

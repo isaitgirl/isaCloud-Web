@@ -220,3 +220,63 @@ describe('The conversation list', function () {
         }),
     );
 });
+
+describe('Closing a groupchat', function () {
+    /**
+     * A 1:1 chat behind a groupchat that is shown, then the groupchat is
+     * closed.
+     * @param {any} _converse
+     * @param {boolean} connected
+     */
+    async function closeShownGroupchat(_converse, connected) {
+        const { api, state } = _converse;
+        await mock.waitForRoster(_converse, 'current', 1);
+        const jid = mock.getContactJID(0);
+        await mock.openChatBoxFor(_converse, jid);
+        await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+        const chat = state.chatboxes.get(jid);
+        await u.waitUntil(() => chat.get('hidden') === true);
+
+        if (!connected) vi.spyOn(api.connection, 'connected').mockReturnValue(false);
+        await state.chatboxes.get(LOUNGE).close();
+        await sleep(100);
+        return chat;
+    }
+
+    it(
+        'shows the chat behind it',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const chat = await closeShownGroupchat(_converse, true);
+            expect(chat.get('hidden')).toBe(false);
+        }),
+    );
+
+    it(
+        'shows nothing while disconnected (logging out closes every chat)',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const chat = await closeShownGroupchat(_converse, false);
+            expect(chat.get('hidden')).toBe(true);
+        }),
+    );
+});
+
+describe('An open groupchat', function () {
+    it(
+        'is marked as a group only when members-only and non-anonymous',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const group_features = ['http://jabber.org/protocol/muc', 'muc_membersonly', 'muc_nonanonymous'];
+            await mock.openAndEnterMUC(_converse, GARDEN, 'romeo', group_features);
+            const group_view = await u.waitUntil(() => _converse.chatboxviews.get(GARDEN));
+            await u.waitUntil(() => group_view.classList.contains('chatroom--group'));
+
+            await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            const channel_view = await u.waitUntil(() => _converse.chatboxviews.get(LOUNGE));
+            await sleep(50);
+            expect(channel_view.classList.contains('chatroom--group')).toBe(false);
+
+            // A room that becomes members-only and non-anonymous turns blue.
+            channel_view.model.features.save({ membersonly: true, nonanonymous: true });
+            await u.waitUntil(() => channel_view.classList.contains('chatroom--group'));
+        }),
+    );
+});

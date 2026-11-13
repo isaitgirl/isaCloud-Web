@@ -1,6 +1,7 @@
 /**
  * @typedef {import('../view').RoomsList} RoomsList
  * @typedef {import('@converse/headless').MUC} MUC
+ * @typedef {import('lit').TemplateResult} TemplateResult
  */
 import { html } from 'lit';
 import { api, constants } from '@converse/headless';
@@ -62,6 +63,87 @@ function tplRoomDomainGroupList(el, rooms) {
     return sorted_domains.map((domain) => tplRoomDomainGroup(el, domain, grouped_rooms.get(domain)));
 }
 
+/** @param {MUC} room */
+const isGroup = (room) => room.isGroup();
+
+/**
+ * Groups and channels as two sections of their own, each with its heading and
+ * menu, shown even when empty so the menu stays reachable. Groups are private
+ * and not listed by the server, so their menu has no "Query server".
+ * @param {RoomsList} el
+ * @param {MUC[]} pinned
+ * @param {MUC[]} unpinned
+ * @param {{ query: TemplateResult, bookmarks: TemplateResult }} items
+ */
+function tplRoomKindSections(el, pinned, unpinned, items) {
+    const rooms = [...pinned, ...unpinned];
+    /** @param {string} label */
+    const tplAdd = (label) =>
+        html`<a
+            class="dropdown-item show-add-muc-modal"
+            role="button"
+            @click="${(ev) => api.modal.show('converse-add-muc-modal', { 'model': el.model }, ev)}"
+        >
+            <converse-icon class="fa fa-plus" size="1em"></converse-icon>
+            ${label}
+        </a>`;
+    const kinds = [
+        {
+            kind: 'groups',
+            label: __('Groups'),
+            toggle_title: __('Click to toggle groups'),
+            color: 'var(--chat-color)',
+            rooms: rooms.filter(isGroup),
+            btns: [tplAdd(__('Add group')), items.bookmarks],
+        },
+        {
+            kind: 'channels',
+            label: __('Channels'),
+            toggle_title: __('Click to toggle channels'),
+            color: 'var(--muc-color)',
+            rooms: rooms.filter((room) => !isGroup(room)),
+            btns: [tplAdd(__('Add channel')), items.query, items.bookmarks],
+        },
+    ];
+    const collapsed = el.model.get('collapsed_kinds') ?? [];
+    return kinds.map(({ kind, label, toggle_title, color, rooms, btns }) => {
+        const is_collapsed = collapsed.includes(kind);
+        return html`<div class="d-flex controlbox-padded rooms-kind-heading rooms-kind-heading--${kind}">
+                <span class="controlbox-heading controlbox-heading--groupchats controlbox-heading--${kind}">
+                    <a
+                        class="list-toggle rooms-kind-toggle"
+                        role="heading"
+                        aria-level="3"
+                        aria-expanded="${!is_collapsed}"
+                        title="${toggle_title}"
+                        @click=${(/** @type {Event} */ ev) => el.toggleKindList(ev, kind)}
+                    >
+                        ${label}
+                        ${
+                            rooms.length
+                                ? html`<converse-icon
+                                      class="fa ${is_collapsed ? 'fa-caret-right' : 'fa-caret-down'}"
+                                      size="1em"
+                                      color="${color}"
+                                  ></converse-icon>`
+                                : ''
+                        }
+                    </a>
+                </span>
+                <converse-dropdown class="btn-group dropstart" .items=${btns}></converse-dropdown>
+            </div>
+            ${
+                rooms.length && !is_collapsed
+                    ? html`<div class="list-container list-container--openrooms rooms-kind rooms-kind--${kind}">
+                          <ul class="items-list rooms-list open-rooms-list">
+                              ${rooms.map((room) => tplRoomItem(el, room))}
+                          </ul>
+                      </div>`
+                    : ''
+            }`;
+    });
+}
+
 /**
  * The pinned rooms, rendered before all other rooms. The `Pinned` label is
  * only needed to explain the ordering when unpinned rooms follow.
@@ -86,6 +168,7 @@ function tplPinnedRooms(el, pinned, show_label) {
  */
 export default (el) => {
     const group_by_domain = api.settings.get('muc_grouped_by_domain');
+    const group_by_kind = api.settings.get('muc_grouped_by_kind');
     const { pinned, unpinned } = el.getRoomPartitions();
     const rooms = [...pinned, ...unpinned];
     const i18n_desc_rooms = __('Click to toggle the list of open groupchats');
@@ -126,6 +209,11 @@ export default (el) => {
             ${i18n_show_bookmarks}
         </a>`,
     ];
+
+    if (group_by_kind) {
+        const [, query, bookmarks] = btns;
+        return tplRoomKindSections(el, pinned, unpinned, { query, bookmarks });
+    }
 
     return html` <div class="d-flex controlbox-padded">
             <span class="controlbox-heading controlbox-heading--groupchats">

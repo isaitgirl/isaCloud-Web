@@ -13,6 +13,7 @@ class RoomsListModel extends Model {
             muc_domain: api.settings.get('muc_domain'),
             toggle_state: OPENED,
             collapsed_domains: [],
+            collapsed_kinds: [],
         };
     }
 

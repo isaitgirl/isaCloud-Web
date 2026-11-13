@@ -3,4 +3,5 @@ export type RoomsListAttrs = {
     muc_domain: string;
     toggle_state: 'opened' | 'closed';
     collapsed_domains: string[];
+    collapsed_kinds?: string[];
 };

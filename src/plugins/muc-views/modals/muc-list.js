@@ -15,12 +15,13 @@ const { getAttributes } = u;
  */
 function insertRoomInfo(el, stanza) {
     // All MUC features found here: https://xmpp.org/registrar/disco-features.html
-    el.querySelector('span.spinner').remove();
+    el.querySelector('.room-info__spinner')?.remove();
     el.querySelector('a.room-info').classList.add('selected');
-    el.insertAdjacentHTML(
+    el.insertAdjacentElement(
         'beforeend',
         u.getElementFromTemplateResult(
             tplMUCDescription({
+                'channels': !!api.settings.get('muc_list_all_services'),
                 'jid': stanza.getAttribute('from'),
                 'desc': sizzle('field[var="muc#roominfo_description"] value', stanza).shift()?.textContent,
                 'occ': sizzle('field[var="muc#roominfo_occupants"] value', stanza).shift()?.textContent,
@@ -51,11 +52,20 @@ function toggleRoomInfo(ev) {
         u.slideIn(div_el).then(u.removeElement);
         parent_el.querySelector('a.room-info').classList.remove('selected');
     } else {
-        parent_el.insertAdjacentElement('beforeend', u.getElementFromTemplateResult(tplSpinner()));
+        if (parent_el.querySelector('.room-info__spinner')) return;
+        parent_el.insertAdjacentElement(
+            'beforeend',
+            u.getElementFromTemplateResult(tplSpinner({ class: 'room-info__spinner' })),
+        );
         api.disco
-            .info(/** @type HTMLElement */ (ev.target).getAttribute('data-room-jid'), null)
+            .info(/** @type HTMLElement */ (ev.currentTarget).getAttribute('data-room-jid'), null)
             .then(/** @param {Element} stanza */ (stanza) => insertRoomInfo(parent_el, stanza))
-            .catch(/** @param {Error} e */ (e) => log.error(e));
+            .catch(
+                /** @param {Error} e */ (e) => {
+                    log.error(e);
+                    parent_el.querySelector('.room-info__spinner')?.remove();
+                },
+            );
     }
 }
 
@@ -68,6 +78,7 @@ class MUCListModal extends BaseModal {
         super(options);
         this.items = [];
         this.loading_items = false;
+        this.show_service = false;
     }
 
     initialize() {
@@ -75,7 +86,13 @@ class MUCListModal extends BaseModal {
         this.listenTo(this.model, 'change:muc_domain', this.onDomainChange);
         this.listenTo(this.model, 'change:feedback_text', () => this.requestUpdate());
 
-        this.addEventListener('shown.bs.modal', () => api.settings.get('locked_muc_domain') && this.updateRoomsList());
+        this.addEventListener('shown.bs.modal', () => {
+            if (api.settings.get('muc_list_all_services')) {
+                this.listAllServices();
+            } else if (api.settings.get('locked_muc_domain')) {
+                this.updateRoomsList();
+            }
+        });
 
         this.model.save('feedback_text', '');
     }
@@ -83,7 +100,9 @@ class MUCListModal extends BaseModal {
     renderModal() {
         return tplMUCList(
             Object.assign(this.model.toJSON(), {
-                'show_form': !api.settings.get('locked_muc_domain'),
+                'show_service': !!this.show_service,
+                'channels': !!api.settings.get('muc_list_all_services'),
+                'show_form': !api.settings.get('locked_muc_domain') && !api.settings.get('muc_list_all_services'),
                 'server_placeholder': this.model.get('muc_domain') || __('conference.example.org'),
                 'items': this.items,
                 'loading_items': this.loading_items,
@@ -96,7 +115,68 @@ class MUCListModal extends BaseModal {
     }
 
     getModalTitle() {
-        return __('Query for Groupchats');
+        // With every service listed, the list holds the public groupchats:
+        // the channels. Groups are members-only and don't show up.
+        return api.settings.get('muc_list_all_services') ? __('Search channels') : __('Query for Groupchats');
+    }
+
+    /**
+     * Lists the groupchats of every groupchat service at once, sorted by
+     * name, with the service of each one shown under it.
+     * Used when `muc_list_all_services` is set.
+     */
+    async listAllServices() {
+        this.loading_items = true;
+        this.show_service = true;
+        this.items = [];
+        this.model.set({ 'feedback_text': '' }, { 'silent': true });
+        this.requestUpdate();
+
+        const services = await u.muc.getMUCServices().catch((e) => {
+            log.error(e);
+            return [];
+        });
+        const results = await Promise.all(services.map((service) => this.queryService(service)));
+        const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
+        const items = results
+            .flat()
+            .sort((a, b) => collator.compare(a.name || a.jid, b.name || b.jid) || collator.compare(a.jid, b.jid));
+        this.onItemsFound(items);
+    }
+
+    /**
+     * @param {string} service
+     * @returns {Promise<Record<string, string>[]>}
+     */
+    async queryService(service) {
+        const iq = stx`
+            <iq to="${service}" type="get" xmlns="jabber:client">
+                <query xmlns="${Strophe.NS.DISCO_ITEMS}"></query>
+            </iq>`;
+        try {
+            const result = await api.sendIQ(iq);
+            return sizzle('query item', result).map((el) => ({ ...getAttributes(el), service }));
+        } catch (e) {
+            log.warn(`Could not list the groupchats of ${service}`);
+            return [];
+        }
+    }
+
+    /**
+     * @param {Record<string, string>[]} items
+     */
+    onItemsFound(items) {
+        this.loading_items = false;
+        this.items = items;
+        const feedback_text = api.settings.get('muc_list_all_services')
+            ? items.length
+                ? __('Channels found')
+                : __('No channels found')
+            : items.length
+              ? __('Groupchats found')
+              : __('No groupchats found');
+        this.model.set({ feedback_text }, { 'silent': true });
+        this.requestUpdate();
     }
 
     /**
@@ -104,7 +184,7 @@ class MUCListModal extends BaseModal {
      */
     openRoom(ev) {
         ev.preventDefault();
-        const el = /** @type {Element} */ (ev.target);
+        const el = /** @type {Element} */ (ev.currentTarget);
         const jid = el.getAttribute('data-room-jid');
         const name = el.getAttribute('data-room-name');
         this.modal.hide();
@@ -130,16 +210,8 @@ class MUCListModal extends BaseModal {
      * @param {Element} [iq]
      */
     onRoomsFound(iq) {
-        this.loading_items = false;
-        const rooms = iq ? sizzle('query item', iq) : [];
-        if (rooms.length) {
-            this.model.set({ 'feedback_text': __('Groupchats found') }, { 'silent': true });
-            this.items = rooms.map(getAttributes);
-        } else {
-            this.items = [];
-            this.model.set({ 'feedback_text': __('No groupchats found') }, { 'silent': true });
-        }
-        this.requestUpdate();
+        this.show_service = false;
+        this.onItemsFound(iq ? sizzle('query item', iq).map(getAttributes) : []);
         return true;
     }
 

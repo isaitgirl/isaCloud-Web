@@ -40,13 +40,31 @@ function tplHeader(el) {
 function tplFilters(el) {
     const active = el.model.get('filter');
     const filters = [
-        ['all', __('All')],
         ['unread', __('Unread chats')],
         ['contacts', __('Contacts')],
         ['groups', __('Groups')],
         ['channels', __('Channels')],
     ];
+    // "All" is an icon, so the chips fit on one line: a list while nothing is
+    // filtered, a cross that clears the filter otherwise.
+    const is_all = active === 'all';
+    const all_label = is_all ? __('All') : __('Clear filters');
     return html`<div class="recent-list__filters" role="group" aria-label="${__('Conversations')}">
+        <button
+            type="button"
+            class="recent-list__chip recent-list__chip--all ${is_all ? 'active' : ''}"
+            aria-pressed="${is_all ? 'true' : 'false'}"
+            title="${all_label}"
+            aria-label="${all_label}"
+            @click=${() => el.setFilter('all')}
+        >
+            <converse-icon
+                class="fa ${is_all ? 'fa-list-ul' : 'fa-times'}"
+                size="0.85em"
+                color="currentColor"
+                aria-hidden="true"
+            ></converse-icon>
+        </button>
         ${filters.map(
             ([id, label]) =>
                 html`<button

@@ -1,0 +1,313 @@
+// isaCloud modals and buttons: modals as floating cards with a light heading,
+// soft fields and segmented tabs, in the colours of the floating layout.
+//
+// Buttons: destructive actions (`btn-danger`) take the isaCloud pink instead
+// of red, and the secondary ones (close, cancel) a light grey.
+//
+// Imported from inside the `.conversejs, converse-bg` block, so `&` is that
+// root. The modals live in `#converse-modals`, inside it.
+
+&.theme-isacloud,
+&.theme-isacloud-dark {
+    .btn {
+        border-radius: 10px;
+        font-weight: 500;
+    }
+    .btn-danger {
+        --converse-btn-color: #fff;
+        --converse-btn-bg: var(--pink);
+        --converse-btn-border-color: var(--pink);
+        --converse-btn-hover-color: #fff;
+        --converse-btn-hover-bg: var(--pink-dark);
+        --converse-btn-hover-border-color: var(--pink-dark);
+        --converse-btn-active-color: #fff;
+        --converse-btn-active-bg: var(--pink-dark);
+        --converse-btn-active-border-color: var(--pink-dark);
+        --converse-btn-disabled-color: #fff;
+        --converse-btn-disabled-bg: var(--pink);
+        --converse-btn-disabled-border-color: var(--pink);
+
+        converse-icon svg {
+            fill: currentColor;
+        }
+    }
+    .btn-secondary {
+        --converse-btn-color: var(--foreground-color);
+        --converse-btn-bg: var(--isa-inset-bg);
+        --converse-btn-border-color: var(--isa-border);
+        --converse-btn-hover-color: var(--foreground-color);
+        --converse-btn-hover-bg: color-mix(in srgb, var(--isa-inset-bg) 88%, var(--foreground-color));
+        --converse-btn-hover-border-color: var(--isa-border);
+        --converse-btn-active-color: var(--foreground-color);
+        --converse-btn-active-bg: color-mix(in srgb, var(--isa-inset-bg) 80%, var(--foreground-color));
+        --converse-btn-active-border-color: var(--isa-border);
+    }
+    .btn-outline-secondary {
+        --converse-btn-color: var(--foreground-color);
+        --converse-btn-border-color: var(--isa-border);
+        --converse-btn-hover-color: var(--foreground-color);
+        --converse-btn-hover-bg: var(--isa-inset-bg);
+        --converse-btn-hover-border-color: var(--isa-border);
+    }
+
+    // The card. Wider than Converse's 30vw on large screens, so the forms
+    // have room.
+    &.fullscreen .modal {
+        @media screen and (min-width: 1200px) {
+            --converse-modal-width: clamp(420px, 34vw, 560px);
+        }
+    }
+    .modal-content {
+        border: 1px solid var(--isa-border);
+        border-radius: 18px;
+        background-color: var(--isa-card-bg);
+        box-shadow:
+            0 24px 60px rgba(20, 32, 43, 0.22),
+            0 4px 14px rgba(20, 32, 43, 0.1);
+        overflow: hidden;
+    }
+
+    // Heading: the title on the card, not on a coloured band.
+    .modal-header {
+        --btn-quiet-tint: var(--foreground-color);
+        align-items: center;
+        padding: 18px 20px 8px;
+        background-color: transparent;
+
+        &.alert-danger {
+            background-color: transparent;
+
+            .modal-title {
+                color: var(--pink);
+            }
+        }
+        .modal-title {
+            color: var(--foreground-color);
+            font-size: 18px;
+            font-weight: 700;
+
+            a {
+                color: inherit;
+            }
+        }
+        // The close button: a round, quiet button.
+        .btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--isa-inset-bg);
+
+            &:hover {
+                background-color: color-mix(in srgb, var(--isa-inset-bg) 85%, var(--foreground-color));
+            }
+            svg {
+                fill: var(--foreground-color);
+            }
+        }
+        .close {
+            color: var(--foreground-color);
+        }
+    }
+
+    .modal-body {
+        padding: 10px 20px 16px;
+    }
+    .modal-footer {
+        gap: 8px;
+        padding: 6px 20px 18px;
+        border-top: 0;
+
+        > * {
+            margin: 0;
+        }
+    }
+
+    // Tabs: a segmented control.
+    .modal-body .nav-pills {
+        --converse-nav-pills-link-active-bg: var(--isa-card-bg);
+        --converse-nav-pills-link-active-color: var(--foreground-color);
+        display: inline-flex;
+        flex-wrap: nowrap;
+        gap: 2px;
+        width: auto;
+        max-width: 100%;
+        // On a phone the tabs scroll sideways instead of overflowing.
+        overflow-x: auto;
+        scrollbar-width: none;
+        margin: 0 auto 16px;
+        padding: 3px;
+        border-radius: 12px;
+        background-color: var(--isa-inset-bg);
+
+        .nav-link {
+            padding: 5px 14px;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--foreground-color);
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+
+            &.active {
+                background-color: var(--isa-card-bg) !important;
+                color: var(--foreground-color) !important;
+                box-shadow: 0 1px 3px rgba(20, 32, 43, 0.15);
+            }
+        }
+    }
+    // The pills are centred in their row.
+    .modal-body:has(> .nav-pills) {
+        text-align: center;
+
+        > .tab-content {
+            text-align: start;
+        }
+    }
+
+    // Round avatars, as in the lists.
+    .modal {
+        --avatar-border-radius: 50%;
+    }
+
+    // Fields.
+    .modal {
+        .form-control,
+        .form-select {
+            border: 1px solid var(--isa-border);
+            border-radius: 10px;
+            background-color: var(--isa-inset-bg);
+            color: var(--foreground-color);
+            font-size: 14px;
+
+            &:focus {
+                border-color: var(--pink);
+                box-shadow: 0 0 0 3px rgba(var(--pink-rgb), 0.15);
+            }
+        }
+        .input-group > .form-control:not(:last-child) {
+            border-start-end-radius: 0;
+            border-end-end-radius: 0;
+        }
+        .input-group > .btn:last-child {
+            border-start-start-radius: 0;
+            border-end-start-radius: 0;
+        }
+        .form-check-input:checked {
+            border-color: var(--pink);
+            background-color: var(--pink);
+        }
+        .form-check-input:focus {
+            border-color: var(--pink);
+            box-shadow: 0 0 0 3px rgba(var(--pink-rgb), 0.15);
+        }
+        .form-text,
+        .text-muted {
+            color: var(--gray) !important;
+        }
+        .badge {
+            border-radius: 999px;
+            font-weight: 600;
+        }
+    }
+
+    // Labels. The id outweighs the user details' own (pink) label colour.
+    #converse-modals .modal {
+        label,
+        .col-form-label,
+        .form-label {
+            color: var(--foreground-color);
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .form-check-label {
+            font-weight: 400;
+        }
+    }
+
+    // Groupchat search: the name (not a link), its service under it, an info
+    // button and a pink "join" button on the right.
+    .available-chatrooms {
+        .room-item {
+            border-color: var(--isa-border);
+            background-color: transparent;
+        }
+        .available-chatroom {
+            gap: 8px;
+        }
+        .available-room {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .available-room__name {
+            overflow: hidden;
+            color: var(--foreground-color);
+            font-weight: 500;
+            text-overflow: ellipsis;
+        }
+        .available-room__service {
+            color: var(--gray);
+            font-size: 12px;
+        }
+        a.room-info {
+            display: inline-flex;
+            flex: 0 0 auto;
+            padding: 6px;
+
+            svg {
+                fill: var(--gray);
+            }
+            &.selected svg {
+                fill: var(--blue);
+            }
+        }
+        // The details shown by the info button, under the row.
+        .room-info__spinner {
+            padding: 8px 0 2px;
+
+            .spinner-grow {
+                width: 1.25rem;
+                height: 1.25rem;
+                color: var(--pink);
+            }
+        }
+        div.room-info {
+            margin-top: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background-color: var(--isa-inset-bg);
+            color: var(--foreground-color);
+            font-size: 13px;
+
+            p.room-info {
+                margin: 0 0 4px;
+            }
+            ul {
+                margin: 0;
+                padding-inline-start: 18px;
+            }
+        }
+        .available-room__join {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            background-color: rgba(var(--pink-rgb), 0.1);
+
+            svg {
+                fill: var(--pink);
+            }
+            &:hover {
+                background-color: var(--pink);
+
+                svg {
+                    fill: #fff;
+                }
+            }
+        }
+    }
+}

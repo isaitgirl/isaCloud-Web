@@ -29,6 +29,26 @@ export async function getDefaultMUCService() {
 }
 
 /**
+ * All the groupchat services: the configured `muc_domain`, then every service
+ * of the user's domain that supports MUC (XEP-0045 discovery).
+ * @returns {Promise<string[]>}
+ */
+export async function getMUCServices() {
+    const services = [];
+    const configured = api.settings.get('muc_domain');
+    if (configured) services.push(configured);
+
+    const domain = _converse.session.get('domain');
+    const items = await api.disco.entities.items(domain);
+    const supported = await Promise.all(items.map((item) => api.disco.features.has(Strophe.NS.MUC, item.get('jid'))));
+    items.forEach((item, i) => {
+        const jid = item.get('jid');
+        if (supported[i] && !services.includes(jid)) services.push(jid);
+    });
+    return services;
+}
+
+/**
  * @param {import('@converse/skeletor').Model} model
  */
 export function isChatRoom(model) {

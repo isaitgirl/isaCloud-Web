@@ -14,7 +14,10 @@ describe('The Controlbox', function () {
                 async function (_converse) {
                     mock.openControlBox(_converse);
                     const el = await u.waitUntil(() => document.querySelector('converse-user-profile .username'));
-                    expect(el.textContent.trim()).toBe('nicky');
+                    // The JID goes under the nickname.
+                    const jid_el = el.querySelector('.username__jid');
+                    expect(jid_el.textContent.trim()).toBe(_converse.session.get('bare_jid'));
+                    expect(el.textContent.replace(jid_el.textContent, '').trim()).toBe('nicky');
                 },
             ),
         );

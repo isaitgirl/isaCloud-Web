@@ -1080,6 +1080,15 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
         return self && self.isModerator() && api.disco.supports(Strophe.NS.MODERATE, this.get('jid'));
     }
 
+    /**
+     * Whether this is a group rather than a channel: a members-only,
+     * non-anonymous room. See https://docs.modernxmpp.org/client/groupchat/
+     * @returns {boolean}
+     */
+    isGroup() {
+        return !!(this.features?.get('membersonly') && this.features?.get('nonanonymous'));
+    }
+
     canPostMessages() {
         return this.isEntered() && !(this.features.get('moderated') && this.getOwnRole() === 'visitor');
     }
@@ -1994,21 +2003,40 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
         }
     }
 
+    /**
+     * The user setting that lists the rooms whose topic is not in its default
+     * state: hidden ones, or shown ones when `hide_muc_subject` hides topics
+     * by default.
+     * @returns {string}
+     */
+    getSubjectSettingKey() {
+        return api.settings.get('hide_muc_subject') ? 'mucs_with_shown_subject' : 'mucs_with_hidden_subject';
+    }
+
+    /**
+     * @param {string[]} jids - The rooms listed under {@link getSubjectSettingKey}
+     * @returns {boolean}
+     */
+    isSubjectHiddenIn(jids) {
+        const listed = jids.includes(this.get('jid'));
+        return api.settings.get('hide_muc_subject') ? !listed : listed;
+    }
+
     async isSubjectHidden() {
-        const jids = await api.user.settings.get('mucs_with_hidden_subject', []);
-        return jids.includes(this.get('jid'));
+        return this.isSubjectHiddenIn(await api.user.settings.get(this.getSubjectSettingKey(), []));
     }
 
     async toggleSubjectHiddenState() {
         const muc_jid = this.get('jid');
-        const jids = await api.user.settings.get('mucs_with_hidden_subject', []);
-        if (jids.includes(this.get('jid'))) {
+        const key = this.getSubjectSettingKey();
+        const jids = await api.user.settings.get(key, []);
+        if (jids.includes(muc_jid)) {
             api.user.settings.set(
-                'mucs_with_hidden_subject',
+                key,
                 jids.filter((jid) => jid !== muc_jid),
             );
         } else {
-            api.user.settings.set('mucs_with_hidden_subject', [...jids, muc_jid]);
+            api.user.settings.set(key, [...jids, muc_jid]);
         }
     }
 

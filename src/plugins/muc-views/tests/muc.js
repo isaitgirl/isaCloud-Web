@@ -401,6 +401,31 @@ describe('Groupchats', function () {
             );
 
             it(
+                'is hidden by default with hide_muc_subject, until shown by the user',
+                mock.initConverse(converse, [], { hide_muc_subject: true }, async function (_converse) {
+                    await mock.openAndEnterMUC(_converse, 'jdev@conference.jabber.org', 'jc');
+                    const stanza = stx`<message xmlns="jabber:client" to="${_converse.jid}" type="groupchat" from="jdev@conference.jabber.org/ralphm">
+                        <subject>An old topic</subject>
+                        <delay xmlns="urn:xmpp:delay" stamp="2014-02-04T09:35:39Z" from="jdev@conference.jabber.org"/>
+                    </message>`;
+                    _converse.api.connection.get()._dataRecv(mock.createRequest(_converse, stanza));
+                    const view = _converse.chatboxviews.get('jdev@conference.jabber.org');
+                    await new Promise((resolve) => view.model.once('change:subject', resolve));
+
+                    const toggle = await u.waitUntil(() => view.querySelector('.hide-topic'));
+                    expect(toggle.textContent.trim()).toBe('Show topic');
+                    expect(view.querySelector('.chat-head__desc')).toBe(null);
+
+                    toggle.click();
+                    const head_desc = await u.waitUntil(() => view.querySelector('.chat-head__desc'));
+                    expect(head_desc.textContent.trim()).toBe('An old topic');
+                    expect(await _converse.api.user.settings.get('mucs_with_shown_subject')).toEqual([
+                        'jdev@conference.jabber.org',
+                    ]);
+                }),
+            );
+
+            it(
                 'causes an info message to be shown when received in real-time',
                 mock.initConverse(converse, [], {}, async function (_converse) {
                     spyOn(_converse.ChatRoom.prototype, 'handleSubjectChange').and.callThrough();
