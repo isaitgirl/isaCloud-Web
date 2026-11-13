@@ -40,6 +40,7 @@ HEADLESS_SPECS=(
     src/headless/plugins/muc/tests/messages.js
     src/headless/plugins/muc/tests/muc.js
     src/headless/plugins/reactions/tests/
+    src/headless/shared/connection/tests/resource.js # isaCloud: resource isaCloudWeb-
 )
 
 npx vitest run --project main "${MAIN_SPECS[@]}"
