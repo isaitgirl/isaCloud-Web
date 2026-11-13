@@ -1,0 +1,119 @@
+// The sticker editor (phase 3), inside the stickers modal. Nested under
+// .conversejs like the rest of the plugin. Colours come from the theme variables
+// (--isa-card-bg, --isa-inset-bg, --isa-border, --pink), so the dark theme works too.
+.conversejs {
+    .sticker-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    // The preview: a square over a checkerboard, so that transparency shows.
+    .sticker-editor__stage {
+        position: relative;
+        width: min(320px, 100%);
+        aspect-ratio: 1;
+        margin: 0 auto;
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: #ffffff;
+        background-image: conic-gradient(#d9d9d9 25%, transparent 0 50%, #d9d9d9 0 75%, transparent 0);
+        background-size: 24px 24px;
+        border: 1px solid var(--isa-border);
+    }
+
+    .sticker-editor__canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        // Gestures are ours: no scrolling or zooming of the page while touching the preview.
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    // The crop frame, drawn over the preview only (the export has none).
+    .sticker-editor__frame {
+        position: absolute;
+        inset: 6%;
+        border: 1px dashed #ffffff;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+    }
+
+    .sticker-editor__toolbar {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+
+        .sticker-editor__add-text {
+            min-width: 48px;
+            font-weight: 700;
+        }
+    }
+
+    .sticker-editor__text {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .sticker-editor__text-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .sticker-editor__input {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+    }
+
+    .sticker-editor__remove {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+    }
+
+    .sticker-editor__colors {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 2px;
+    }
+
+    .sticker-editor__swatch {
+        flex: 1 1 0;
+        max-width: 44px;
+        aspect-ratio: 1;
+        padding: 0;
+        border: 1px solid var(--isa-border);
+        border-radius: 50%;
+        cursor: pointer;
+
+        &--selected {
+            box-shadow:
+                0 0 0 3px var(--isa-card-bg),
+                0 0 0 5px var(--pink);
+        }
+    }
+
+    .sticker-editor__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 4px;
+    }
+
+    // On a phone, the keyboard is open while typing: the "Aa" row goes away to leave room.
+    @media (max-width: 575.98px) {
+        .sticker-editor--typing .sticker-editor__toolbar {
+            display: none;
+        }
+    }
+}

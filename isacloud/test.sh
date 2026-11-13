@@ -28,6 +28,7 @@ MAIN_SPECS=(
     src/plugins/muc-views/tests/muc-list-modal.js
     src/plugins/profile/tests/
     src/plugins/roomslist/tests/
+    src/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
     src/plugins/muc-views/tests/muc-messages.js
     src/plugins/muc-views/tests/nickname.js
     src/plugins/muc-views/tests/retractions.js

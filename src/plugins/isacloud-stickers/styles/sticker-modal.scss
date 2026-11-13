@@ -1,0 +1,124 @@
+// The sticker picker. Nested under .conversejs so the generic Converse rules
+// for buttons, lists and images do not win.
+.conversejs {
+    .isacloud-stickers {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .isacloud-stickers__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+
+        // The modal theme centres the tabs in their row; here they sit beside the "+".
+        .nav-pills {
+            margin: 0;
+            min-width: 0;
+        }
+    }
+
+    .isacloud-stickers__add {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 50%;
+    }
+
+    .isacloud-stickers__grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .isacloud-stickers__cell {
+        position: relative;
+    }
+
+    .isacloud-stickers__item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        aspect-ratio: 1;
+        padding: 6px;
+        border: 0;
+        border-radius: 12px;
+        background: var(--isa-inset-bg);
+        cursor: pointer;
+        touch-action: manipulation;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+
+        &:hover,
+        &:focus-visible {
+            background: color-mix(in srgb, var(--isa-inset-bg) 85%, var(--pink) 15%);
+        }
+
+        img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+    }
+
+    .isacloud-stickers__menu {
+        // Fixed, with top/left set by openMenu(): the modal body would clip an absolute menu.
+        position: fixed;
+        z-index: 1070;
+        width: 200px;
+        margin: 0;
+        padding: 4px;
+        list-style: none;
+        background: var(--isa-card-bg);
+        border: 1px solid var(--isa-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .isacloud-stickers__menu-item {
+        display: block;
+        width: 100%;
+        padding: 8px 10px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--foreground-color);
+        font-size: 14px;
+        text-align: start;
+        white-space: nowrap;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--isa-inset-bg);
+        }
+
+        &--danger {
+            color: var(--pink);
+        }
+    }
+
+    .isacloud-stickers__empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px 8px;
+        text-align: center;
+        opacity: 0.8;
+
+        p {
+            margin: 0;
+        }
+    }
+}

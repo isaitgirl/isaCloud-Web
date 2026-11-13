@@ -1,0 +1,30 @@
+// Stickers: the image alone, without the message frame, border or shadow.
+// Nested under .conversejs so that Converse's generic image rules
+// (img-thumbnail, chat-image) do not win.
+.conversejs {
+    .chat-msg--sticker {
+        .chat-msg__text {
+            padding: 0;
+        }
+
+        // A sticker's body is only its image link: hide the URL text when the
+        // image is rendered next to it.
+        .chat-msg__text > a:not(.chat-image__link) {
+            display: none;
+        }
+
+        img.chat-image,
+        .chat-image img {
+            width: 128px;
+            height: 128px;
+            max-width: 128px;
+            max-height: 128px;
+            object-fit: contain;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            box-shadow: none;
+            border-radius: 0;
+        }
+    }
+}
