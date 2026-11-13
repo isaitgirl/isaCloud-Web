@@ -92,6 +92,7 @@ converse.plugins.add('converse-muc', {
             auto_register_muc_nickname: true,
             colorize_username: false,
             hide_muc_participants: false,
+            hide_muc_subject: false,
             locked_muc_domain: false,
             modtools_disable_assign: false,
             muc_clear_messages_on_leave: true,

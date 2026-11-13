@@ -53,7 +53,10 @@ function renderContact(contact) {
 export default (o) => {
     const i18n_title = __('Click to hide these contacts');
     const collapsed = _converse.state.roster.state.get('collapsed_groups');
-    return html`<div class="roster-group" data-group="${o.name}">
+    // A modifier for the list of saved contacts, so that a theme can drop its
+    // header when it is the only group (`roster_groups` off).
+    const is_current = o.name === _converse.labels.HEADER_CURRENT_CONTACTS;
+    return html`<div class="roster-group ${is_current ? 'roster-group--current' : ''}" data-group="${o.name}">
         <a
             href="#"
             class="list-toggle group-toggle controlbox-padded"

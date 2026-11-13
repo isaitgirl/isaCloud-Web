@@ -23,6 +23,7 @@ export default class MUCHeading extends CustomElement {
 
         this.user_settings = await _converse.api.user.settings.getModel();
         this.listenTo(this.user_settings, 'change:mucs_with_hidden_subject', () => this.requestUpdate());
+        this.listenTo(this.user_settings, 'change:mucs_with_shown_subject', () => this.requestUpdate());
 
         await this.model.initialized;
         const own_occupant = this.model.occupants.findOccupant({ jid: _converse.session.get('bare_jid') });

@@ -24,6 +24,10 @@ MAIN_SPECS=(
     src/plugins/chatview/tests/messages.js
     src/plugins/chatview/tests/retractions.js
     src/plugins/muc-views/tests/composer-panels.js
+    src/plugins/muc-views/tests/muc.js
+    src/plugins/muc-views/tests/muc-list-modal.js
+    src/plugins/profile/tests/
+    src/plugins/roomslist/tests/
     src/plugins/muc-views/tests/muc-messages.js
     src/plugins/muc-views/tests/nickname.js
     src/plugins/muc-views/tests/retractions.js

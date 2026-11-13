@@ -36,6 +36,23 @@ $blue: #1780ad;
             justify-content: flex-start;
         }
 
+        // Contacts view: round avatars, as in the conversation list.
+        &.recent-list--contacts {
+            --avatar-border-radius: 50%;
+        }
+        // Without contact groups, "My contacts" is the only group: its header
+        // repeats the "Contacts" heading, so it goes, and the list cannot be
+        // left collapsed without a way to open it.
+        // The id matches rosterview's own `#converse-roster ... .group-toggle`.
+        &.recent-list--contacts #converse-roster .roster-group--current {
+            > .group-toggle {
+                display: none;
+            }
+            > .roster-group-contacts.collapsed {
+                display: block;
+            }
+        }
+
         &__title {
             margin: 0;
             color: var(--foreground-color);
@@ -79,9 +96,12 @@ $blue: #1780ad;
         &__filters {
             display: flex;
             flex: 0 0 auto;
-            flex-wrap: wrap;
-            gap: 6px;
+            // One line; on a sidebar too narrow for it, the chips scroll
+            // sideways instead of wrapping.
+            flex-wrap: nowrap;
+            gap: 4px;
             padding: 0 10px 10px;
+            overflow-x: auto;
             scrollbar-width: none;
 
             &::-webkit-scrollbar {
@@ -91,14 +111,30 @@ $blue: #1780ad;
 
         &__chip {
             flex: 0 0 auto;
-            padding: 4px 12px;
+            padding: 4px 8px;
             border: 1px solid var(--isa-border, var(--border-color, #ddd));
             border-radius: 999px;
             background: transparent;
             color: var(--foreground-color);
-            font-size: 13px;
+            font-size: 12px;
             white-space: nowrap;
             cursor: pointer;
+
+            // "All" / "Clear filters": an icon only.
+            &--all {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 4px 7px;
+
+                // Converse colours icons itself; here the icon follows the
+                // chip: white when active, the text colour otherwise.
+                converse-icon,
+                converse-icon svg {
+                    display: inline-flex;
+                    color: inherit;
+                }
+            }
 
             &.active {
                 border-color: $pink;
@@ -322,6 +358,46 @@ $blue: #1780ad;
             &:focus-within &__time {
                 visibility: hidden;
             }
+        }
+    }
+
+    // Contacts view. The id matches the controlbox's, roster's and rooms
+    // list's own rules for the same elements.
+    #controlbox .recent-list.recent-list--contacts {
+        // Section headings: groups and contacts in blue, channels in pink.
+        .controlbox-heading.controlbox-heading--groups,
+        .controlbox-heading.controlbox-heading--contacts {
+            color: var(--blue, #{$blue});
+        }
+        .controlbox-heading.controlbox-heading--channels {
+            color: var(--pink, #{$pink});
+        }
+        // Each section's menu button in the colour of its heading.
+        .rooms-kind-heading--groups .dropdown-toggle svg {
+            fill: var(--blue, #{$blue});
+        }
+        .rooms-kind-heading--channels .dropdown-toggle svg {
+            fill: var(--pink, #{$pink});
+        }
+        .rooms-kind-heading {
+            margin-top: 10px;
+        }
+        .rooms-kind + .rooms-kind-heading,
+        .list-container + .rooms-kind-heading {
+            margin-top: 14px;
+        }
+
+        // Room and room-like rows had no space between them.
+        .items-list .list-item {
+            height: auto;
+            min-height: 44px;
+            margin-bottom: 4px;
+            padding-block: 6px;
+            border-radius: 10px;
+        }
+        .items-list .list-item .open-room {
+            height: auto;
+            align-items: center;
         }
     }
 }

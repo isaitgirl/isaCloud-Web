@@ -9,7 +9,8 @@ import 'shared/texture/components/texture.js';
 /** @param {import('../heading').default} el} */
 export default (el) => {
     const o = el.model.toJSON();
-    const subject_hidden = el.user_settings?.get('mucs_with_hidden_subject', [])?.includes(el.model.get('jid'));
+    const subject_key = el.model.getSubjectSettingKey();
+    const subject_hidden = el.model.isSubjectHiddenIn(el.user_settings?.get(subject_key) ?? []);
     const heading_buttons_promise = el.getHeadingButtons(subject_hidden);
     const i18n_hide_topic = __('Hide the groupchat topic');
     const subject = o.subject ? o.subject.text : '';

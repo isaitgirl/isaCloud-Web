@@ -14,6 +14,17 @@
 // already matches the same element at the same specificity, so the order in
 // which the bundle lists the stylesheets does not decide the outcome.
 
+// A rounded box inside a card: the messages and the composer, as the occupants
+// panel already is. The border and shadow tell it apart from the card, which
+// keeps the same background.
+@mixin isa-inset-box {
+    border: 1px solid var(--isa-border);
+    border-radius: 12px;
+    background-color: var(--isa-card-bg);
+    box-shadow: var(--isa-form-shadow);
+    overflow: hidden;
+}
+
 @mixin isa-split($share) {
     #controlbox:not(.logged-out) .flyout {
         left: var(--isa-gap);
@@ -31,6 +42,45 @@
 
 &.theme-isacloud,
 &.theme-isacloud-dark {
+    // A group (members-only, non-anonymous room) is blue like a 1:1 chat;
+    // channels keep the room pink. The class comes from the recent-list
+    // plugin. Each variable is set again here: the derived ones were resolved
+    // with the pink at the root.
+    .chatbox.chatroom.chatroom--group {
+        --muc-color: var(--chat-color);
+        --muc-rgb: var(--chat-rgb);
+        --muc-color-hover: var(--chat-color-hover);
+        --muc-header-fg-color: var(--chat-header-fg-color);
+        --muc-header-bg-color: var(--chat-header-bg-color);
+        --muc-header-subdued-color: var(--chat-header-subdued-color);
+    }
+
+    // Mentions and emoji suggestions in the composer: a floating card like the
+    // modals. The selected row keeps the normal text colour: Converse paints it
+    // white, which vanished on the soft highlight of the isaCloud themes.
+    .rich-ac {
+        padding: 4px;
+        border: 1px solid var(--isa-border);
+        border-radius: 12px;
+        background-color: var(--isa-card-bg);
+        box-shadow: var(--isa-card-shadow);
+        --avatar-border-radius: 50%;
+    }
+    .rich-ac__item {
+        padding: 5px 10px;
+        border-radius: 8px;
+        color: var(--foreground-color);
+
+        &.is-active,
+        &:hover {
+            background-color: rgba(var(--blue-rgb), 0.14);
+            color: var(--foreground-color);
+        }
+        &.is-active .rich-ac__label {
+            font-weight: 600;
+        }
+    }
+
     converse-app-chat.converse-fullscreen {
         background-color: var(--isa-surface-bg);
 
@@ -54,6 +104,62 @@
         }
         converse-user-profile {
             border-bottom: 0;
+        }
+
+        // Round avatars, as in the conversation list: one's own and the
+        // occupants'.
+        converse-user-profile,
+        .chatbox converse-muc-sidebar {
+            --avatar-border-radius: 50%;
+        }
+
+        // Own profile: the status goes under the name, beside the avatar,
+        // instead of on a line of its own under the avatar. The rows of the
+        // template dissolve into one grid; the link still wraps avatar and
+        // name, so both still open the profile.
+        converse-user-profile .userinfo {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            column-gap: 10px;
+            align-items: center;
+
+            .profile,
+            .show-profile {
+                display: contents !important;
+            }
+            converse-avatar {
+                grid-column: 1;
+                grid-row: 1 / span 2;
+            }
+            // The nickname, with the JID under it, 1px smaller.
+            .username {
+                grid-column: 2;
+                grid-row: 1;
+                align-self: end;
+                margin: 0;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            .username__jid {
+                display: block;
+                overflow: hidden;
+                color: var(--foreground-color);
+                font-size: 13px;
+                font-weight: 400;
+                opacity: 0.75;
+                text-overflow: ellipsis;
+            }
+            converse-controlbox-buttons {
+                grid-column: 3;
+                grid-row: 1 / span 2;
+            }
+            .xmpp-status {
+                grid-column: 2;
+                grid-row: 2;
+                align-self: start;
+                min-width: 0;
+                font-size: 12px;
+            }
         }
         .chatbox .chat-head {
             border-bottom: 0;
@@ -191,6 +297,33 @@
             }
         }
 
+        // The messages and the composer become a floating box in each card.
+        // Groupchat: the messages column (`.chat-area`) sits beside the occupants
+        // panel. Its margins match the panel's, so both boxes share the same top
+        // and bottom lines. The drag handle is the gap between them.
+        // Its Bootstrap column width would overflow once it has margins, so the
+        // flex sizing is set here too, from 768px up (it was xl-only before).
+        converse-app-chat.converse-fullscreen .chatbox:not(#controlbox) .chatroom-body .chat-area {
+            @include isa-inset-box;
+            margin: var(--isa-gap);
+            height: calc(100% - var(--isa-gap) * 2);
+            flex: 1 1 0;
+            width: auto;
+            max-width: none;
+            min-width: 0;
+        }
+        // 1:1 chat: the body (messages and composer) is the box. Its top margin
+        // separates it from the heading. It is a flex child of the card, so it
+        // fills the card minus the margins instead of overflowing.
+        converse-app-chat.converse-fullscreen .chatbox:not(#controlbox):not(.chatroom) > .flyout > .chat-body {
+            @include isa-inset-box;
+            margin: var(--isa-gap);
+            flex: 1 1 auto;
+            min-height: 0;
+            height: auto;
+            width: auto;
+        }
+
         converse-app-chat.converse-fullscreen {
             @include isa-split(40%);
         }
@@ -216,12 +349,6 @@
                 flex: 0 0 clamp(260px, 26%, 320px);
                 width: clamp(260px, 26%, 320px);
                 max-width: none;
-            }
-            .chat-area.col-xl-10 {
-                flex: 1 1 0;
-                width: auto;
-                max-width: none;
-                min-width: 0;
             }
         }
     }

@@ -26,8 +26,7 @@ export function getConversationKind(model) {
     // The rule of the isaCloud iOS app (Monal) and of
     // https://docs.modernxmpp.org/client/groupchat/: a group is members-only
     // and non-anonymous; every other room is a channel.
-    const features = model.features;
-    return features?.get('membersonly') && features?.get('nonanonymous') ? 'group' : 'channel';
+    return /** @type {import('@converse/headless').MUC} */ (model).isGroup?.() ? 'group' : 'channel';
 }
 
 /**

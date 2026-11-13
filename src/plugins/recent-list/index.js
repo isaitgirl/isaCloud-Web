@@ -35,6 +35,13 @@ converse.plugins.add('converse-recent-list', {
                 html`<converse-recent-list .renderContacts=${original}></converse-recent-list>`;
         }
 
+        // A group (not a channel) takes the 1:1 chats' colour, as in the list.
+        api.listen.on('chatRoomViewInitialized', (view) => {
+            const update = () => view.classList.toggle('chatroom--group', view.model.isGroup());
+            view.listenTo(view.model.features, 'change', update);
+            update();
+        });
+
         // Closing a 1:1 chat keeps it in the list (it is saved as closed).
         // Closing a groupchat still leaves it, so it is removed from the list.
         api.listen.on('shouldDestroyOnClose', (chatbox, should_destroy) => {

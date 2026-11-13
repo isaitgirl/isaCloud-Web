@@ -48,7 +48,21 @@ export class RoomsList extends CustomElement {
         this.listenTo(chatboxes, 'vcard:change', () => this.requestUpdate());
         this.listenTo(this.model, 'change', () => this.requestUpdate());
         this.listenTo(_converse, 'bookmarksInitialized', this.onBookmarksInitialized);
+        if (api.settings.get('muc_grouped_by_kind')) {
+            // A room's kind comes from its disco features, which arrive later.
+            chatboxes.forEach((model) => this.watchFeatures(model));
+            this.listenTo(chatboxes, 'add', this.watchFeatures);
+        }
         this.onBookmarksInitialized(_converse.state.bookmarks);
+    }
+
+    /** @param {import('@converse/headless').Model} model */
+    async watchFeatures(model) {
+        if (!u.muc.isChatRoom(model)) return;
+        await model.initialized;
+        if (model.features) this.listenTo(model.features, 'change', () => this.requestUpdate());
+        // The features may have been restored before the listener was added.
+        this.requestUpdate();
     }
 
     /** @param {import('@converse/headless').Bookmarks} bookmarks */
@@ -171,6 +185,22 @@ export class RoomsList extends CustomElement {
             u.slideOut(list_el).then(() => this.model.save({ 'toggle_state': OPENED }));
         } else {
             u.slideIn(list_el).then(() => this.model.save({ 'toggle_state': CLOSED }));
+        }
+    }
+
+    /**
+     * Collapses or expands one section (groups or channels) when
+     * `muc_grouped_by_kind` is set.
+     * @param {Event} ev
+     * @param {string} kind
+     */
+    toggleKindList(ev, kind) {
+        ev?.preventDefault?.();
+        const collapsed = this.model.get('collapsed_kinds') ?? [];
+        if (collapsed.includes(kind)) {
+            this.model.save({ 'collapsed_kinds': collapsed.filter((k) => k !== kind) });
+        } else {
+            this.model.save({ 'collapsed_kinds': [...collapsed, kind] });
         }
     }
 

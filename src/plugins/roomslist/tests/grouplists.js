@@ -140,3 +140,56 @@ describe('A MUC domain group', function () {
         ),
     );
 });
+
+describe('The list of groupchats grouped by kind', function () {
+    it(
+        'shows groups and channels under their own headings',
+        mock.initConverse(
+            converse,
+            ['chatBoxesFetched'],
+            { muc_grouped_by_kind: true, allow_bookmarks: false },
+            async function (_converse) {
+                await mock.waitForRoster(_converse, 'current', 0);
+                await mock.openControlBox(_converse);
+                const lview = _converse.chatboxviews.get('controlbox').querySelector('converse-rooms-list');
+
+                const group_jid = 'family@conference.shakespeare.lit';
+                _converse.api.rooms.open(group_jid, { nick: 'romeo' });
+                await mock.waitForMUCDiscoInfo(_converse, group_jid, [
+                    'http://jabber.org/protocol/muc',
+                    'muc_membersonly',
+                    'muc_nonanonymous',
+                ]);
+                await u.waitUntil(() => lview.querySelectorAll('.rooms-kind--groups .open-room').length === 1);
+                expect(lview.querySelector('.rooms-kind--channels')).toBe(null);
+                // The channels heading and its menu are there even without channels.
+                expect(lview.querySelector('.rooms-kind-heading--channels converse-dropdown')).not.toBe(null);
+
+                const channel_jid = 'lounge@conference.shakespeare.lit';
+                _converse.api.rooms.open(channel_jid, { nick: 'romeo' });
+                await mock.waitForMUCDiscoInfo(_converse, channel_jid);
+                await u.waitUntil(() => lview.querySelectorAll('.rooms-kind--channels .open-room').length === 1);
+
+                // Two sections of their own, the rooms menu on the first one.
+                const headings = Array.from(lview.querySelectorAll('.rooms-kind-heading .controlbox-heading'));
+                expect(headings.map((el) => el.textContent.trim())).toEqual(['Groups', 'Channels']);
+                // Each section has its menu; groups are not listed by the server.
+                const menu = (kind) => lview.querySelector(`.rooms-kind-heading--${kind} converse-dropdown`).items;
+                expect(menu('groups').length).toBe(2);
+                expect(menu('channels').length).toBe(3);
+
+                // Each section collapses on its own, from the caret by its heading.
+                lview.querySelector('.rooms-kind-heading--groups .rooms-kind-toggle').click();
+                await u.waitUntil(() => lview.querySelector('.rooms-kind--groups') === null);
+                expect(lview.querySelector('.rooms-kind--channels')).not.toBe(null);
+                expect(lview.querySelector('.rooms-kind-heading--groups converse-icon').classList).toContain(
+                    'fa-caret-right',
+                );
+                expect(lview.model.get('collapsed_kinds')).toEqual(['groups']);
+                lview.querySelector('.rooms-kind-heading--groups .rooms-kind-toggle').click();
+                await u.waitUntil(() => lview.querySelector('.rooms-kind--groups .open-room'));
+                expect(lview.model.get('collapsed_kinds')).toEqual([]);
+            },
+        ),
+    );
+});

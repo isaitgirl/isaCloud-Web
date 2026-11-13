@@ -51,8 +51,11 @@ converse.plugins.add('converse-chatboxes', {
         api.listen.on('clearSession', onClearSession);
 
         // XXX: Would be nice to keep track of the last open chat and to show that again.
+        // Not while disconnected: logging out closes every chat at once, and
+        // a groupchat still leaving its room would be shown again over the
+        // login form.
         api.listen.on('chatBoxClosed', () => {
-            if (isUniView()) {
+            if (isUniView() && api.connection.connected()) {
                 _converse.state.chatboxes.find((c) => c.get('jid') && !c.get('closed'))?.maybeShow();
             }
         });

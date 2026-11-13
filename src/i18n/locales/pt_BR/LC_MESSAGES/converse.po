@@ -3173,7 +3173,7 @@ msgstr "conferencia.exemplo.org"
 
 #: dist/converse-no-dependencies.js:145633
 msgid "Query for Groupchats"
-msgstr "Consulta do bate papo"
+msgstr "Buscar salas"
 
 #: dist/converse-no-dependencies.js:145678
 msgid "Groupchats found"
@@ -3202,12 +3202,11 @@ msgstr "Grupos"
 
 #: dist/converse-no-dependencies.js:145998
 msgid "Query server"
-msgstr ""
+msgstr "Buscar no servidor"
 
 #: dist/converse-no-dependencies.js:145999
-#, fuzzy
 msgid "Add groupchat"
-msgstr "Adicionar um novo grupo"
+msgstr "Adicionar sala"
 
 #: dist/converse-no-dependencies.js:146386
 #, javascript-format
@@ -3507,6 +3506,18 @@ msgstr "Canais"
 msgid "Unread chats"
 msgstr "Não lidas"
 
+msgid "Clear filters"
+msgstr "Limpar filtros"
+
+msgid "Groups and channels"
+msgstr "Grupos e canais"
+
+msgid "No messages yet"
+msgstr "Nenhuma mensagem ainda"
+
+msgid "Join this groupchat"
+msgstr "Entrar nesta sala"
+
 msgid "You"
 msgstr "Eu"
 
@@ -3539,6 +3550,36 @@ msgstr "Remover esta conversa da lista?"
 
 msgid "Click to open this conversation"
 msgstr "Clique para abrir esta conversa"
+
+msgid "Search channels"
+msgstr "Buscar canais"
+
+msgid "Channels found"
+msgstr "Canais encontrados"
+
+msgid "No channels found"
+msgstr "Nenhum canal encontrado"
+
+msgid "Show more information on this channel"
+msgstr "Mostrar mais informações deste canal"
+
+msgid "Join this channel"
+msgstr "Entrar neste canal"
+
+msgid "Channel address:"
+msgstr "Endereço do canal:"
+
+msgid "Add group"
+msgstr "Adicionar grupo"
+
+msgid "Add channel"
+msgstr "Adicionar canal"
+
+msgid "Click to toggle groups"
+msgstr "Clique para mostrar/esconder os grupos"
+
+msgid "Click to toggle channels"
+msgstr "Clique para mostrar/esconder os canais"
 
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"

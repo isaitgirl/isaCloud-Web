@@ -160,4 +160,95 @@ describe('The "Groupchats" List modal', function () {
             },
         ),
     );
+
+    it(
+        'lists the groupchats of every service, sorted, with muc_list_all_services',
+        mock.initConverse(converse, ['chatBoxesFetched'], { muc_list_all_services: true }, async function (_converse) {
+            vi.spyOn(u.muc, 'getMUCServices').mockResolvedValue(['b.shakespeare.lit', 'a.shakespeare.lit']);
+            spyOn(_converse.ChatRoom.prototype, 'getDiscoInfo').and.callFake(() => Promise.resolve());
+            await mock.openControlBox(_converse);
+            const cbview = _converse.chatboxviews.get('controlbox');
+            const button = await u.waitUntil(() => cbview.querySelector('converse-rooms-list .show-list-muc-modal'));
+            button.click();
+            const modal = _converse.api.modal.get('converse-muc-list-modal');
+            await u.waitUntil(() => u.isVisible(modal), 1000);
+
+            const IQ_stanzas = _converse.api.connection.get().IQ_stanzas;
+            const query = (service) =>
+                u.waitUntil(() =>
+                    IQ_stanzas.find(
+                        (s) =>
+                            s.getAttribute('to') === service &&
+                            sizzle(`query[xmlns="${Strophe.NS.DISCO_ITEMS}"]`, s).length,
+                    ),
+                );
+            const reply = (iq, items) =>
+                _converse.api.connection.get()._dataRecv(
+                    mock.createRequest(
+                        _converse,
+                        stx`<iq xmlns="jabber:client" type="result" id="${iq.getAttribute('id')}" from="${iq.getAttribute('to')}" to="${_converse.jid}">
+                            <query xmlns="${Strophe.NS.DISCO_ITEMS}">
+                                ${items.map(([jid, name]) => stx`<item jid="${jid}" name="${name}"/>`)}
+                            </query>
+                        </iq>`,
+                    ),
+                );
+            reply(await query('b.shakespeare.lit'), [
+                ['zeta@b.shakespeare.lit', 'Zeta'],
+                ['beta@b.shakespeare.lit', 'beta'],
+            ]);
+            reply(await query('a.shakespeare.lit'), [['alfa@a.shakespeare.lit', 'Alfa']]);
+
+            await u.waitUntil(() => modal.querySelectorAll('.available-chatrooms .room-item').length === 3);
+            const names = Array.from(modal.querySelectorAll('.available-room__name')).map((el) =>
+                el.textContent.trim(),
+            );
+            expect(names).toEqual(['Alfa', 'beta', 'Zeta']);
+            const services = Array.from(modal.querySelectorAll('.available-room__service')).map((el) =>
+                el.textContent.trim(),
+            );
+            expect(services).toEqual(['a.shakespeare.lit', 'b.shakespeare.lit', 'b.shakespeare.lit']);
+
+            // No server field: every service is already listed.
+            expect(modal.querySelector('form.list-chatrooms')).toBe(null);
+            expect(modal.querySelector('.modal-title').textContent.trim()).toBe('Search channels');
+            expect(modal.querySelector('.available-chatrooms .active').textContent.trim()).toBe('Channels found');
+
+            // The info button shows the details of the room.
+            modal.querySelector('a.room-info').click();
+            await u.waitUntil(() => modal.querySelector('.room-info__spinner'));
+            const info_iq = await u.waitUntil(() =>
+                IQ_stanzas.find(
+                    (s) =>
+                        s.getAttribute('to') === 'alfa@a.shakespeare.lit' &&
+                        sizzle(`query[xmlns="${Strophe.NS.DISCO_INFO}"]`, s).length,
+                ),
+            );
+            _converse.api.connection.get()._dataRecv(
+                mock.createRequest(
+                    _converse,
+                    stx`<iq xmlns="jabber:client" type="result" id="${info_iq.getAttribute('id')}" from="alfa@a.shakespeare.lit" to="${_converse.jid}">
+                        <query xmlns="${Strophe.NS.DISCO_INFO}">
+                            <identity category="conference" name="Alfa" type="text"/>
+                            <feature var="muc_open"/>
+                        </query>
+                    </iq>`,
+                ),
+            );
+            const details = await u.waitUntil(() => modal.querySelector('div.room-info'));
+            expect(details.textContent).toContain('Channel address: alfa@a.shakespeare.lit');
+            expect(modal.querySelector('.room-info__spinner')).toBe(null);
+            expect(modal.querySelector('a.room-info').classList.contains('selected')).toBe(true);
+
+            // The name is not a link; the join button opens the room.
+            expect(modal.querySelector('.available-room a')).toBe(null);
+            const trigger = vi.spyOn(_converse.api, 'trigger');
+            modal.querySelectorAll('.available-room__join')[0].click();
+            expect(trigger).toHaveBeenCalledWith('openConversation', {
+                view: 'room',
+                jid: 'alfa@a.shakespeare.lit',
+                attrs: { name: 'Alfa' },
+            });
+        }),
+    );
 });

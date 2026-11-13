@@ -830,6 +830,14 @@ You can also set this value by changing a URL fragment <span class="title-ref">\
 
 Option which allows you to hide the participants list by default.
 
+### hide_muc_subject
+
+- Default: `false`
+
+Hides the topic in the heading of every groupchat by default. Each groupchat
+can still show it with the "Show topic" item of the heading menu, and a new
+topic set while you are in the room is shown.
+
 ### hide_offline_users
 
 - Default: `false`
@@ -968,6 +976,15 @@ And to prevent the displaying of anything, an empty list must be used: `'muc_hat
 
 The number of characters that need to be entered before the auto-complete list of matching nicknames is shown.
 
+### muc_list_all_services
+
+- Default: `false`
+
+If `true`, the "Query server" dialog lists the groupchats of every groupchat
+service at once when it opens: the [muc_domain](/docs/configuration/#muc_domain)
+and every MUC service found through service discovery on the user's domain,
+sorted by name. The form to query another server is still there.
+
 ### muc_mention_autocomplete_filter
 
 - Default: `contains`
@@ -1084,6 +1101,16 @@ By fetching member lists, Converse.js will always show these users as participan
 - Default: `false`
 
 If `true`, displays MUCS of a same domain together, in collapsible groups.
+
+### muc_grouped_by_kind
+
+- Default: `false`
+
+If `true`, groups (members-only, non-anonymous rooms) and channels (every other
+room) are listed in two sections of their own, each with its menu. The groups
+menu has no "Query server", since private groups are not listed by servers.
+It takes precedence over
+[muc_grouped_by_domain](/docs/configuration/#muc_grouped_by_domain).
 
 ### muc_history_max_stanzas
 

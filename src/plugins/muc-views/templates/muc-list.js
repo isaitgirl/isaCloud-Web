@@ -27,27 +27,37 @@ const form = (o) => {
 };
 
 const tplItem = (o, item) => {
-    const i18n_info_title = __('Show more information on this groupchat');
-    const i18n_open_title = __('Click to open this groupchat');
+    const i18n_info_title = o.channels
+        ? __('Show more information on this channel')
+        : __('Show more information on this groupchat');
+    const i18n_join = o.channels ? __('Join this channel') : __('Join this groupchat');
     return html`
         <li class="room-item list-group-item">
-            <div class="available-chatroom d-flex flex-row">
-                <a
-                    class="open-room available-room w-100"
-                    @click=${o.openRoom}
-                    data-room-jid="${item.jid}"
-                    data-room-name="${item.name}"
-                    title="${i18n_open_title}"
-                    href="#"
-                    >${item.name || item.jid}</a
-                >
+            <div class="available-chatroom d-flex flex-row align-items-center">
+                <span class="available-room w-100">
+                    <span class="available-room__name">${item.name || item.jid}</span>
+                    ${o.show_service ? html`<small class="available-room__service">${item.service}</small>` : ''}
+                </span>
                 <a
                     class="right room-info icon-room-info"
                     @click=${o.toggleRoomInfo}
                     data-room-jid="${item.jid}"
                     title="${i18n_info_title}"
+                    aria-label="${i18n_info_title}"
                     href="#"
+                    ><converse-icon class="fa fa-info-circle" size="1em" aria-hidden="true"></converse-icon
                 ></a>
+                <button
+                    type="button"
+                    class="btn open-room available-room__join"
+                    @click=${o.openRoom}
+                    data-room-jid="${item.jid}"
+                    data-room-name="${item.name}"
+                    title="${i18n_join}"
+                    aria-label="${i18n_join}"
+                >
+                    <converse-icon class="fa fa-sign-in-thin" size="1.1em" aria-hidden="true"></converse-icon>
+                </button>
             </div>
         </li>
     `;

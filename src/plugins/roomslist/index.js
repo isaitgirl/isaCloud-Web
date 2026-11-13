@@ -14,6 +14,7 @@ converse.plugins.add('converse-roomslist', {
     initialize() {
         api.settings.extend({
             muc_grouped_by_domain: false,
+            muc_grouped_by_kind: false,
         });
 
         api.listen.on('clearSession', () => {
