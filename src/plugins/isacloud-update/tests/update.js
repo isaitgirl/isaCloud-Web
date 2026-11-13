@@ -14,7 +14,7 @@ const SETTINGS = {
  * an Error, or 404 when null), the clear URL answers 204, the rest goes through.
  * @param {string|Error|null} published
  */
-function stubFetch(published) {
+function stubFetch(published, { slow_clear = false } = {}) {
     const original = globalThis.fetch;
     const fake = vi.fn(async (/** @type {any} */ input, /** @type {any} */ init) => {
         const url = String(input);
@@ -23,7 +23,11 @@ function stubFetch(published) {
             if (published === null) return new Response('', { status: 404 });
             return new Response(JSON.stringify({ version: published }), { status: 200 });
         }
-        if (url.includes('atualizar')) return new Response(null, { status: 204 });
+        if (url.includes('atualizar')) {
+            // Chrome holds this response until the cache is cleared, which can take seconds.
+            if (slow_clear) return new Promise(() => {});
+            return new Response(null, { status: 204 });
+        }
         return original(input, init);
     });
     vi.stubGlobal('fetch', fake);
@@ -32,7 +36,9 @@ function stubFetch(published) {
 
 /** @param {any} _converse */
 function reset(_converse) {
-    _converse.exports.isacloud_update.update_state.available = null;
+    const { update_state } = _converse.exports.isacloud_update;
+    update_state.available = null;
+    update_state.updating = false;
 }
 
 const versionCalls = (/** @type {any} */ fake) =>
@@ -113,5 +119,37 @@ describe('The isaCloud new version notice', function () {
             expect(new URL(String(clear[0][0])).pathname.endsWith('/atualizar')).toBe(true);
             reload.mockRestore();
         }),
+    );
+
+    it(
+        'spins at once on a click and reloads without waiting long for a slow clear URL',
+        mock.initConverse(
+            converse,
+            [],
+            { ...SETTINGS, isacloud_update_clear_timeout: 300 },
+            async function (_converse) {
+                reset(_converse);
+                const fake = stubFetch('bbb2222', { slow_clear: true });
+                const { actions, checkForUpdate } = _converse.exports.isacloud_update;
+                const reload = vi.spyOn(actions, 'reload').mockImplementation(() => {});
+                await checkForUpdate();
+                await mock.openControlBox(_converse);
+                const cbview = _converse.chatboxviews.get('controlbox');
+                const btn = await u.waitUntil(() => cbview.querySelector('.isacloud-update-btn'));
+
+                btn.click();
+                const busy = await u.waitUntil(() => cbview.querySelector('.isacloud-update-btn--updating'));
+                expect(busy.getAttribute('aria-busy')).toBe('true');
+                expect(busy.getAttribute('title')).toBe('Updating…');
+                expect(reload).not.toHaveBeenCalled();
+
+                busy.click(); // ignored while updating
+                await u.waitUntil(() => reload.mock.calls.length === 1, 2000);
+                await new Promise((resolve) => setTimeout(resolve, 400));
+                expect(reload).toHaveBeenCalledOnce();
+                expect(fake.mock.calls.filter(([url]) => String(url).includes('atualizar')).length).toBe(1);
+                reload.mockRestore();
+            },
+        ),
     );
 });

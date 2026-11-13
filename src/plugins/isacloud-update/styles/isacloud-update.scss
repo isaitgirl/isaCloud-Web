@@ -21,5 +21,26 @@
         &:focus-visible converse-icon svg {
             opacity: 0.8;
         }
+
+        // While the page clears its cache and reloads.
+        &.isacloud-update-btn--updating {
+            cursor: progress;
+
+            converse-icon {
+                animation: isacloud-update-spin 1s linear infinite;
+            }
+        }
+    }
+}
+
+@keyframes isacloud-update-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .conversejs .isacloud-update-btn.isacloud-update-btn--updating converse-icon {
+        animation-duration: 3s;
     }
 }

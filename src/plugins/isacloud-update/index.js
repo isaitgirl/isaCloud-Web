@@ -12,7 +12,9 @@
  *
  *  The reload asks the server's `isacloud_update_clear_url`, which answers with
  *  `Clear-Site-Data: "cache"` (nginx, see isacloud-docs), so that only the HTTP
- *  cache is dropped. IndexedDB and localStorage are never touched.
+ *  cache is dropped. IndexedDB and localStorage are never touched. Chrome is
+ *  slow to answer it, so the reload waits at most `isacloud_update_clear_timeout`
+ *  ms, while the button spins.
  *
  *  The settings gear's template (`controlbox/templates/buttons.js`) has no hook
  *  for more buttons, so this plugin wraps `render()` of
@@ -83,6 +85,8 @@ converse.plugins.add('converse-isacloud-update', {
             isacloud_update_interval: 600,
             /** URL answering with `Clear-Site-Data: "cache"`; empty to skip it. */
             isacloud_update_clear_url: 'atualizar',
+            /** Milliseconds the reload waits, at most, for the clear URL. */
+            isacloud_update_clear_timeout: 2000,
         });
 
         // Shared with the specs, which need the same module state as the plugin.

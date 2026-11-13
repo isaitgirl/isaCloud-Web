@@ -25,13 +25,15 @@ export default class UpdateButton extends CustomElement {
 
     render() {
         if (!update_state.available) return '';
-        const label = t('New version available, click to update');
+        const { updating } = update_state;
+        const label = updating ? t('Updating…') : t('New version available, click to update');
         return html`<a
             href="#"
-            class="isacloud-update-btn"
+            class="isacloud-update-btn ${updating ? 'isacloud-update-btn--updating' : ''}"
             role="button"
             title="${label}"
             aria-label="${label}"
+            aria-busy="${updating ? 'true' : 'false'}"
             @click=${(/** @type {MouseEvent} */ ev) => {
                 ev.preventDefault();
                 reloadWithNewVersion();
