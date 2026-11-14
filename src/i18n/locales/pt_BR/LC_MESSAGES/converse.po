@@ -3619,6 +3619,10 @@ msgstr "Mensagens privadas pelo grupo não são cifradas. Converse com %1$s numa
 msgid "Encrypted chat"
 msgstr "Conversa cifrada"
 
+#: src/plugins/mam-views/templates/placeholder.js
+msgid "Load earlier messages"
+msgstr "Carregar mensagens anteriores"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

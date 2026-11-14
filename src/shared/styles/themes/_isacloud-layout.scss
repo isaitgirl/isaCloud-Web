@@ -372,6 +372,15 @@
         }
     }
 
+    // A list too short to fill the area sits at its bottom, next to the composer, as in the
+    // mobile apps. Converse spreads it with `space-between`, which puts the messages at the
+    // top: then whatever the archive adds above (older messages, the placeholder) pushed the
+    // whole conversation down while the history was loading. At the bottom, it grows upwards
+    // into the empty space. The class is doubled to win over chatview's rule of the same weight.
+    .chatbox .chat-content__messages.chat-content__messages {
+        justify-content: flex-start;
+    }
+
     @media screen and (max-width: 767.98px) {
         converse-app-chat.converse-fullscreen {
             .chatbox:not(.logged-out) .flyout {
