@@ -40,6 +40,20 @@ export function isDisplayableMessage(message) {
 }
 
 /**
+ * Whether a conversation has something to show in the recent list. 1:1 chats
+ * are always listed. A groupchat is listed while its initial history fetch is
+ * still in flight, and afterwards only if it has a displayable message, so a
+ * room whose archive is empty doesn't clutter the list.
+ * @param {Model} model
+ * @returns {boolean}
+ */
+export function hasConversationContent(model) {
+    if (model.get('type') !== CHATROOMS_TYPE) return true;
+    if (!model.session?.get('mam_initialized')) return true;
+    return !!getLastDisplayableMessage(model);
+}
+
+/**
  * @param {Model} model
  * @returns {Model|undefined}
  */
