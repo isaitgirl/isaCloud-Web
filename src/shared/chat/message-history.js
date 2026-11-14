@@ -3,7 +3,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { until } from 'lit/directives/until.js';
 import { api } from '@converse/headless';
 import { CustomElement } from 'shared/components/element.js';
-import { getDayIndicator } from './utils.js';
+import { getDayIndicator, isHiddenMessage } from './utils.js';
 import './message.js';
 
 class MessageHistory extends CustomElement {
@@ -42,12 +42,7 @@ class MessageHistory extends CustomElement {
      * @param {(Message)} model
      */
     renderMessage(model) {
-        if (
-            model.get('dangling_retraction') ||
-            model.get('dangling_moderation') ||
-            model.get('dangling_reaction') ||
-            model.get('is_only_key')
-        ) {
+        if (isHiddenMessage(model)) {
             return '';
         }
         const template_hook = model.get('template_hook');

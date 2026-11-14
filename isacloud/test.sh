@@ -22,6 +22,7 @@ MAIN_SPECS=(
     src/plugins/chatview/tests/composer-panels.js
     src/plugins/chatview/tests/markers.js
     src/plugins/chatview/tests/messages.js
+    src/plugins/chatview/tests/message-window.js # isaCloud: janela da lista de mensagens
     src/plugins/chatview/tests/retractions.js
     src/plugins/muc-views/tests/composer-panels.js
     src/plugins/muc-views/tests/muc.js

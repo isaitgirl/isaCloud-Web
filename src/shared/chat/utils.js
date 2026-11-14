@@ -92,6 +92,21 @@ export async function getDropdownButtons(promise) {
         : '';
 }
 
+/**
+ * Whether the message list draws nothing for this model: reactions, retractions
+ * and moderations whose target isn't held yet, and OMEMO key transports.
+ * @param {import('@converse/skeletor').Model} model
+ * @returns {boolean}
+ */
+export function isHiddenMessage(model) {
+    return !!(
+        model.get('dangling_retraction') ||
+        model.get('dangling_moderation') ||
+        model.get('dangling_reaction') ||
+        model.get('is_only_key')
+    );
+}
+
 /** @param {import('@converse/skeletor').Model} model */
 export function onScrolledDown(model) {
     if (!model.isHidden()) {
