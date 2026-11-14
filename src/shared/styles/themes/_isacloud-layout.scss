@@ -100,6 +100,40 @@
         }
     }
 
+    // Login page: loginform.scss gives the forms (and the invitation above
+    // them) `margin: auto` inside a `justify-content: space-between` column,
+    // which centres them vertically and leaves the logo and the form floating
+    // in the middle of the page. Keep the horizontal centring, drop the
+    // vertical one, and keep the footer close under the form. The Bootstrap
+    // utility wins over a plain declaration, hence `!important`.
+    converse-app-chat.converse-fullscreen #controlbox.logged-out {
+        .controlbox-pane {
+            justify-content: flex-start !important;
+        }
+        converse-brand-logo {
+            margin-top: 1em;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            .brand-heading {
+                padding-top: 0;
+                .converse-svg-logo {
+                    margin-block: 0;
+                    height: 1.5em;
+                }
+            }
+        }
+        converse-pending-invitation {
+            margin-block: 0;
+        }
+        converse-login-form,
+        converse-registration-form {
+            margin-block: 2em 0;
+        }
+        converse-footer {
+            margin-top: 2em;
+        }
+    }
+
     converse-app-chat.converse-fullscreen {
         background-color: var(--isa-surface-bg);
 

@@ -16,7 +16,7 @@ A free, beautiful XMPP client for the browser, built on top of Converse.</p>
   <a href="https://chat.isacloud.cc"><b>Open the chat</b></a> ·
   <a href="https://isacloud.com.br">isacloud.com.br</a> ·
   <a href="https://github.com/isaitgirl/isaCloud-Web">Source on GitHub</a> ·
-  <a href="https://liberapay.com/isacloud">Support isaCloud</a>
+  <a href="https://isacloud.com.br/#doacoes">Support isaCloud</a>
 </p>
 
 <p align="center">
@@ -53,7 +53,7 @@ continue to be merged.
 
 Everything Converse offers, plus what isaCloud adds or turns on:
 
-- Ready for **isacloud.im**: sign in or create an account right from the login screen.
+- Ready for **isacloud.im**: sign in right from the login screen.
 - 1:1 chats, private groups and public channels, with the room list of the server.
 - End-to-end encryption with **OMEMO** (legacy and OMEMO 2), **on by default**.
 - **Joins channels with your nickname** (from your profile, or the name in your address). You can

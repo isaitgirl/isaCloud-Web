@@ -24,7 +24,7 @@ export default (el) => {
                             >
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" target="_blank" rel="noopener" href="https://liberapay.com/isacloud"
+                            <a class="nav-link" target="_blank" rel="noopener" href="https://isacloud.com.br/#doacoes"
                                 >Apoie</a
                             >
                         </li>

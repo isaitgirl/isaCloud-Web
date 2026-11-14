@@ -16,7 +16,7 @@ Um cliente XMPP livre e bonito para o navegador, feito sobre o Converse.</p>
   <a href="https://chat.isacloud.cc"><b>Abrir o chat</b></a> ·
   <a href="https://isacloud.com.br">isacloud.com.br</a> ·
   <a href="https://github.com/isaitgirl/isaCloud-Web">Código no GitHub</a> ·
-  <a href="https://liberapay.com/isacloud">Apoie o isaCloud</a>
+  <a href="https://isacloud.com.br/#doacoes">Apoie o isaCloud</a>
 </p>
 
 <p align="center">
@@ -54,7 +54,7 @@ As atualizações do upstream continuam sendo mescladas.
 
 Tudo o que o Converse oferece, mais o que o isaCloud acrescenta ou liga:
 
-- Pronto para o **isacloud.im**: entre ou crie uma conta direto na tela de login.
+- Pronto para o **isacloud.im**: entre direto na tela de login.
 - Conversas individuais, grupos privados e canais públicos, com a lista de salas do servidor.
 - Criptografia de ponta a ponta com **OMEMO** (o legado e o OMEMO 2), **ligada por padrão**.
 - **Entra nos canais com o seu apelido** (o do perfil ou o nome do seu endereço). Dá para trocar

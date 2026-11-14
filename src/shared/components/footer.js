@@ -33,9 +33,10 @@ export class ConverseFooter extends CustomElement {
                                 >).
                             </p>
                             <p class="brand-subtitle mb-3">
-                                Gostou? Apoie o isaCloud no
-                                <a href="https://liberapay.com/isacloud" target="_blank" rel="noopener">Liberapay</a>.
-                                💜
+                                Gostou?
+                                <a href="https://isacloud.com.br/#doacoes" target="_blank" rel="noopener"
+                                    >Apoie o isaCloud</a
+                                >. 💜
                             </p>
                         </div>
                     </div>
