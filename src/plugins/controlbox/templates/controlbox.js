@@ -1,8 +1,21 @@
 import { html, nothing } from 'lit';
 import { _converse, api, converse } from '@converse/headless';
+import { __ } from 'i18n/index.js';
 import { getChatStyle } from 'shared/chat/utils.js';
 
 const { Strophe } = converse.env;
+
+/**
+ * A discreet notice, above the panel, while a session that was connected is
+ * being re-established. It must not replace the panel: the profile, logout and
+ * the settings stay reachable during the wait.
+ */
+const tplReconnecting = () => html`
+    <div class="reconnecting-notice" role="status" aria-live="polite">
+        <span class="reconnecting-notice__spinner" aria-hidden="true"></span>
+        <span class="reconnecting-notice__text">${__('Reconnecting…')}</span>
+    </div>
+`;
 
 /**
  * @param {import('../controlbox').default} el
@@ -44,6 +57,7 @@ function whenNotConnected(el) {
  */
 export default (el) => {
     const style = getChatStyle(el.model);
+    const reconnecting = el.model.get('reconnecting');
     // The controlbox lives inside the active app's subtree, so `getActive()`
     // always resolves to the app that rendered it. `renderControlbox` is
     // optional: an app may show the controlbox chrome (profile, login form)
@@ -51,8 +65,9 @@ export default (el) => {
     const { renderControlbox } = api.apps.getActive();
     return html`<div class="flyout box-flyout" style="${style || nothing}">
         ${api.settings.get('view_mode') === 'overlayed' ? html`<converse-dragresize></converse-dragresize>` : ''}
+        ${reconnecting ? tplReconnecting() : nothing}
         ${
-            el.model.get('connected')
+            el.model.get('connected') || reconnecting
                 ? html`<converse-user-profile></converse-user-profile> ${
                           renderControlbox ? html`<div class="controlbox-pane">${renderControlbox()}</div>` : nothing
                       }`

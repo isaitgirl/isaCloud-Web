@@ -30,6 +30,47 @@ describe('The Controlbox', function () {
         }),
     );
 
+    describe('while reconnecting', function () {
+        it(
+            'keeps the panel and shows a discreet notice until the connection is back',
+            mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+                await mock.openControlBox(_converse);
+                const view = _converse.chatboxviews.get('controlbox');
+                expect(view.querySelector('.reconnecting-notice')).toBeNull();
+
+                _converse.api.trigger('will-reconnect');
+                const notice = await u.waitUntil(() => view.querySelector('.reconnecting-notice'));
+                expect(notice.getAttribute('role')).toBe('status');
+                expect(notice.getAttribute('aria-live')).toBe('polite');
+                expect(notice.textContent).toContain('Reconnect');
+                // The panel stays in place, spinner replaced by nothing.
+                expect(view.querySelector('converse-user-profile')).not.toBeNull();
+                expect(view.querySelector('.controlbox-pane')).not.toBeNull();
+                expect(view.querySelector('converse-spinner')).toBeNull();
+
+                _converse.api.trigger('reconnected');
+                await u.waitUntil(() => !view.querySelector('.reconnecting-notice'));
+                expect(view.querySelector('converse-user-profile')).not.toBeNull();
+                expect(view.querySelector('.controlbox-pane')).not.toBeNull();
+            }),
+        );
+
+        it(
+            'returns the notice to hidden when the session is cleared',
+            mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+                await mock.openControlBox(_converse);
+                const model = _converse.chatboxes.get('controlbox');
+
+                _converse.api.trigger('will-reconnect');
+                await u.waitUntil(() => model.get('reconnecting'));
+
+                _converse.api.trigger('clearSession');
+                await u.waitUntil(() => !model.get('reconnecting'));
+                expect(model.get('connected')).toBe(false);
+            }),
+        );
+    });
+
     describe('The "Contacts" section', function () {
         it(
             'shows the number of unread mentions received',

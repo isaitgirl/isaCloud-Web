@@ -22,6 +22,7 @@ class ControlBox extends Model {
             chat_state: undefined,
             closed: !api.settings.get('show_controlbox_by_default'),
             num_unread: 0,
+            reconnecting: false,
             time_opened: dayjs(0).valueOf(),
             type: CONTROLBOX_TYPE,
             url: '',
@@ -55,7 +56,7 @@ class ControlBox extends Model {
     }
 
     onReconnection() {
-        this.save('connected', true);
+        this.save({ connected: true, reconnecting: false });
     }
 }
 

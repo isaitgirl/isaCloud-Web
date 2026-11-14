@@ -51,6 +51,7 @@ class ControlBoxView extends DragResizable(CustomElement) {
         this.listenTo(_converse.state.connfeedback, 'change:connection_status', () => this.requestUpdate());
         this.listenTo(this.model, 'change:active-form', () => this.requestUpdate());
         this.listenTo(this.model, 'change:connected', () => this.requestUpdate());
+        this.listenTo(this.model, 'change:reconnecting', () => this.requestUpdate());
         this.requestUpdate();
     }
 
