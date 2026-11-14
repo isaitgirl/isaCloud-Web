@@ -392,6 +392,54 @@
         }
     }
 
+    // Reconnecting: a thin bar above the profile instead of the spinner that
+    // used to replace the whole panel. The profile, logout and the list stay
+    // where they were, and the bar only appears while the session comes back.
+    // The flyout becomes a column only with the bar present, so the pane keeps
+    // the rest of the height instead of overflowing under it.
+    #controlbox .reconnecting-notice {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        column-gap: 8px;
+        padding: 6px 14px;
+        border-bottom: 1px solid var(--isa-border);
+        background-color: var(--isa-inset-bg);
+        color: var(--subdued-color);
+        font-size: 12px;
+        line-height: 1.2;
+    }
+    .reconnecting-notice__spinner {
+        flex: 0 0 auto;
+        width: 12px;
+        height: 12px;
+        border: 2px solid var(--isa-border);
+        border-top-color: var(--link-color);
+        border-radius: 50%;
+        animation: isa-reconnecting-spin 0.8s linear infinite;
+    }
+    // No movement for those who ask for reduced motion.
+    @media (prefers-reduced-motion: reduce) {
+        .reconnecting-notice__spinner {
+            animation: none;
+        }
+    }
+    #controlbox .flyout:has(.reconnecting-notice) {
+        display: flex;
+        flex-direction: column;
+    }
+    #controlbox .flyout:has(.reconnecting-notice) .controlbox-pane {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+    }
+
+    @keyframes isa-reconnecting-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     // Wider occupants panel on large screens: muc-views gives it 2 of 12
     // columns of the chat card from xl up (about 170px). The `col-*` classes
     // are Bootstrap's; a width dragged with the resize handle is an inline

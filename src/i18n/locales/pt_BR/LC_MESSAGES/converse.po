@@ -1838,6 +1838,10 @@ msgstr ""
 msgid "Show details about this chat client"
 msgstr "Mostrar detalhes sobre este cliente do bate-papo"
 
+#: src/plugins/controlbox/templates/controlbox.js
+msgid "Reconnecting…"
+msgstr "Reconectando…"
+
 #: dist/converse-no-dependencies.js:122350
 msgid "Discover Services"
 msgstr ""

@@ -32,14 +32,19 @@ export function disconnect() {
     // we reconnect, "onConnected" will be called,
     // to fetch the roster again and to send out a presence stanza.
     const model = _converse.state.chatboxes?.get('controlbox');
-    if (model) u.safeSave(model, { 'connected': false });
+    if (model) {
+        // Only a session that was already connected keeps its panel while the
+        // connection comes back. A retry on the first connection must still
+        // show the login form, not an empty chat panel.
+        u.safeSave(model, { 'connected': false, 'reconnecting': model.get('connected') });
+    }
 }
 
 export function clearSession() {
     const { chatboxviews } = _converse.state;
     const view = chatboxviews?.get('controlbox');
     if (view) {
-        u.safeSave(view.model, { connected: false });
+        u.safeSave(view.model, { connected: false, reconnecting: false });
         if (view?.controlbox_pane) {
             view.controlbox_pane.remove();
             delete view.controlbox_pane;
@@ -49,7 +54,7 @@ export function clearSession() {
 
 export function onChatBoxesFetched() {
     const controlbox = _converse.state.chatboxes.get('controlbox') || addControlBox();
-    controlbox.save({ 'connected': true });
+    controlbox.save({ 'connected': true, 'reconnecting': false });
 }
 
 /**

@@ -8,7 +8,18 @@ const { Strophe, stx } = converse.env;
 let lastStanzaDate;
 
 export function onWindowStateChanged() {
-    if (!isAppHidden()) api.ping(null, 5000);
+    if (isAppHidden()) return;
+
+    const connection = api.connection.get();
+    // A tab that was frozen can come back with a dead transport that Strophe
+    // still believes is up. Reconnect straight away instead of waiting out a
+    // backoff that may already be at its longest.
+    if (connection?.has_connected && !api.connection.authenticated()) {
+        return api.connection.reconnect();
+    }
+    // Otherwise check quickly, so a dead connection is noticed sooner than
+    // the regular five seconds. A healthy connection is only pinged.
+    api.ping(null, 1500);
 }
 
 export function setLastStanzaDate(date) {
