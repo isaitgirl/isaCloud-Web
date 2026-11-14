@@ -56,6 +56,22 @@ describe('The Controlbox', function () {
         );
 
         it(
+            'does not keep the panel when the first connection is still being retried',
+            mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+                await mock.openControlBox(_converse);
+                const model = _converse.chatboxes.get('controlbox');
+                model.save('connected', false);
+
+                _converse.api.trigger('will-reconnect');
+                await u.waitUntil(() => model.get('connected') === false);
+                expect(model.get('reconnecting')).toBe(false);
+
+                const view = _converse.chatboxviews.get('controlbox');
+                expect(view.querySelector('.reconnecting-notice')).toBeNull();
+            }),
+        );
+
+        it(
             'returns the notice to hidden when the session is cleared',
             mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
                 await mock.openControlBox(_converse);
