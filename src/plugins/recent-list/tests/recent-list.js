@@ -61,7 +61,8 @@ describe('The conversation list', function () {
             await mock.openChatBoxFor(_converse, contact_jid);
             await _converse.handleMessageStanza(mock.createChatMessage(_converse, contact_jid, 'Oi'));
             await sleep(5);
-            await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            await room.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Bem-vindo'));
 
             const list = await getRecentList(_converse);
             await u.waitUntil(() => rowJIDs(list).length === 2);
@@ -107,11 +108,17 @@ describe('The conversation list', function () {
             _converse.state.chatboxes.get(first).set('num_unread', 0);
             _converse.state.chatboxes.get(second).set('num_unread', 2);
 
-            await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
-            await mock.openAndEnterMUC(_converse, GARDEN, 'romeo');
+            const lounge = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            const garden = await mock.openAndEnterMUC(_converse, GARDEN, 'romeo');
+            await lounge.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Um'));
+            await garden.handleMessageStanza(mucMessage(GARDEN, 'capulet', 'Dois'));
+            // Messages received while the room is hidden count as unread/active:
+            // only `second` should be.
+            lounge.set({ num_unread: 0, num_unread_general: 0, has_activity: false });
+            garden.set({ num_unread: 0, num_unread_general: 0, has_activity: false });
             // A group is members-only and non-anonymous; any other room is a channel.
-            _converse.state.chatboxes.get(LOUNGE).features.set({ membersonly: true, nonanonymous: true });
-            _converse.state.chatboxes.get(GARDEN).features.set({ membersonly: false, publicroom: true });
+            lounge.features.set({ membersonly: true, nonanonymous: true });
+            garden.features.set({ membersonly: false, publicroom: true });
 
             const list = await getRecentList(_converse);
             await u.waitUntil(() => rowJIDs(list).length === 4);
@@ -133,6 +140,42 @@ describe('The conversation list', function () {
             chip(list, 'Channels').click();
             await u.waitUntil(() => rowJIDs(currentList(_converse)).join() === GARDEN);
             expect(chip(list, 'Channels').getAttribute('aria-pressed')).toBe('true');
+        }),
+    );
+
+    it(
+        'omits a groupchat whose archive is empty, until it receives a message',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            // The default disco info advertises MAM, but the mock doesn't answer
+            // the archive query, so the room stays "loading" until we settle it.
+            const empty_room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            expect(empty_room.session.get('mam_initialized')).toBe(false);
+
+            await getRecentList(_converse);
+            // While the history fetch is in flight the row is kept, so it doesn't
+            // flicker away and back.
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(LOUNGE));
+
+            // The archive settled and had no displayable message: the row goes.
+            empty_room.session.save({ mam_initialized: true });
+            await u.waitUntil(() => !rowJIDs(currentList(_converse)).includes(LOUNGE));
+
+            // A room without MAM settles as soon as it is entered, and has history.
+            const room_with_history = await mock.openAndEnterMUC(_converse, GARDEN, 'romeo', [
+                'http://jabber.org/protocol/muc',
+            ]);
+            await room_with_history.handleMessageStanza(mucMessage(GARDEN, 'capulet', 'Com histórico'));
+            await u.waitUntil(() => room_with_history.session.get('mam_initialized') === true);
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(GARDEN));
+            expect(rowJIDs(currentList(_converse))).not.toContain(LOUNGE);
+
+            await sleep(5);
+            await empty_room.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Agora tem'));
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(LOUNGE));
+            const jids = rowJIDs(currentList(_converse));
+            expect(jids).toContain(GARDEN);
+            // The just-received message makes the formerly empty room the most recent.
+            expect(jids.indexOf(LOUNGE)).toBeLessThan(jids.indexOf(GARDEN));
         }),
     );
 

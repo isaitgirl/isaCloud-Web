@@ -14,6 +14,7 @@ import {
     getConversationKind,
     getLastActivity,
     getLastDisplayableMessage,
+    hasConversationContent,
     isConversation,
     matchesFilter,
 } from './utils.js';
@@ -90,6 +91,9 @@ export class RecentList extends CustomElement {
         await model.initialized;
         if (model.messages) this.listenTo(model.messages, 'add change remove', this.scheduleRefresh);
         if (model.features) this.listenTo(model.features, 'change', this.scheduleRefresh);
+        // A room with an empty archive disappears once its history is known to
+        // be settled; a room with history appears when its messages arrive.
+        if (model.session) this.listenTo(model.session, 'change:mam_initialized', this.scheduleRefresh);
         this.scheduleRefresh();
     }
 
@@ -122,7 +126,8 @@ export class RecentList extends CustomElement {
 
     /**
      * The 1:1 chats and groupchats in the list. Closed groupchats have left
-     * the room and are not listed; closed 1:1 chats are kept.
+     * the room and are not listed; closed 1:1 chats are kept. Empty
+     * groupchats are filtered out later by `getItems()`.
      */
     getConversations() {
         const { chatboxes } = _converse.state;
@@ -132,12 +137,14 @@ export class RecentList extends CustomElement {
     }
 
     /**
-     * The conversations matching the active filter, most recent activity first.
+     * The conversations with content matching the active filter, most recent
+     * activity first. Empty groupchats are omitted.
      * @returns {{ model: import('@converse/headless').Model, kind: string, activity: number }[]}
      */
     getItems() {
         const filter = this.model.get('filter');
         return this.getConversations()
+            .filter((model) => hasConversationContent(model))
             .filter((model) => matchesFilter(model, filter))
             .map((model) => ({ model, kind: getConversationKind(model), activity: getLastActivity(model) }))
             .sort((a, b) => b.activity - a.activity || compareNames(a.model, b.model));
