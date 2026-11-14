@@ -3,10 +3,9 @@
  * @typedef {import('@converse/headless').RosterContacts} RosterContacts
  */
 import { __ } from 'i18n';
-import { _converse, api, converse, log, constants, u, Profile } from '@converse/headless';
+import { _converse, api, converse, log, u, Profile } from '@converse/headless';
 
 const { Strophe } = converse.env;
-const { STATUS_WEIGHTS } = constants;
 
 /**
  * @param {RosterContact} contact
@@ -283,20 +282,13 @@ export function populateContactsMap(contacts_map, contact) {
 }
 
 /**
+ * Sorts contacts alphabetically by display name, ignoring case and accents.
  * @param {RosterContact|Profile} contact1
  * @param {RosterContact|Profile} contact2
- * @returns {(-1|0|1)}
+ * @returns {number}
  */
 export function contactsComparator(contact1, contact2) {
-    const status1 = /** @type {string} */ (contact1.getStatus());
-    const status2 = /** @type {string} */ (contact2.getStatus());
-    if (STATUS_WEIGHTS[status1] === STATUS_WEIGHTS[status2]) {
-        const name1 = contact1.getDisplayName().toLowerCase();
-        const name2 = contact2.getDisplayName().toLowerCase();
-        return name1 < name2 ? -1 : name1 > name2 ? 1 : 0;
-    } else {
-        return STATUS_WEIGHTS[status1] < STATUS_WEIGHTS[status2] ? -1 : 1;
-    }
+    return contact1.getDisplayName().localeCompare(contact2.getDisplayName(), undefined, { sensitivity: 'base' });
 }
 
 /**
