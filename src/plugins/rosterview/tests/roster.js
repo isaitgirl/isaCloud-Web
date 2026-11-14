@@ -1182,52 +1182,83 @@ describe('The Contacts Roster', function () {
 
         it(
             'can be added to the roster and they will be sorted alphabetically',
-            mock.initConverse(converse, [], { lazy_load_vcards: false }, async function (_converse) {
-                const { api } = _converse;
-                await mock.waitForRoster(_converse, 'current', 0);
-                const { roster } = _converse.state;
-                await mock.openControlBox(_converse);
-                const rosterview = document.querySelector('converse-roster');
-                await Promise.all(
-                    mock.cur_names.map((name) => {
-                        const contact = roster.create({
-                            jid: name.replace(/ /g, '.').toLowerCase() + '@montague.lit',
-                            subscription: 'both',
-                            ask: null,
-                            fullname: name,
+            mock.initConverse(
+                converse,
+                [],
+                { show_self_in_roster: false, lazy_load_vcards: false },
+                async function (_converse) {
+                    const { api } = _converse;
+                    await mock.waitForRoster(_converse, 'current', 0);
+                    const { roster } = _converse.state;
+                    await mock.openControlBox(_converse);
+                    const rosterview = document.querySelector('converse-roster');
+
+                    // Lowercase-leading names would be sorted after all the capitalized
+                    // names by a case-sensitive comparison, so they also verify that
+                    // sorting ignores case.
+                    const names = [...mock.cur_names, 'abel', 'andromache'];
+                    await Promise.all(
+                        names.map((name) => {
+                            const contact = roster.create({
+                                jid: name.replace(/ /g, '.').toLowerCase() + '@montague.lit',
+                                subscription: 'both',
+                                ask: null,
+                                nickname: name,
+                            });
+                            return u.waitUntil(() => contact.initialized);
+                        }),
+                    );
+                    await u.waitUntil(() => sizzle('li', rosterview).length);
+                    await api.waitUntil('VCardsInitialized');
+
+                    const expected = [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+                    const get_rendered_names = () =>
+                        sizzle('.current-xmpp-contact a.open-chat .contact-name', rosterview).map((el) =>
+                            el.textContent.trim(),
+                        );
+                    const check_alphabetical = async () => {
+                        await u.waitUntil(() => {
+                            const rendered = get_rendered_names();
+                            return rendered.length === expected.length && rendered.join('\n') === expected.join('\n');
                         });
-                        return u.waitUntil(() => contact.initialized);
-                    }),
-                );
-                await u.waitUntil(() => sizzle('li', rosterview).length);
-                await api.waitUntil('VCardsInitialized');
+                        expect(get_rendered_names()).toEqual(expected);
+                    };
 
-                // Check that they are sorted alphabetically
-                const els = sizzle('.current-xmpp-contact.offline a.open-chat .contact-name', rosterview);
-                const t = els.reduce((result, value) => result + value.textContent.trim(), '');
-                expect(t).toEqual(mock.cur_names.slice(0, mock.cur_names.length).sort().join(''));
+                    // Check that they are sorted alphabetically, case-insensitively.
+                    await check_alphabetical();
 
-                // Check that ordering changes based on chat status
-                let contact_jid = mock.getContactJID(roster.length - 1);
-                let contact = await _converse.api.contacts.get(contact_jid);
-                contact.presence.set('presence', 'online');
-                let sel = 'ul.roster-group-contacts li:first-child converse-roster-contact';
-                await u.waitUntil(() => rosterview.querySelector(sel).model?.get('jid') === contact_jid);
+                    // Check that changing their chat status does not change the ordering.
+                    let contact = await api.contacts.get(mock.getContactJID(5)); // Tybalt, alphabetically last
+                    contact.presence.set('presence', 'online');
+                    await u.waitUntil(() =>
+                        sizzle('.current-xmpp-contact[data-status="online"] .contact-name', rosterview).some(
+                            (el) => el.textContent.trim() === 'Tybalt',
+                        ),
+                    );
+                    await check_alphabetical();
 
-                contact_jid = mock.getContactJID(roster.length - 2);
-                contact = await _converse.api.contacts.get(contact_jid);
-                contact.presence.set({ show: 'dnd', presence: 'online' });
+                    contact = await api.contacts.get(mock.getContactJID(11)); // Sampson
+                    contact.presence.set({ show: 'dnd', presence: 'online' });
+                    await u.waitUntil(() =>
+                        sizzle('.current-xmpp-contact[data-status="dnd"] .contact-name', rosterview).some(
+                            (el) => el.textContent.trim() === 'Sampson',
+                        ),
+                    );
+                    await check_alphabetical();
 
-                sel = 'ul.roster-group-contacts li:nth-child(3) converse-roster-contact';
-                await u.waitUntil(() => rosterview.querySelector(sel).model?.get('jid') === contact_jid);
+                    contact = await api.contacts.get(mock.getContactJID(13)); // Potpan
+                    contact.presence.set({ show: 'away', presence: 'online' });
+                    await u.waitUntil(() =>
+                        sizzle('.current-xmpp-contact[data-status="away"] .contact-name', rosterview).some(
+                            (el) => el.textContent.trim() === 'Potpan',
+                        ),
+                    );
+                    await check_alphabetical();
 
-                contact_jid = mock.getContactJID(roster.length - 3);
-                contact = await _converse.api.contacts.get(contact_jid);
-                contact.presence.set({ show: 'away', presence: 'online' });
-
-                sel = 'ul.roster-group-contacts li:nth-child(4) converse-roster-contact';
-                await u.waitUntil(() => rosterview.querySelector(sel).model?.get('jid') === contact_jid);
-            }),
+                    // Online contacts are not moved to the top of the list.
+                    expect(get_rendered_names()[0]).toBe(expected[0]);
+                },
+            ),
         );
 
         it(
@@ -1321,7 +1352,12 @@ describe('The Contacts Roster', function () {
                             const groupname = groupnames[j];
                             const els = [...group.querySelectorAll('.current-xmpp-contact.online a.open-chat')];
                             const t = els.reduce((result, value) => result + value.textContent?.trim(), '');
-                            expect(t).toEqual(mock.groups_map[groupname].slice(0, els.length).sort().join(''));
+                            expect(t).toEqual(
+                                mock.groups_map[groupname]
+                                    .slice(0, els.length)
+                                    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                    .join(''),
+                            );
                         }
                     }
                 },
@@ -1347,7 +1383,12 @@ describe('The Contacts Roster', function () {
                         const groupname = groupnames[j];
                         const els = [...group.querySelectorAll('.current-xmpp-contact.dnd a.open-chat')];
                         const t = els.reduce((result, value) => result + value.textContent.trim(), '');
-                        expect(t).toEqual(mock.groups_map[groupname].slice(0, els.length).sort().join(''));
+                        expect(t).toEqual(
+                            mock.groups_map[groupname]
+                                .slice(0, els.length)
+                                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                .join(''),
+                        );
                     }
                 }
             }),
@@ -1372,7 +1413,12 @@ describe('The Contacts Roster', function () {
                         const groupname = groupnames[j];
                         const els = [...group.querySelectorAll('.current-xmpp-contact.away a.open-chat')];
                         const t = els.reduce((result, value) => result + value.textContent.trim(), '');
-                        expect(t).toEqual(mock.groups_map[groupname].slice(0, els.length).sort().join(''));
+                        expect(t).toEqual(
+                            mock.groups_map[groupname]
+                                .slice(0, els.length)
+                                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                .join(''),
+                        );
                     }
                 }
             }),
@@ -1397,7 +1443,12 @@ describe('The Contacts Roster', function () {
                         const groupname = groupnames[j];
                         const els = [...group.querySelectorAll('.current-xmpp-contact.xa a.open-chat')];
                         const t = els.reduce((result, value) => result + value.textContenc?.trim(), '');
-                        expect(t).toEqual(mock.groups_map[groupname].slice(0, els.length).sort().join(''));
+                        expect(t).toEqual(
+                            mock.groups_map[groupname]
+                                .slice(0, els.length)
+                                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                .join(''),
+                        );
                     }
                 }
             }),
@@ -1422,14 +1473,19 @@ describe('The Contacts Roster', function () {
                         const groupname = groupnames[j];
                         const els = [...group.querySelectorAll('.current-xmpp-contact.unavailable a.open-chat')];
                         const t = els.reduce((result, value) => result + value.textContent.trim(), '');
-                        expect(t).toEqual(mock.groups_map[groupname].slice(0, els.length).sort().join(''));
+                        expect(t).toEqual(
+                            mock.groups_map[groupname]
+                                .slice(0, els.length)
+                                .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+                                .join(''),
+                        );
                     }
                 }
             }),
         );
 
         it(
-            'are ordered according to status: online, busy, away, xa, unavailable, offline',
+            'are ordered alphabetically, regardless of their status',
             mock.initConverse(
                 converse,
                 [],
@@ -1460,61 +1516,34 @@ describe('The Contacts Roster', function () {
                         _converse.roster.get(jid).presence.set('presence', 'offline');
                     }
 
+                    const sort_alphabetically = (names) =>
+                        [...names].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+                    const get_group_names = (group) =>
+                        Array.from(group.querySelectorAll('.current-xmpp-contact .contact-name')).map((el) =>
+                            el.textContent.trim(),
+                        );
+
                     await u.waitUntil(() => u.isVisible(rosterview.querySelector('li.list-item:first-child')));
-                    const roster = rosterview;
-                    const groups = roster.querySelectorAll('.roster-group');
+                    const groups = rosterview.querySelectorAll('.roster-group');
                     const groupnames = Array.from(groups).map((g) => g.getAttribute('data-group'));
                     expect(groupnames.join(' ')).toBe('Colleagues Family friends & acquaintances ænemies Ungrouped');
-
-                    const group = groups[0];
-                    const els = Array.from(group.querySelectorAll('.current-xmpp-contact'));
-                    await u.waitUntil(
-                        () => els.map((e) => e.getAttribute('data-status')).join(' ') === 'online online away xa xa xa',
-                    );
 
                     for (let j = 0; j < groups.length; j++) {
                         const group = groups[j];
                         const groupname = groupnames[j];
+                        const expected = sort_alphabetically(mock.groups_map[groupname]);
+                        await u.waitUntil(() => get_group_names(group).join('\n') === expected.join('\n'), 700);
+
                         const els = Array.from(group.querySelectorAll('.current-xmpp-contact'));
                         expect(els.length).toBe(mock.groups_map[groupname].length);
-
-                        if (groupname === 'Colleagues') {
-                            const statuses = els.map((e) => e.getAttribute('data-status'));
-                            const subscription_classes = els.map((e) => e.classList[4]);
-                            const status_classes = els.map((e) => e.classList[5]);
-                            expect(statuses.join(' ')).toBe('online online away xa xa xa');
-                            expect(status_classes.join(' ')).toBe('online online away xa xa xa');
-                            expect(subscription_classes.join(' ')).toBe('both both both both both both');
-                        } else if (groupname === 'friends & acquaintances') {
-                            const statuses = els.map((e) => e.getAttribute('data-status'));
-                            const subscription_classes = els.map((e) => e.classList[4]);
-                            const status_classes = els.map((e) => e.classList[5]);
-                            expect(statuses.join(' ')).toBe('online online dnd dnd away offline');
-                            expect(status_classes.join(' ')).toBe('online online dnd dnd away offline');
-                            expect(subscription_classes.join(' ')).toBe('both both both both both both');
-                        } else if (groupname === 'Family') {
-                            const statuses = els.map((e) => e.getAttribute('data-status'));
-                            const subscription_classes = els.map((e) => e.classList[4]);
-                            const status_classes = els.map((e) => e.classList[5]);
-                            expect(statuses.join(' ')).toBe('online dnd');
-                            expect(status_classes.join(' ')).toBe('online dnd');
-                            expect(subscription_classes.join(' ')).toBe('both both');
-                        } else if (groupname === 'ænemies') {
-                            const statuses = els.map((e) => e.getAttribute('data-status'));
-                            const subscription_classes = els.map((e) => e.classList[4]);
-                            const status_classes = els.map((e) => e.classList[5]);
-                            expect(statuses.join(' ')).toBe('away');
-                            expect(status_classes.join(' ')).toBe('away');
-                            expect(subscription_classes.join(' ')).toBe('both');
-                        } else if (groupname === 'Ungrouped') {
-                            const statuses = els.map((e) => e.getAttribute('data-status'));
-                            const subscription_classes = els.map((e) => e.classList[4]);
-                            const status_classes = els.map((e) => e.classList[5]);
-                            expect(statuses.join(' ')).toBe('offline offline');
-                            expect(status_classes.join(' ')).toBe('offline offline');
-                            expect(subscription_classes.join(' ')).toBe('both both');
-                        }
+                        expect(get_group_names(group)).toEqual(expected);
                     }
+
+                    // The DOM order must not follow the status sequence.
+                    const colleagues_statuses = Array.from(groups[0].querySelectorAll('.current-xmpp-contact')).map(
+                        (e) => e.getAttribute('data-status'),
+                    );
+                    expect(colleagues_statuses.join(' ')).not.toBe('online online away xa xa xa');
                 },
             ),
         );
