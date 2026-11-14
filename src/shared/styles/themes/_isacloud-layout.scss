@@ -418,10 +418,10 @@
         border-radius: 50%;
         animation: isa-reconnecting-spin 0.8s linear infinite;
     }
-    // Keep a slow hint of movement without a spinner, for those who ask for it.
+    // No movement for those who ask for reduced motion.
     @media (prefers-reduced-motion: reduce) {
         .reconnecting-notice__spinner {
-            animation-duration: 2.4s;
+            animation: none;
         }
     }
     #controlbox .flyout:has(.reconnecting-notice) {
