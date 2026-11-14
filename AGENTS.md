@@ -51,9 +51,10 @@ Tests live in a `tests/` subdirectory of each plugin. Mock data is in
 not source files directly. If you skip the build, you will be testing against a stale bundle and changes to source
 files will have no effect.
 
-**The full test suite takes over a minute to run.** Avoid running it unless you need to verify that nothing has
-regressed across the entire codebase. When working on a specific feature, pass a file path or use `fdescribe`/`fit`
-(see below).
+**Run the full test suite only when the user explicitly asks for it.** By default, run only the specs related to
+what was changed, or the reduced fork suite (`./isacloud/test.sh`). The full suite takes over a minute; reserve it
+for verifying that nothing has regressed across the entire codebase. When working on a specific feature, pass a
+file path or use `fdescribe`/`fit` (see below).
 
 ```bash
 # Run only specific files (fastest turnaround) — pass a path/substring to vitest
