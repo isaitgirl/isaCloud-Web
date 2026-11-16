@@ -6,6 +6,20 @@
 .conversejs {
     .chatbox {
         .bottom-panel {
+            // Discreet bar above the composer while a session comes back. The
+            // composer stays enabled: the send queue holds the messages.
+            .reconnecting-notice {
+                display: flex;
+                align-items: center;
+                column-gap: 8px;
+                padding: 6px 14px;
+                border-top: 1px solid var(--chat-color);
+                background-color: var(--background-color);
+                color: var(--foreground-color);
+                font-size: 12px;
+                line-height: 1.2;
+            }
+
             .chat-content-sendbutton {
                 height: calc(
                     100% - (var(--chat-textarea-height) + var(--send-button-height) + 2 * var(--send-button-margin))

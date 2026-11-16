@@ -150,6 +150,11 @@ export default (el) => {
                         ${is_retracted ? el.renderRetraction(tpl_action_time) : el.renderMessageText(tpl_action_time)}
                     </div>
                     ${el.model.get('send_status') === 'failed' ? tplSendFailed(el) : ''}
+                    ${
+                        el.model.get('send_status') === 'pending'
+                            ? html`<span class="chat-msg__send-pending text-muted small">${__('Sending…')}</span>`
+                            : ''
+                    }
                     <converse-message-actions
                         .model=${el.model}
                         ?is_retracted=${is_retracted}

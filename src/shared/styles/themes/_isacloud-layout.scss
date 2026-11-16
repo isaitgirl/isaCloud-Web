@@ -248,6 +248,16 @@
             box-shadow: var(--isa-form-shadow);
         }
 
+        // Reconnecting notice above the composer: the same inset surface as the
+        // panels, so the bar reads as part of the conversation card instead of
+        // a rule across it.
+        .chatbox .bottom-panel .reconnecting-notice {
+            margin: 0 var(--isa-gap) 8px;
+            border: 1px solid var(--isa-border);
+            border-radius: 12px;
+            background-color: var(--isa-inset-bg);
+        }
+
         // Occupants of a room: an inner panel instead of a column split off
         // by a rule, with rows styled like the conversation list.
         // muc-sidebar gives it `height: 100%`; the margins come off it, so the
@@ -405,7 +415,7 @@
         padding: 6px 14px;
         border-bottom: 1px solid var(--isa-border);
         background-color: var(--isa-inset-bg);
-        color: var(--subdued-color);
+        color: var(--foreground-color);
         font-size: 12px;
         line-height: 1.2;
     }

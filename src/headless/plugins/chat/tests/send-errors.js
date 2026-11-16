@@ -1,7 +1,7 @@
 import converse from '../../../dist/converse-headless.js';
 import mock from '../../../tests/mock.js';
 
-const { stx } = converse.env;
+const { Strophe, stx, u } = converse.env;
 
 describe('A failed chat send', function () {
     it(
@@ -35,6 +35,93 @@ describe('A failed chat send', function () {
             await chat.resendFailedMessage(failed);
             expect(send).toHaveBeenCalledTimes(1);
             expect(failed.get('send_status')).toBeUndefined();
+        }),
+    );
+
+    it(
+        'is sent again on reconnection only when it never reached the transport',
+        mock.initConverse(converse, ['rosterInitialized', 'chatBoxesInitialized'], {}, async (_converse) => {
+            const { api } = _converse;
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.openChatBoxFor(_converse, contact_jid);
+            const chat = _converse.chatboxes.get(contact_jid);
+
+            const send = vi.spyOn(api, 'send');
+            const connection = api.connection.get();
+            connection.authenticated = false;
+            connection.connected = false;
+
+            await expect(chat.sendMessage({ body: 'Into the void' })).rejects.toMatchObject({
+                code: 'not-connected',
+            });
+            const unreachable = chat.messages.findWhere({ body: 'Into the void' });
+            expect(unreachable.get('send_status')).toBe('failed');
+            expect(unreachable.get('send_error_code')).toBe('not-connected');
+            expect(send).not.toHaveBeenCalled();
+
+            connection.authenticated = true;
+            connection.connected = true;
+
+            // A failure with another reason is left alone: it may have been delivered.
+            const build = chat.createMessageStanza.bind(chat);
+            vi.spyOn(chat, 'createMessageStanza').mockImplementation(async (message) => {
+                if (message.get('body') === 'Refused') {
+                    throw Object.assign(new Error('x'), { code: 'send-failed' });
+                }
+                return build(message);
+            });
+            await expect(chat.sendMessage({ body: 'Refused' })).rejects.toMatchObject({ code: 'send-failed' });
+            const refused = chat.messages.findWhere({ body: 'Refused' });
+            expect(refused.get('send_error_code')).toBe('send-failed');
+            expect(send).not.toHaveBeenCalled();
+
+            api.trigger('chatReconnected', chat);
+
+            // The failure is cleared before the stanza is built, so wait for the send itself.
+            await u.waitUntil(() => send.mock.calls.length === 1);
+            expect(unreachable.get('send_status')).toBeUndefined();
+            expect(refused.get('send_status')).toBe('failed');
+            expect(refused.get('send_error_code')).toBe('send-failed');
+        }),
+    );
+
+    it(
+        'is not sent twice when a retry overlaps with the resend after a reconnection',
+        mock.initConverse(converse, ['rosterInitialized', 'chatBoxesInitialized'], {}, async (_converse) => {
+            const { api } = _converse;
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.openChatBoxFor(_converse, contact_jid);
+            const chat = _converse.chatboxes.get(contact_jid);
+
+            const send = vi.spyOn(api, 'send');
+            const connection = api.connection.get();
+
+            const failWhileDisconnected = async (body) => {
+                connection.authenticated = false;
+                connection.connected = false;
+                await expect(chat.sendMessage({ body })).rejects.toMatchObject({ code: 'not-connected' });
+                connection.authenticated = true;
+                connection.connected = true;
+                return chat.messages.findWhere({ body });
+            };
+
+            const first = await failWhileDisconnected('First');
+
+            // Retry clicked, then the automatic resend arrives.
+            const retry = chat.resendFailedMessage(first);
+            const automatic = chat.resumeSendsAfterReconnection();
+            await Promise.all([retry, automatic]);
+            expect(send).toHaveBeenCalledTimes(1);
+
+            // The real race: the automatic resend is running when Retry is clicked.
+            const second = await failWhileDisconnected('Second');
+            const running = chat.resumeSendsAfterReconnection();
+            const retry_again = chat.resendFailedMessage(second);
+            await Promise.all([running, retry_again]);
+            expect(send).toHaveBeenCalledTimes(2);
+            expect(second.get('send_status')).toBeUndefined();
         }),
     );
 
@@ -329,6 +416,121 @@ describe('A failed chat send', function () {
             expect(failed.get('send_status')).toBe('failed');
             expect(failed.get('send_error_code')).toBe('not-connected');
         }),
+    );
+
+    it(
+        'is queued while a reconnection is underway, and sent once the chat reconnects',
+        mock.initConverse(converse, ['rosterInitialized', 'chatBoxesInitialized'], {}, async (_converse) => {
+            const { api } = _converse;
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.openChatBoxFor(_converse, contact_jid);
+            const chat = _converse.chatboxes.get(contact_jid);
+
+            const send = vi.spyOn(api, 'send');
+            const connection = api.connection.get();
+            connection.authenticated = false;
+            connection.connected = false;
+            connection.status = Strophe.Status.RECONNECTING;
+
+            const message = await chat.sendMessage({ body: 'Waiting for the connection' });
+            expect(message.get('send_status')).toBe('pending');
+            expect(message.get('send_error_code')).toBeUndefined();
+            expect(send).not.toHaveBeenCalled();
+
+            connection.authenticated = true;
+            connection.connected = true;
+            connection.status = Strophe.Status.CONNECTED;
+            api.trigger('chatReconnected', chat);
+
+            await u.waitUntil(() => send.mock.calls.length === 1);
+            expect(message.get('send_status')).toBeUndefined();
+        }),
+    );
+
+    it(
+        'is failed as not connected when the queue times out, and sent on the next reconnection',
+        mock.initConverse(
+            converse,
+            ['rosterInitialized', 'chatBoxesInitialized'],
+            { send_queue_timeout: 20 },
+            async (_converse) => {
+                const { api } = _converse;
+                await mock.waitForRoster(_converse, 'current', 1);
+                const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+                await mock.openChatBoxFor(_converse, contact_jid);
+                const chat = _converse.chatboxes.get(contact_jid);
+
+                const send = vi.spyOn(api, 'send');
+                const connection = api.connection.get();
+                connection.authenticated = false;
+                connection.connected = false;
+                connection.status = Strophe.Status.RECONNECTING;
+
+                const message = await chat.sendMessage({ body: 'Waiting too long' });
+                expect(message.get('send_status')).toBe('pending');
+
+                await u.waitUntil(() => message.get('send_status') === 'failed');
+                expect(message.get('send_error_code')).toBe('not-connected');
+                expect(send).not.toHaveBeenCalled();
+
+                connection.authenticated = true;
+                connection.connected = true;
+                connection.status = Strophe.Status.CONNECTED;
+                api.trigger('chatReconnected', chat);
+
+                await u.waitUntil(() => send.mock.calls.length === 1);
+                expect(message.get('send_status')).toBeUndefined();
+            },
+        ),
+    );
+
+    it(
+        'does not fail the messages behind a slow one when their queue time runs out during the flush',
+        mock.initConverse(
+            converse,
+            ['rosterInitialized', 'chatBoxesInitialized'],
+            { send_queue_timeout: 20 },
+            async (_converse) => {
+                const { api } = _converse;
+                await mock.waitForRoster(_converse, 'current', 1);
+                const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+                await mock.openChatBoxFor(_converse, contact_jid);
+                const chat = _converse.chatboxes.get(contact_jid);
+
+                const send = vi.spyOn(api, 'send');
+                const connection = api.connection.get();
+                connection.authenticated = false;
+                connection.connected = false;
+                connection.status = Strophe.Status.RECONNECTING;
+
+                const first = await chat.sendMessage({ body: 'Slow to build' });
+                const second = await chat.sendMessage({ body: 'Waiting behind' });
+                expect(first.get('send_status')).toBe('pending');
+                expect(second.get('send_status')).toBe('pending');
+
+                // Without the fix, the second one's timer fails it while the flush is
+                // busy with the first, so the flush skips it. Keep the resend out of
+                // the way, so that it doesn't hide the skipped message.
+                vi.spyOn(chat, 'resendFailedMessage').mockResolvedValue(undefined);
+
+                // Building takes longer than the timeout, so it fires during the flush.
+                const build = chat.createMessageStanza.bind(chat);
+                vi.spyOn(chat, 'createMessageStanza').mockImplementation(async (m) => {
+                    await new Promise((resolve) => setTimeout(resolve, 60));
+                    return build(m);
+                });
+
+                connection.authenticated = true;
+                connection.connected = true;
+                connection.status = Strophe.Status.CONNECTED;
+                api.trigger('chatReconnected', chat);
+
+                await u.waitUntil(() => send.mock.calls.length === 2);
+                expect(first.get('send_status')).toBeUndefined();
+                expect(second.get('send_status')).toBeUndefined();
+            },
+        ),
     );
 
     it(
