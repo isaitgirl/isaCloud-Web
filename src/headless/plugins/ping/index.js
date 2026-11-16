@@ -8,8 +8,14 @@
 import api from '../../shared/api/index.js';
 import converse from '../../shared/api/public.js';
 import ping_api from './api.js';
-import { onWindowStateChanged, registerHandlers, unregisterIntervalHandler } from './utils.js';
-import { addVisibilityListener } from '../../utils/environment.js';
+import {
+    onConnectionMayBeBack,
+    onWindowStateChanged,
+    reconnectIfNeeded,
+    registerHandlers,
+    unregisterIntervalHandler,
+} from './utils.js';
+import { addVisibilityListener, IS_BROWSER } from '../../utils/environment.js';
 
 const { Strophe } = converse.env;
 
@@ -28,5 +34,16 @@ converse.plugins.add('converse-ping', {
         api.listen.on('disconnected', unregisterIntervalHandler);
 
         addVisibilityListener(onWindowStateChanged);
+
+        if (IS_BROWSER) {
+            // `online` and `pageshow` mean the network or page came back, which
+            // can happen while the page is still hidden, so they reconnect
+            // without checking `isAppHidden()`.
+            window.addEventListener('online', onConnectionMayBeBack);
+            window.addEventListener('pageshow', onConnectionMayBeBack);
+            // `focus` fires on every window switch, so it only reconnects and
+            // does not ping.
+            window.addEventListener('focus', reconnectIfNeeded);
+        }
     },
 });

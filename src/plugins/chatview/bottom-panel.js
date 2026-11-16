@@ -3,13 +3,15 @@
  * @typedef {import('shared/chat/emoji-dropdown.js').default} EmojiDropdown
  * @typedef {import('./message-form.js').default} MessageForm
  */
-import { _converse, api } from '@converse/headless';
+import { _converse, api, converse } from '@converse/headless';
 import { CustomElement } from 'shared/components/element.js';
 import tplBottomPanel from './templates/bottom-panel.js';
 import { clearMessages } from './utils.js';
 import './message-form.js';
 
 import './styles/chat-bottom-panel.scss';
+
+const { Strophe } = converse.env;
 
 export default class ChatBottomPanel extends CustomElement {
     constructor() {
@@ -35,9 +37,27 @@ export default class ChatBottomPanel extends CustomElement {
         await this.model.initialized;
         this.listenTo(this.model, 'change:num_unread', () => this.requestUpdate());
         this.listenTo(this.model, 'emoji-picker-autocomplete', this.autocompleteInPicker);
+        this.listenTo(_converse.state.connfeedback, 'change:connection_status', () => this.requestUpdate());
 
         this.addEventListener('emojipickerblur', () => this.#focusMessageField());
         this.addEventListener('composerpanelclose', () => this.#focusMessageField());
+    }
+
+    /**
+     * Whether a session that was already connected is being re-established.
+     *
+     * Covers both the backoff wait (status RECONNECTING) and the attempt itself
+     * (CONNECTING/AUTHENTICATING with `reconnecting` set), so the notice does
+     * not flicker in the middle of a retry. The first connection and a dropped
+     * connection (no connection object) are not reconnections.
+     * @returns {boolean}
+     */
+    isReconnecting() {
+        const connection = api.connection.get();
+        return (
+            !!connection?.has_connected &&
+            (!!connection.reconnecting || connection.status === Strophe.Status.RECONNECTING)
+        );
     }
 
     #focusMessageField() {

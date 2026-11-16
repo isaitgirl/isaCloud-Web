@@ -3627,6 +3627,48 @@ msgstr "Conversa cifrada"
 msgid "Load earlier messages"
 msgstr "Carregar mensagens anteriores"
 
+#: src/shared/chat/send-errors.js
+msgid ""
+"Your message could not be sent because you are not connected."
+msgstr ""
+"Sua mensagem não pôde ser enviada porque você não está conectado."
+
+#: src/shared/chat/send-errors.js
+msgid "Your message could not be sent."
+msgstr "Sua mensagem não pôde ser enviada."
+
+#: src/shared/chat/send-errors.js
+msgid "Not connected"
+msgstr "Sem conexão"
+
+#: src/shared/chat/templates/send-failed.js
+msgid "Send without encryption"
+msgstr "Enviar sem criptografia"
+
+#: src/shared/chat/templates/send-failed.js
+msgid "Discard"
+msgstr "Descartar"
+
+#: src/shared/chat/message.js
+msgid "Send without encryption?"
+msgstr "Enviar sem criptografia?"
+
+#: src/shared/chat/message.js
+msgid ""
+"This message will be sent unencrypted. The server, and anyone else who can "
+"read the conversation, can read it."
+msgstr ""
+"Esta mensagem será enviada sem criptografia. O servidor, e qualquer outra "
+"pessoa que consiga ler a conversa, poderá lê-la."
+
+#: src/shared/chat/message.js
+msgid "This message could not be sent without encryption."
+msgstr "Esta mensagem não pôde ser enviada sem criptografia."
+
+#: src/shared/chat/templates/message.js
+msgid "Sending…"
+msgstr "Enviando…"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

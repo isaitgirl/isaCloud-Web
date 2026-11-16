@@ -18,6 +18,14 @@ export default (el) => {
                   </div>`
                 : ''
         }
+        ${
+            el.isReconnecting()
+                ? html`<div class="reconnecting-notice bottom-panel__reconnecting" role="status" aria-live="polite">
+                      <span class="reconnecting-notice__spinner" aria-hidden="true"></span>
+                      <span class="reconnecting-notice__text">${__('Reconnecting…')}</span>
+                  </div>`
+                : ''
+        }
         <converse-composer-panels .model=${el.model}></converse-composer-panels>
         <converse-message-form .model=${el.model}></converse-message-form>
     `;

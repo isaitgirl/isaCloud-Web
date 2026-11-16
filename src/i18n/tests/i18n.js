@@ -13,6 +13,20 @@ describe('i18n', () => {
         );
     });
 
+    describe('pt_BR send-failure strings', () => {
+        it(
+            'translates the new connection and encryption strings',
+            mock.initConverse(converse, [], { i18n: 'pt_BR' }, function (_converse) {
+                const { __ } = _converse.env.i18n;
+                expect(__('Your message could not be sent because you are not connected.')).toBe(
+                    'Sua mensagem não pôde ser enviada porque você não está conectado.',
+                );
+                expect(__('Not connected')).toBe('Sem conexão');
+                expect(__('Sending…')).toBe('Enviando…');
+            }),
+        );
+    });
+
     describe('determineLocale', () => {
         it(
             'returns the preferred locale if supported',

@@ -5,7 +5,7 @@ import { getOpenPromise } from '@converse/openpromise';
 import { Model } from '@converse/skeletor';
 import log from '@converse/log';
 import { initStorage } from '../utils/storage.js';
-import { isAppHidden } from '../utils/environment.js';
+import { IS_BROWSER, isAppHidden } from '../utils/environment.js';
 import * as constants from './constants.js';
 import converse from './api/public.js';
 import api from './api/index.js';
@@ -24,6 +24,19 @@ const { CORRECTED_ATTRS } = constants;
 // compatibility fallback. Matches the preview length shown by the reply-context
 // UI (shared/chat/reply-context.js), so we never quote more than we'd display.
 const REPLY_FALLBACK_QUOTE_LENGTH = 80;
+
+/**
+ * The send attempts currently in flight, per message. A second attempt for the
+ * same message joins the running one instead of sending it twice.
+ * @type {WeakMap<import('./message').default, Promise<import('./message').default>>}
+ */
+const resending_messages = new WeakMap();
+
+/**
+ * The timers of the messages which wait for a reconnection before being sent.
+ * @type {WeakMap<import('./message').default, ReturnType<typeof setTimeout>>}
+ */
+const pending_send_timers = new WeakMap();
 
 /**
  * Whether a stored message and the attributes of an incoming one are from the same sender,
@@ -63,6 +76,12 @@ export default function ModelWithMessages(BaseModel) {
      */
 
     return class ModelWithMessages extends BaseModel {
+        /**
+         * The flush of the queued messages which is underway, if any.
+         * @type {Promise<void>|null}
+         */
+        #pending_flush = null;
+
         /** @param {...any} args */
         constructor(...args) {
             super(args[0], args[1]);
@@ -166,6 +185,16 @@ export default function ModelWithMessages(BaseModel) {
         }
 
         afterMessagesFetched() {
+            // A message still marked as pending was queued when the page was
+            // reloaded, so the timer that would have ended its wait is gone.
+            // Keep it as a failed one, which the next reconnection sends again.
+            this.messages.forEach(
+                /** @param {BaseMessage} m */ (m) => {
+                    if (m.get('send_status') === 'pending') {
+                        m.save({ send_status: 'failed', send_error_code: 'not-connected' });
+                    }
+                },
+            );
             this.pruneHistoryWhenScrolledDown();
             /**
              * Triggered whenever a {@link ModelWithMessages}
@@ -445,7 +474,13 @@ export default function ModelWithMessages(BaseModel) {
          * If the send fails, the promise rejects with the error, which has a `code` that
          * identifies the reason. The message is kept in the conversation with `send_status`
          * set to `failed` and `send_error_code` set to that code. Nothing resends it on its
-         * own. Call {@link resendFailedMessage} or {@link discardFailedMessage} to act on it.
+         * own, except a failure caused by the lack of a connection, which is sent again
+         * after reconnecting (see {@link resumeSendsAfterReconnection}). Call
+         * {@link resendFailedMessage} or {@link discardFailedMessage} to act on it.
+         *
+         * While a reconnection is underway, the message is instead kept as `pending`
+         * until the chat reconnects (at most `send_queue_timeout` milliseconds), so that
+         * the composer isn't held up and the message isn't needlessly failed.
          * @param {Object} [attrs] - A map of attributes to be saved on the message
          * @param {Object} [options]
          * @param {BaseMessage} [options.replying_to] - A message of this conversation that this
@@ -516,6 +551,21 @@ export default function ModelWithMessages(BaseModel) {
                 message = await this.createMessage(attrs);
             }
 
+            if (await this.#shouldQueueMessage()) {
+                this.#queueMessage(message);
+
+                /**
+                 * Triggered when a message is being sent out
+                 * @event _converse#sendMessage
+                 * @type {Object}
+                 * @param {Object} data
+                 * @property {(ChatBox|MUC)} data.chatbox
+                 * @property {(BaseMessage)} data.message
+                 */
+                api.trigger('sendMessage', { chatbox: this, message });
+                return message;
+            }
+
             await this.#sendStoredMessage(message);
 
             /**
@@ -528,6 +578,125 @@ export default function ModelWithMessages(BaseModel) {
              */
             api.trigger('sendMessage', { chatbox: this, message });
             return message;
+        }
+
+        /**
+         * Whether this send should wait for a reconnection instead of failing right
+         * away. Only a reconnection that's underway, or one that can be started, is
+         * worth waiting for: otherwise there is nothing that would ever send it.
+         * @returns {Promise<boolean>}
+         */
+        async #shouldQueueMessage() {
+            if (!IS_BROWSER) return false;
+            if (api.connection.authenticated()) return false;
+            if (navigator.onLine === false) return false;
+            if (!(api.settings.get('send_queue_timeout') > 0)) return false;
+
+            const connection = api.connection.get();
+            if (!connection?.has_connected) return false;
+
+            /** @returns {boolean} */
+            const is_reconnecting = () =>
+                !!connection.reconnecting || connection.status === Strophe.Status.RECONNECTING;
+
+            if (!is_reconnecting()) {
+                // A connection that still reports CONNECTED doesn't need bringing
+                // back: the missing authentication is either transient or the flag
+                // is stale, so the send fails right away as it always did.
+                if (connection.status === Strophe.Status.CONNECTED) return false;
+
+                // Some callers (attachments, location updates) don't ask for a
+                // reconnection themselves, so start one for them and check again.
+                // The login itself isn't awaited: status changes synchronously.
+                Promise.resolve(api.connection.reconnect()).catch((e) => log.debug(e));
+            }
+            return is_reconnecting();
+        }
+
+        /**
+         * Keeps the message until the chat reconnects, or until it waited for too long.
+         * @param {BaseMessage} message
+         */
+        #queueMessage(message) {
+            message.save({
+                send_status: 'pending',
+                send_error_code: undefined,
+                send_error_from: undefined,
+                send_can_send_unencrypted: undefined,
+            });
+            const timer = setTimeout(() => this.#onPendingSendTimeout(message), api.settings.get('send_queue_timeout'));
+            pending_send_timers.set(message, timer);
+        }
+
+        /**
+         * Gives up on waiting for the reconnection, and keeps the message as failed
+         * so that the next reconnection sends it (see {@link resumeSendsAfterReconnection}).
+         * @param {BaseMessage} message
+         */
+        #onPendingSendTimeout(message) {
+            this.#clearPendingTimer(message);
+
+            const giveUp = () => {
+                if (!this.messages.get(message.id) || message.get('send_status') !== 'pending') return;
+
+                message.save({ send_status: 'failed', send_error_code: 'not-connected' });
+                log.debug(`Gave up waiting for a connection to send message ${message.get('id')}`);
+
+                // The connection can come back just after the timeout fired.
+                if (api.connection.authenticated()) {
+                    this.resendFailedMessage(message).catch((e) => log.debug(e));
+                }
+            };
+
+            // A flush that's underway is sending this message: only decide once it
+            // has finished, so it can't be marked failed after it actually went out.
+            if (this.#pending_flush) {
+                this.#pending_flush.then(giveUp, giveUp);
+            } else {
+                giveUp();
+            }
+        }
+
+        /**
+         * @param {BaseMessage} message
+         */
+        #clearPendingTimer(message) {
+            const timer = pending_send_timers.get(message);
+            if (timer === undefined) return;
+            clearTimeout(timer);
+            pending_send_timers.delete(message);
+        }
+
+        /**
+         * Sends the messages which waited for the reconnection, in the order in which
+         * they were written. A second call joins the flush which is underway, so that
+         * a reconnection announced twice doesn't send a message twice.
+         * @returns {Promise<void>}
+         */
+        async #flushPendingMessages() {
+            if (!IS_BROWSER) return;
+            if (this.#pending_flush) return this.#pending_flush;
+
+            this.#pending_flush = (async () => {
+                for (const message of this.messages.models) {
+                    if (message.get('send_status') !== 'pending') continue;
+                    // The user may have discarded it in the meantime.
+                    if (!this.messages.get(message.id)) continue;
+                    this.#clearPendingTimer(message);
+                    try {
+                        await this.#sendStoredMessage(message);
+                    } catch (e) {
+                        // Keep going: one failure shouldn't hold up the ones behind it.
+                        log.debug(e);
+                    }
+                }
+            })();
+
+            try {
+                await this.#pending_flush;
+            } finally {
+                this.#pending_flush = null;
+            }
         }
 
         /**
@@ -552,6 +721,9 @@ export default function ModelWithMessages(BaseModel) {
                 // The connection can drop during the build, and api.send drops the stanza silently.
                 this.#throwIfNotConnected();
                 api.send(stanza);
+                if (message.get('send_status') === 'pending') {
+                    message.save({ send_status: undefined });
+                }
                 if (message.get('before_correction')) message.save({ before_correction: undefined });
             } catch (e) {
                 const { code, iq, can_send_unencrypted } =
@@ -570,24 +742,72 @@ export default function ModelWithMessages(BaseModel) {
 
         /**
          * Sends a failed message again. Only a call from the client resends a message,
-         * nothing resends on its own. The `attrs` apply to this attempt only: they are
-         * saved before the send and restored if it fails again. A failed attempt keeps
-         * its own failure, not the earlier one, since that's the one the user hasn't seen.
+         * unless it failed because there was no connection (see
+         * {@link resumeSendsAfterReconnection}). The `attrs` apply to this attempt only:
+         * they are saved before the send and restored if it fails again. A failed
+         * attempt keeps its own failure, not the earlier one, since that's the one the
+         * user hasn't seen.
          * @param {BaseMessage} message - A message whose `send_status` is `failed`.
          * @param {Object} [attrs] - Attributes to apply to this attempt.
          * @returns {Promise<BaseMessage>}
          */
         async resendFailedMessage(message, attrs = {}) {
-            this.#clearSendFailure(message);
-            const previous = Object.fromEntries(Object.keys(attrs).map((key) => [key, message.get(key)]));
-            message.save(attrs);
+            // A retry can land while an automatic resend is still in flight, so join it.
+            const in_progress = resending_messages.get(message);
+            if (in_progress) return in_progress;
+
+            const attempt = (async () => {
+                this.#clearSendFailure(message);
+                const previous = Object.fromEntries(Object.keys(attrs).map((key) => [key, message.get(key)]));
+                message.save(attrs);
+                try {
+                    await this.#sendStoredMessage(message);
+                } catch (e) {
+                    message.save(previous);
+                    throw e;
+                }
+                return message;
+            })();
+
+            resending_messages.set(message, attempt);
             try {
-                await this.#sendStoredMessage(message);
-            } catch (e) {
-                message.save(previous);
-                throw e;
+                return await attempt;
+            } finally {
+                resending_messages.delete(message);
             }
-            return message;
+        }
+
+        /**
+         * Sends again what waited for the reconnection. Queued messages go out
+         * first, in order, and then the messages which failed only because there was
+         * no connection. Such a message never reached the transport, so sending it
+         * again can't deliver it twice, which is why this runs on its own after a
+         * reconnection. Failures of any other kind are left for the user to deal with.
+         *
+         * Doesn't run outside a browser: the daemon reports a failed send right away
+         * and keeps doing so.
+         * @returns {Promise<void>}
+         */
+        async resumeSendsAfterReconnection() {
+            if (!IS_BROWSER) return;
+
+            await this.#flushPendingMessages();
+
+            const failed = this.messages.filter(
+                /** @param {BaseMessage} m */
+                (m) => m.get('send_status') === 'failed' && m.get('send_error_code') === 'not-connected',
+            );
+
+            for (const message of failed) {
+                // The user may have discarded it in the meantime.
+                if (!this.messages.get(message.id)) continue;
+                try {
+                    await this.resendFailedMessage(message);
+                } catch (e) {
+                    // Keep going: one failure shouldn't hold up the ones behind it.
+                    log.debug(e);
+                }
+            }
         }
 
         /**

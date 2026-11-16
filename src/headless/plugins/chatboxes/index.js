@@ -19,6 +19,8 @@ converse.plugins.add('converse-chatboxes', {
     initialize() {
         api.promises.add(['chatBoxesFetched', 'chatBoxesInitialized', 'privateChatsAutoJoined']);
 
+        api.settings.extend({ send_queue_timeout: 10000 });
+
         Object.assign(api, { chatboxes: chatboxes_api });
 
         Object.assign(_converse, { ChatBoxes }); // TODO: DEPRECATED
@@ -48,6 +50,7 @@ converse.plugins.add('converse-chatboxes', {
 
         api.listen.on('presencesInitialized', (reconnecting) => chatboxes.onConnected(reconnecting));
         api.listen.on('reconnected', () => chatboxes.forEach((m) => m.onReconnection()));
+        api.listen.on('chatReconnected', (chatbox) => chatbox.resumeSendsAfterReconnection?.());
         api.listen.on('clearSession', onClearSession);
 
         // XXX: Would be nice to keep track of the last open chat and to show that again.

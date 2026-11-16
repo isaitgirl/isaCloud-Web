@@ -33,9 +33,23 @@ export function getSendErrorMessages(code, details = {}) {
 }
 
 /**
- * Shows a failed send to the user in an alert. Call it once per failed send.
+ * Shows a failed send to the user. Call it once per failed send.
+ *
+ * A send that failed because the connection dropped is shown as a non-blocking
+ * toast, since the failed message already stays in the conversation with the
+ * reason and the retry and discard buttons. Other failures still use an alert.
  * @param {Error & {code?: string, iq?: Element}} e
  */
 export function alertSendError(e) {
-    api.alert('error', __('Error'), getSendErrorMessages(e.code, { from: e.iq?.getAttribute('from'), iq: e.iq }));
+    const messages = getSendErrorMessages(e.code, { from: e.iq?.getAttribute('from'), iq: e.iq });
+
+    if (e.code === 'not-connected') {
+        api.toast?.show?.('send-failed-not-connected', {
+            'type': 'warning', // A `danger` toast doesn't auto-hide, a warning hides after 5s.
+            'title': __('Not connected'),
+            'body': messages.join(' '),
+        });
+        return;
+    }
+    api.alert('error', __('Error'), messages);
 }
