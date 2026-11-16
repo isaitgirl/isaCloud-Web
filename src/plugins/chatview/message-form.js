@@ -290,7 +290,8 @@ export default class MessageForm extends CustomElement {
     }
 
     /**
-     * Handles the escape key press event to stop correcting a message.
+     * Handles the escape key press: cancel a correction, close a menu in the composer,
+     * or, when nothing else claims it, hide the conversation.
      * @param {KeyboardEvent} ev
      */
     onEscapePressed(ev) {
@@ -299,7 +300,19 @@ export default class MessageForm extends CustomElement {
         if (message) {
             ev.preventDefault();
             message.save('correcting', false);
+            return;
         }
+
+        // An open dropdown owns the key. Its own document-level Escape handler closes it,
+        // and Lexical only keeps focus in the editor while the menu is still visible, so
+        // the composer just leaves it alone instead of hiding the conversation.
+        if (this.querySelector('.dropdown-menu.show')) {
+            ev.preventDefault();
+            return;
+        }
+
+        ev.preventDefault();
+        u.safeSave(this.model, { hidden: true });
     }
 
     /**

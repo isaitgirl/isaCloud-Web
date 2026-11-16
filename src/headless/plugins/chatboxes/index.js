@@ -19,7 +19,7 @@ converse.plugins.add('converse-chatboxes', {
     initialize() {
         api.promises.add(['chatBoxesFetched', 'chatBoxesInitialized', 'privateChatsAutoJoined']);
 
-        api.settings.extend({ send_queue_timeout: 10000 });
+        api.settings.extend({ open_last_conversation: true, send_queue_timeout: 10000 });
 
         Object.assign(api, { chatboxes: chatboxes_api });
 
@@ -58,6 +58,8 @@ converse.plugins.add('converse-chatboxes', {
         // a groupchat still leaving its room would be shown again over the
         // login form.
         api.listen.on('chatBoxClosed', () => {
+            // The app shows its empty state instead of bringing another conversation forward.
+            if (!api.settings.get('open_last_conversation')) return;
             if (isUniView() && api.connection.connected()) {
                 _converse.state.chatboxes.find((c) => c.get('jid') && !c.get('closed'))?.maybeShow();
             }

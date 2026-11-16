@@ -59,12 +59,31 @@ class ChatApp extends CustomElement {
         const body = document.querySelector('body');
         body.classList.add(`converse-${api.settings.get('view_mode')}`);
 
+        // A deployment can open on its empty state instead of the conversation left open
+        // in the previous session. The fetch promise resolves once per page session, so
+        // the listener covers a logout/login without a reload, and the wait covers the
+        // case where the fetch finished before this view mounted. Reconnects don't refetch.
+        if (!api.settings.get('open_last_conversation')) {
+            this.listenTo(_converse, 'chatBoxesFetched', () => this.hideVisibleConversations());
+            api.waitUntil('chatBoxesFetched').then(() => this.hideVisibleConversations());
+        }
+
         /**
          * Triggered once the ChatBoxViews view-collection has been initialized
          * @event _converse#chatBoxViewsInitialized
          * @example _converse.api.listen.on('chatBoxViewsInitialized', () => { ... });
          */
         api.trigger('chatBoxViewsInitialized');
+    }
+
+    /**
+     * Hide every restored conversation, so the app opens on its empty state. This is not
+     * destructive: the boxes stay in the collection with their drafts and place in the list.
+     */
+    hideVisibleConversations() {
+        this.model
+            .filter((c) => c.get('type') !== CONTROLBOX_TYPE && !c.get('hidden') && !c.get('closed'))
+            .forEach((c) => u.safeSave(c, { hidden: true }));
     }
 
     connectedCallback() {

@@ -110,6 +110,33 @@ describe('The Chat app URL routing', function () {
     );
 
     it(
+        'opens a deep-linked chat even when the home state hides restored conversations',
+        mock.initConverse(
+            converse,
+            ['chatBoxesFetched'],
+            { enable_url_routing: true, open_last_conversation: false, view_mode: 'fullscreen' },
+            async function (_converse) {
+                const { state } = _converse;
+                await mock.waitForRoster(_converse, 'current', 1);
+                const mercutio = 'mercutio@montague.lit';
+
+                // Cold deep-link: the hash is set without a `hashchange`, so only the app
+                // mounted below sees it. Its boot hide runs before the route opens the chat.
+                history.replaceState(
+                    null,
+                    '',
+                    `${location.pathname}${location.search}${buildChatRoute({ view: 'chat', jid: mercutio })}`,
+                );
+                const el = mountChatApp();
+                await u.waitUntil(() => state.chatboxes.get(mercutio)?.get('hidden') === false);
+
+                el.remove();
+                clearHash();
+            },
+        ),
+    );
+
+    it(
         "does not clobber another app's hash (e.g. #converse/social) nor background chats off a foreign hash",
         mock.initConverse(
             converse,

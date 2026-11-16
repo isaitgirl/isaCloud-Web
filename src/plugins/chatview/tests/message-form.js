@@ -91,6 +91,8 @@ describe('A message form', function () {
 
             expect(message.get('correcting')).toBe(false);
             expect(escEvent.defaultPrevented).toBe(true);
+            // Cancelling the correction leaves the conversation open.
+            expect(view.model.get('hidden')).toBeFalsy();
         }),
     );
 

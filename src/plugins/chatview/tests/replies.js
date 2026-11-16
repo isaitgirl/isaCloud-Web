@@ -198,7 +198,7 @@ describe('XEP-0461 Message Replies', function () {
         );
 
         it(
-            'leaves the reply in place when Escape is pressed in the message field',
+            'keeps the reply in place and hides the conversation when Escape is pressed in the message field',
             mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
                 await mock.waitForRoster(_converse, 'current', 1);
                 await mock.openControlBox(_converse);
@@ -214,8 +214,9 @@ describe('XEP-0461 Message Replies', function () {
                 await u.waitUntil(() => view.querySelector('.composer-panel--context'));
                 await mock.pressComposerKey(view, 'Escape');
 
+                await u.waitUntil(() => view.model.get('hidden') === true);
                 expect(view.model.get('reply_to_id')).toBeDefined();
-                expect(view.querySelector('.composer-panel--context')).not.toBeNull();
+                expect(_converse.state.chatboxes.get(contact_jid)).toBe(view.model);
             }),
         );
 
