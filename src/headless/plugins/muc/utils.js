@@ -231,15 +231,17 @@ export function isInfoVisible(code) {
  * of strings (groupchat JIDs) or objects (with groupchat JID and other settings).
  */
 export async function autoJoinRooms() {
+    // When the app opens on its empty state, the rooms still join in the background.
+    const hidden = !api.settings.get('open_last_conversation');
     await Promise.all(
         api.settings.get('auto_join_rooms').map((muc) => {
             if (typeof muc === 'string') {
                 if (_converse.state.chatboxes.where({ 'jid': muc }).length) {
                     return Promise.resolve();
                 }
-                return api.rooms.open(muc);
+                return api.rooms.open(muc, hidden ? { hidden: true } : {});
             } else if (muc instanceof Object) {
-                return api.rooms.open(muc.jid, { ...muc });
+                return api.rooms.open(muc.jid, { ...muc, hidden: muc.hidden ?? hidden });
             } else {
                 log.error('Invalid muc criteria specified for "auto_join_rooms"');
                 return Promise.resolve();

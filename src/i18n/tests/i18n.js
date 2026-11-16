@@ -25,6 +25,9 @@ describe('i18n', () => {
                 expect(__('Sending…')).toBe('Enviando…');
                 expect(__('Notes to self')).toBe('Notas para si mesmo');
                 expect(__('Open your notes')).toBe('Abrir suas notas');
+                expect(__('Your personal messages are end-to-end encrypted')).toBe(
+                    'Suas mensagens pessoais são criptografadas ponta a ponta',
+                );
             }),
         );
     });

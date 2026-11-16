@@ -101,6 +101,33 @@ describe('Groupchats', function () {
         );
 
         it(
+            'stays hidden when opened at boot with the home state',
+            mock.initConverse(
+                converse,
+                ['discoInitialized'],
+                {
+                    'view_mode': 'fullscreen',
+                    'auto_join_rooms': ['orchard@chat.shakespeare.lit'],
+                    'open_last_conversation': false,
+                },
+                async function (_converse) {
+                    const { api } = _converse;
+                    const muc_jid = 'orchard@chat.shakespeare.lit';
+                    api.rooms.get(muc_jid);
+                    await mock.waitForMUCDiscoInfo(_converse, muc_jid);
+                    await mock.waitForReservedNick(_converse, muc_jid, 'romeo');
+                    await mock.receiveOwnMUCPresence(_converse, muc_jid, 'romeo');
+
+                    await api.waitUntil('roomsAutoJoined');
+
+                    const room = await u.waitUntil(() => _converse.chatboxes.get(muc_jid));
+                    // Joined in the background: listed, but not taking the empty home state.
+                    expect(room.get('hidden')).toBe(true);
+                },
+            ),
+        );
+
+        it(
             'Can be configured to show cached messages before being joined',
             mock.initConverse(
                 converse,

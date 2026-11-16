@@ -3677,6 +3677,10 @@ msgstr "Notas para si mesmo"
 msgid "Open your notes"
 msgstr "Abrir suas notas"
 
+#: src/apps/chat/templates/chats.js
+msgid "Your personal messages are end-to-end encrypted"
+msgstr "Suas mensagens pessoais são criptografadas ponta a ponta"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

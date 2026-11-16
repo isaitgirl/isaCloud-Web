@@ -38,6 +38,11 @@
         width: auto;
         max-width: none;
     }
+    // The empty area takes the conversation card's place on the right.
+    .chat-placeholder {
+        left: calc(#{$share} + var(--isa-gap) * 0.5);
+        right: var(--isa-gap);
+    }
 }
 
 &.theme-isacloud,
@@ -358,6 +363,21 @@
             #controlbox:not(.logged-out) .flyout {
                 border-radius: var(--isa-card-radius);
             }
+            // The empty area is a card like the conversation's, in the same place
+            // (the split mixin below gives it the same left and right).
+            .chat-placeholder {
+                position: absolute;
+                top: var(--isa-gap);
+                bottom: var(--isa-gap);
+                // `.row > *` gives every direct child a full width; the card is
+                // sized by its left/right instead.
+                width: auto;
+                max-width: none;
+                padding: 0;
+                border-radius: var(--isa-card-radius);
+                background-color: var(--isa-card-bg);
+                box-shadow: var(--isa-card-shadow);
+            }
         }
 
         // The messages and the composer become a floating box in each card.
@@ -492,6 +512,12 @@
                 height: 100%;
                 margin: 0;
                 border-radius: 0;
+            }
+            // No floating card on a phone: the conversation list owns the screen,
+            // and there is no ESC key to close a conversation. Keep the placeholder
+            // out of the way instead of covering the list.
+            .chat-placeholder {
+                display: none;
             }
         }
     }

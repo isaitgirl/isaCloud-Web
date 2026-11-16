@@ -124,6 +124,8 @@ describe('Emojis', function () {
                 const dropdown = view.querySelector('converse-emoji-dropdown');
                 await u.waitUntil(() => !dropdown.querySelector('.dropdown-menu').classList.contains('show'), 1000);
                 expect(dropdown.querySelector('.dropdown-menu').classList.contains('show')).toBe(false);
+                // The picker claimed the key, so the conversation stays open.
+                expect(view.model.get('hidden')).toBeFalsy();
             }),
         );
 

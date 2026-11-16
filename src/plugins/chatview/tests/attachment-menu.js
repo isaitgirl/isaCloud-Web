@@ -337,20 +337,25 @@ describe('The attachment menu and the keyboard', function () {
 
             await u.waitUntil(() => !u.isVisible(view.querySelector('.attachment-menu')));
             expect(document.activeElement).toBe(editable);
+            // The menu claimed the key, so the conversation stays open.
+            expect(view.model.get('hidden')).toBeFalsy();
         }),
     );
 
     it(
-        'leaves the message field on Escape when no menu is open',
+        'hides the conversation on Escape when no menu is open',
         initConverse(converse, ['chatBoxesFetched'], settings, async function (_converse) {
             const view = await openChat(_converse);
+            const model = view.model;
 
             // Clicking gives the editor a selection, which is what Escape acts on.
             const editable = view.querySelector('.chat-textarea');
             await userEvent.click(editable);
             await userEvent.keyboard('{Escape}');
 
-            await u.waitUntil(() => document.activeElement !== editable);
+            await u.waitUntil(() => model.get('hidden') === true);
+            // Hiding is not closing: the chatbox is still there to be reopened.
+            expect(_converse.state.chatboxes.get(model.get('jid'))).toBe(model);
         }),
     );
 

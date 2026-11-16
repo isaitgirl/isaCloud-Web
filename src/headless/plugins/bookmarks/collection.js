@@ -130,11 +130,14 @@ class Bookmarks extends Collection {
      */
     async openBookmarkedRoom(bookmark) {
         if (api.settings.get('muc_respect_autojoin') && bookmark.get('autojoin')) {
+            const open_last_conversation = api.settings.get('open_last_conversation');
             const groupchat = await api.rooms.create(bookmark.get('jid'), {
                 nick: bookmark.get('nick'),
                 password: bookmark.get('password'),
+                // The room still joins; it just doesn't take the foreground on the empty home state.
+                ...(open_last_conversation ? {} : { hidden: true }),
             });
-            groupchat.maybeShow();
+            if (open_last_conversation) groupchat.maybeShow();
         }
         return bookmark;
     }

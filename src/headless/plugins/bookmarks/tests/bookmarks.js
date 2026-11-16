@@ -269,6 +269,50 @@ describe('A bookmark', function () {
         );
 
         it(
+            'joins the room hidden when the app opens on its empty state',
+            mock.initConverse(converse, [], { open_last_conversation: false }, async function (_converse) {
+                const { state } = _converse;
+                await mock.waitForRoster(_converse, 'current', 0);
+                await mock.waitUntilBookmarksReturned(_converse);
+                const maybe_show = spyOn(_converse.exports.MUC.prototype, 'maybeShow');
+
+                const jid = 'theplay@conference.shakespeare.lit';
+                state.bookmarks.create({ jid, autojoin: true, name: 'The Play', nick: '' });
+
+                await mock.waitForMUCDiscoInfo(_converse, jid);
+                await mock.waitForReservedNick(_converse, jid, '');
+                await u.waitUntil(() => state.chatboxes.length === 1);
+
+                const muc = state.chatboxes.get(jid);
+                expect(muc).toBeTruthy();
+                // Joined in the background: listed, but not in the foreground.
+                expect(muc.get('hidden')).toBe(true);
+                expect(maybe_show).not.toHaveBeenCalled();
+            }),
+        );
+
+        it(
+            'joins the room visible when conversations open by default',
+            mock.initConverse(converse, [], {}, async function (_converse) {
+                const { state } = _converse;
+                await mock.waitForRoster(_converse, 'current', 0);
+                await mock.waitUntilBookmarksReturned(_converse);
+                const maybe_show = spyOn(_converse.exports.MUC.prototype, 'maybeShow').and.callThrough();
+
+                const jid = 'theplay@conference.shakespeare.lit';
+                state.bookmarks.create({ jid, autojoin: true, name: 'The Play', nick: '' });
+
+                await mock.waitForMUCDiscoInfo(_converse, jid);
+                await mock.waitForReservedNick(_converse, jid, '');
+                await u.waitUntil(() => state.chatboxes.length === 1);
+
+                const muc = state.chatboxes.get(jid);
+                expect(muc.get('hidden')).toBe(false);
+                expect(maybe_show).toHaveBeenCalled();
+            }),
+        );
+
+        it(
             'has autojoin set to false upon leaving',
             mock.initConverse(converse, [], {}, async function (_converse) {
                 await mock.waitForRoster(_converse, 'current', 0);
