@@ -7,6 +7,20 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-27 — 2026-11-16 (`8b97bb2bc`)
+
+- `fix(chat)`: mensagens digitadas durante a reconexão ficam na fila e são
+  enviadas quando a conversa volta; falhas `not-connected` são reenviadas
+  sozinhas após a reconexão, em vez de exigirem um novo clique.
+- `fix(chat)`: o erro de falta de conexão vira um aviso discreto (toast) e a
+  conversa mostra "Reconectando…" acima do compositor, legível no tema escuro.
+  A reconexão é tentada na hora em `online`, `pageshow`, `focus` e ao voltar
+  para a aba.
+- `fix(isacloud)`: `ping_interval` caiu para 30 s.
+- `fix(chat)`: as mensagens de falha de envio, os botões de reenvio e o
+  indicador "Enviando…" foram traduzidos para pt_BR. A versão exibida no
+  perfil e no rodapé passa a ser `v15-27` (`VERSION_NAME`).
+
 ## v15-26 — 2026-11-14 (`b833b9188`)
 
 - `feat(roster)`: a lista de contatos passa a ser totalmente alfabética pelo
