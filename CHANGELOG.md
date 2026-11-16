@@ -7,7 +7,7 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
-## v15-27 — 2026-11-16 (`8b97bb2bc`)
+## v15-27 — 2026-11-16 (`30b4a1433`)
 
 - `fix(chat)`: mensagens digitadas durante a reconexão ficam na fila e são
   enviadas quando a conversa volta; falhas `not-connected` são reenviadas
