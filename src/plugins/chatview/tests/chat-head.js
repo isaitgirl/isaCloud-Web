@@ -93,7 +93,7 @@ describe('The chat heading', function () {
     );
 
     it(
-        'shows our own status message in a chat with ourselves',
+        'does not show our own status message in a chat with ourselves',
         mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 1);
             // Not mock.openChatBoxFor: that goes through the roster, and we're
@@ -102,13 +102,12 @@ describe('The chat heading', function () {
             await _converse.api.chats.open(own_jid, {}, true);
             const view = await u.waitUntil(() => _converse.chatboxviews.get(own_jid));
 
-            // Our own profile keeps the free text in `status_message`. Its
-            // `status` is the availability, so reading that here would put
-            // "away" under our name.
+            // A chat with ourselves is where "Notes to self" lives. Our own
+            // availability and status message are not a contact's status, so
+            // nothing goes under the name.
             _converse.state.profile.set({ status: 'away', status_message: 'Away from keyboard' });
-
-            const desc = await u.waitUntil(() => view.querySelector('.chat-head__desc'));
-            expect(desc.textContent.trim()).toBe('Away from keyboard');
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(view.querySelector('.chat-head__desc')).toBeNull();
         }),
     );
 

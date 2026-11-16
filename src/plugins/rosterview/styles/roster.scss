@@ -168,4 +168,17 @@
             }
         }
     }
+
+    // "Notes to self" is the first item of the contacts section, outside the
+    // group's <ul>, so the group's `.list-item` height does not reach it.
+    #converse-roster .notes-to-self {
+        height: 2.5em;
+
+        .list-item-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75em;
+            width: 100%;
+        }
+    }
 }

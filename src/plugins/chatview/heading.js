@@ -6,7 +6,7 @@ import 'shared/modals/user-details.js';
 
 import './styles/chat-head.scss';
 
-const { Strophe } = converse.env;
+const { Strophe, u } = converse.env;
 
 export default class ChatHeading extends CustomElement {
     constructor() {
@@ -83,7 +83,8 @@ export default class ChatHeading extends CustomElement {
         ];
 
         const domain = _converse.session.get('domain');
-        if (domain && (await api.disco.supports(Strophe.NS.BLOCKING, domain))) {
+        const is_self = u.isSameBareJID(this.model.get('jid'), _converse.session.get('bare_jid'));
+        if (!is_self && domain && (await api.disco.supports(Strophe.NS.BLOCKING, domain))) {
             const blocklist = await api.blocklist.get();
             if (blocklist.get(this.model.get('jid'))) {
                 buttons.push({

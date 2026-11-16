@@ -26,6 +26,7 @@ converse.plugins.add('converse-chat', {
             'auto_join_private_chats': [],
             'clear_messages_on_reconnection': false,
             'filter_by_resource': false,
+            'notes_to_self': false,
             'prune_messages_above': undefined,
             'pruning_behavior': 'unscrolled',
             'send_chat_markers': ['received', 'displayed', 'acknowledged'],

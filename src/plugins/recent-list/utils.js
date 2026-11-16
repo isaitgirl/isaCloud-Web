@@ -2,7 +2,7 @@
  * @typedef {import('@converse/headless').Model} Model
  * @typedef {'chat'|'group'|'channel'} ConversationKind
  */
-import { constants, converse, u } from '@converse/headless';
+import { _converse, api, constants, converse, u } from '@converse/headless';
 import { __ } from 'i18n';
 
 const { dayjs } = converse.env;
@@ -15,6 +15,27 @@ const URL_ONLY_REGEX = /^https?:\/\/\S+$/;
 export function isConversation(model) {
     const type = model.get('type');
     return type === PRIVATE_CHAT_TYPE || type === CHATROOMS_TYPE;
+}
+
+/**
+ * Whether the conversation is a 1:1 chat with our own bare JID.
+ * @param {Model} model
+ * @returns {boolean}
+ */
+export function isSelfChat(model) {
+    return (
+        model.get('type') === PRIVATE_CHAT_TYPE && u.isSameBareJID(model.get('jid'), _converse.session.get('bare_jid'))
+    );
+}
+
+/**
+ * Whether the conversation is the "Notes to self" chat, which only exists for
+ * the user's own JID and when the setting is enabled.
+ * @param {Model} model
+ * @returns {boolean}
+ */
+export function isNotesToSelf(model) {
+    return api.settings.get('notes_to_self') && isSelfChat(model);
 }
 
 /**
@@ -41,13 +62,15 @@ export function isDisplayableMessage(message) {
 
 /**
  * Whether a conversation has something to show in the recent list. 1:1 chats
- * are always listed. A groupchat is listed while its initial history fetch is
+ * are always listed, except "Notes to self", which only appears once it has a
+ * displayable message. A groupchat is listed while its initial history fetch is
  * still in flight, and afterwards only if it has a displayable message, so a
  * room whose archive is empty doesn't clutter the list.
  * @param {Model} model
  * @returns {boolean}
  */
 export function hasConversationContent(model) {
+    if (isNotesToSelf(model)) return !!getLastDisplayableMessage(model);
     if (model.get('type') !== CHATROOMS_TYPE) return true;
     if (!model.session?.get('mam_initialized')) return true;
     return !!getLastDisplayableMessage(model);
@@ -119,6 +142,7 @@ function getPreviewText(message) {
  * @returns {string}
  */
 function getPreviewPrefix(model, message) {
+    if (isNotesToSelf(model)) return '';
     if (message.get('sender') === 'me') return __('You');
     if (getConversationKind(model) === 'chat') return '';
     return message.getDisplayName?.() || message.get('nick') || '';
