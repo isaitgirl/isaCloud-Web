@@ -1,12 +1,24 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-27** · atualizada em **16/11/2026**
+Versão atual: **v15-28** · atualizada em **16/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-28 — 16/11/2026
+
+- 📝 **Notas para si mesmo:** agora existe um contato no topo de Contatos para
+  você mandar mensagens para si mesmo. A conversa aparece nos recentes depois da
+  primeira nota.
+- ⌨️ **ESC fecha a conversa:** com o cursor na caixa de mensagem, ESC esconde a
+  conversa sem sair de grupos ou canais. A área vazia mostra o balão, a versão e
+  o aviso de criptografia, e é a página inicial do isaCloud.
+- 🔐 **Login ao fechar o navegador:** o isaCloud pede login de novo quando você
+  fecha o navegador. Suas conversas, chaves OMEMO e configurações continuam
+  guardadas em cada conta.
 
 ### v15-27 — 16/11/2026
 

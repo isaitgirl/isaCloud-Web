@@ -7,6 +7,19 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-28 — 2026-11-16 (`65338e64f`)
+
+- `feat(chat)`: “Notas para si mesmo” vira o primeiro item da seção Contatos e abre
+  uma conversa normal com o próprio JID; ela só aparece nos recentes depois da
+  primeira nota e não tem “Remove from list” (`44115b55c`).
+- `feat(chat)`: ESC na caixa de mensagem esconde a conversa sem sair da sala; a
+  área da direita mostra o balão, a versão e o aviso de criptografia. A página
+  inicial do isaCloud fica nesse estado vazio, e bookmarks/`auto_join_rooms`
+  entram escondidos (`346900c0a`).
+- `feat(isacloud)`: o login é pedido de novo quando o navegador fecha, por meio
+  de um cookie de sessão; histórico, OMEMO e configurações continuam guardados
+  (`36b254662`).
+
 ## v15-27 — 2026-11-16 (`30b4a1433`)
 
 - `fix(chat)`: mensagens digitadas durante a reconexão ficam na fila e são
