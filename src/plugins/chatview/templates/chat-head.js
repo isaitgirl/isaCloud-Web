@@ -1,6 +1,6 @@
 import { html } from 'lit';
 import { until } from 'lit/directives/until.js';
-import { _converse, constants } from '@converse/headless';
+import { _converse, constants, u } from '@converse/headless';
 import { __ } from 'i18n';
 import { getStandaloneButtons, getDropdownButtons } from 'shared/chat/utils.js';
 
@@ -22,6 +22,9 @@ export default (el) => {
     const contact = el.model.contact;
     const status =
         contact instanceof _converse.exports.Profile ? contact.get('status_message') : contact?.get('status');
+    // Our own profile's status is not the status of a contact, so it is not
+    // shown as the description of the "Notes to self" chat.
+    const is_self = u.isSameBareJID(jid, _converse.session.get('bare_jid'));
 
     const i18n_profile = __("The User's Profile Image");
     const display_name = el.model.getDisplayName();
@@ -62,7 +65,7 @@ export default (el) => {
                                 : display_name
                         }
                     </div>
-                    ${status ? html`<p class="chat-head__desc">${status}</p>` : ''}
+                    ${status && !is_self ? html`<p class="chat-head__desc">${status}</p>` : ''}
                 </div>
             </div>
             <div class="chatbox-title__buttons btn-toolbar g-0">

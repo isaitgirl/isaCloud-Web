@@ -115,6 +115,12 @@ export default (el) => {
         `);
     }
 
+    const profile = _converse.state.profile;
+    const openNotesToSelf = (/** @type {Event} */ ev) => {
+        ev.preventDefault();
+        api.trigger('openConversation', { view: 'chat', jid: _converse.session.get('bare_jid') });
+    };
+
     return html`
         <div class="d-flex controlbox-padded">
             <span class="controlbox-heading controlbox-heading--contacts">
@@ -153,6 +159,28 @@ export default (el) => {
                           .template=${tplRosterFilter}
                           .model=${_converse.state.roster_filter}
                       ></converse-list-filter>`
+                    : ''
+            }
+            ${
+                api.settings.get('notes_to_self') && profile
+                    ? html`<div class="list-item d-flex controlbox-padded notes-to-self">
+                          <a
+                              class="list-item-link cbox-list-item open-chat"
+                              href="#"
+                              title="${__('Open your notes')}"
+                              @click=${openNotesToSelf}
+                          >
+                              <converse-avatar
+                                  .model=${profile}
+                                  class="avatar"
+                                  name="${profile.getDisplayName()}"
+                                  nonce=${profile.vcard?.get('vcard_updated')}
+                                  height="30"
+                                  width="30"
+                              ></converse-avatar>
+                              <span class="contact-name">${__('Notes to self')}</span>
+                          </a>
+                      </div>`
                     : ''
             }
             ${repeat(

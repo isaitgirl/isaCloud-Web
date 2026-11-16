@@ -64,4 +64,24 @@ describe('A ChatBox', function () {
             expect(newest_msg.get('message')).toBe('This is a chat message');
         }),
     );
+
+    it(
+        'is called "Notes to self" when it is a chat with our own JID and the setting is on',
+        mock.initConverse(
+            converse,
+            ['rosterInitialized', 'chatBoxesInitialized'],
+            { notes_to_self: true },
+            async (_converse) => {
+                await mock.waitForRoster(_converse, 'current', 1);
+                const chatbox = await _converse.api.chats.get(_converse.bare_jid, {}, true);
+                expect(chatbox.contact).toBe(_converse.state.profile);
+                expect(chatbox.getDisplayName()).toBe('Notes to self');
+
+                // A normal 1:1 chat keeps the contact's name.
+                const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+                await mock.openChatBoxFor(_converse, contact_jid);
+                expect(_converse.state.chatboxes.get(contact_jid).getDisplayName()).not.toBe('Notes to self');
+            },
+        ),
+    );
 });

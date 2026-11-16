@@ -183,6 +183,11 @@ class ChatBox extends ModelWithVCard(ModelWithMessages(ModelWithContact(ColorAwa
      * @returns {string|null}
      */
     getDisplayName() {
+        if (api.settings.get('notes_to_self') && u.isSameBareJID(this.get('jid'), _converse.session.get('bare_jid'))) {
+            const { __ } = _converse;
+            return __('Notes to self');
+        }
+
         if (this.contact) {
             const display_name = this.contact.getDisplayName({ no_jid: true });
             if (display_name) return display_name;

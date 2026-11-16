@@ -323,3 +323,99 @@ describe('An open groupchat', function () {
         }),
     );
 });
+
+describe('The "Notes to self" conversation', function () {
+    // The isaCloud server allows messaging JIDs outside the roster, which is
+    // what a chat with our own JID is.
+    const NOTES_SETTINGS = { ...SETTINGS, allow_non_roster_messaging: true, notes_to_self: true };
+
+    /** @param {any} _converse */
+    async function openNotesToSelfChat(_converse) {
+        const chat = await _converse.api.chats.open(_converse.bare_jid);
+        await chat.initialized;
+        return chat;
+    }
+
+    it(
+        'only appears in the conversation list once it has a message, without the "You:" prefix',
+        mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            await openNotesToSelfChat(_converse);
+            const list = await getRecentList(_converse);
+            expect(rowJIDs(list)).not.toContain(_converse.bare_jid);
+
+            await _converse.handleMessageStanza(
+                mock.createChatMessage(_converse, _converse.bare_jid, 'Minha primeira nota'),
+            );
+            const self_jid = _converse.bare_jid;
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(self_jid));
+            const row = currentList(_converse).querySelector(`.recent-item[data-jid="${self_jid}"]`);
+            expect(row.querySelector('.recent-item__name').textContent.trim()).toBe('Notes to self');
+            expect(row.querySelector('.recent-item__prefix')).toBeNull();
+            expect(previewOf(currentList(_converse), self_jid)).toBe('Minha primeira nota');
+        }),
+    );
+
+    it(
+        'is the first item of the contacts section, and opens the chat with our own JID',
+        mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const list = await getRecentList(_converse);
+            list.querySelector('.recent-list__contacts-btn').click();
+
+            const roster = await u.waitUntil(() => currentList(_converse).querySelector('#converse-roster'));
+            const row = await u.waitUntil(() => roster.querySelector('.notes-to-self'));
+            expect(row.querySelector('.contact-name').textContent.trim()).toBe('Notes to self');
+            expect(row.querySelector('.list-item-link').getAttribute('title')).toBe('Open your notes');
+
+            // It sits before the first group and outside it, above the contacts.
+            const first_group = roster.querySelector('.roster-group');
+            expect(row.closest('.roster-group')).toBeNull();
+            expect(first_group.previousElementSibling).toBe(row);
+
+            const trigger = vi.spyOn(_converse.api, 'trigger');
+            row.querySelector('.list-item-link').click();
+            expect(trigger).toHaveBeenCalledWith('openConversation', { view: 'chat', jid: _converse.bare_jid });
+        }),
+    );
+
+    it(
+        'has no "Remove from list" menu in the conversation list, unlike other 1:1 chats',
+        mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.getContactJID(0);
+            await mock.openChatBoxFor(_converse, contact_jid);
+            await _converse.handleMessageStanza(mock.createChatMessage(_converse, contact_jid, 'Oi'));
+
+            await openNotesToSelfChat(_converse);
+            await _converse.handleMessageStanza(mock.createChatMessage(_converse, _converse.bare_jid, 'Uma nota'));
+
+            const list = await getRecentList(_converse);
+            const self_jid = _converse.bare_jid;
+            await u.waitUntil(() => rowJIDs(list).includes(self_jid));
+            const self_row = list.querySelector(`.recent-item[data-jid="${self_jid}"]`);
+            const contact_row = list.querySelector(`.recent-item[data-jid="${contact_jid}"]`);
+            expect(self_row.querySelector('converse-dropdown')).toBeNull();
+            expect(contact_row.querySelector('converse-dropdown')).not.toBeNull();
+        }),
+    );
+
+    it(
+        'has no status line and no block button in the chat header',
+        mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            await mock.openControlBox(_converse);
+            // Our own profile's status is what the header would otherwise show.
+            _converse.state.profile.set('status_message', 'Trabalhando nas notas');
+            await openNotesToSelfChat(_converse);
+
+            const view = await u.waitUntil(() => _converse.chatboxviews.get(_converse.bare_jid));
+            await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .show-user-details-modal'));
+            expect(view.querySelector('.chat-head__desc')).toBeNull();
+            expect(view.querySelector('.block-user')).toBeNull();
+            expect(view.querySelector('.unblock-user')).toBeNull();
+            // "Details" and "Close" stay.
+            expect(view.querySelector('.close-chatbox-button')).not.toBeNull();
+        }),
+    );
+});

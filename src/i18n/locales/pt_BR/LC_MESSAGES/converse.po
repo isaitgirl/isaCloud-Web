@@ -3669,6 +3669,14 @@ msgstr "Esta mensagem não pôde ser enviada sem criptografia."
 msgid "Sending…"
 msgstr "Enviando…"
 
+#: src/headless/plugins/chat/model.js
+msgid "Notes to self"
+msgstr "Notas para si mesmo"
+
+#: src/plugins/recent-list/templates/recent-list.js
+msgid "Open your notes"
+msgstr "Abrir suas notas"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

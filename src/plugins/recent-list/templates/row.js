@@ -5,7 +5,14 @@
 import { html } from 'lit';
 import { u } from '@converse/headless';
 import { __ } from 'i18n';
-import { formatActivityTime, formatUnreadCount, getPreview, getUnreadCount, isUnread } from '../utils.js';
+import {
+    formatActivityTime,
+    formatUnreadCount,
+    getPreview,
+    getUnreadCount,
+    isNotesToSelf,
+    isUnread,
+} from '../utils.js';
 
 /** @param {Model} model */
 function isCurrentlyOpen(model) {
@@ -55,25 +62,28 @@ function tplMenuItem({ text, title, icon_class, handler }) {
  */
 export default function tplRecentRow(el, { model, kind, activity }) {
     const is_room = kind !== 'chat';
+    const is_notes = isNotesToSelf(model);
     const is_unread = isUnread(model);
     const preview = getPreview(model);
-    const buttons = is_room
-        ? [
-              tplMenuItem({
-                  text: __('Leave this groupchat'),
-                  title: __('Leave this groupchat'),
-                  icon_class: 'fa-sign-out-alt',
-                  handler: () => el.leaveRoom(model),
-              }),
-          ]
-        : [
-              tplMenuItem({
-                  text: __('Remove from list'),
-                  title: __('Remove from list'),
-                  icon_class: 'fa-times',
-                  handler: () => el.removeChat(model),
-              }),
-          ];
+    const buttons = is_notes
+        ? []
+        : is_room
+          ? [
+                tplMenuItem({
+                    text: __('Leave this groupchat'),
+                    title: __('Leave this groupchat'),
+                    icon_class: 'fa-sign-out-alt',
+                    handler: () => el.leaveRoom(model),
+                }),
+            ]
+          : [
+                tplMenuItem({
+                    text: __('Remove from list'),
+                    title: __('Remove from list'),
+                    icon_class: 'fa-times',
+                    handler: () => el.removeChat(model),
+                }),
+            ];
 
     return html`<li
         class="recent-item ${isCurrentlyOpen(model) ? 'open' : ''} ${is_unread ? 'unread' : ''} ${model.get('closed') ? 'closed' : ''}"
@@ -104,6 +114,13 @@ export default function tplRecentRow(el, { model, kind, activity }) {
             </span>
             <time class="recent-item__time">${formatActivityTime(activity)}</time>
         </a>
-        <converse-dropdown class="btn-group dropstart recent-item__action" .items=${buttons}></converse-dropdown>
+        ${
+            buttons.length
+                ? html`<converse-dropdown
+                      class="btn-group dropstart recent-item__action"
+                      .items=${buttons}
+                  ></converse-dropdown>`
+                : ''
+        }
     </li>`;
 }

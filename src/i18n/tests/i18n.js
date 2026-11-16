@@ -23,6 +23,8 @@ describe('i18n', () => {
                 );
                 expect(__('Not connected')).toBe('Sem conexão');
                 expect(__('Sending…')).toBe('Enviando…');
+                expect(__('Notes to self')).toBe('Notas para si mesmo');
+                expect(__('Open your notes')).toBe('Abrir suas notas');
             }),
         );
     });
