@@ -78,6 +78,8 @@ export class Texture extends String {
      * @param {Function} [options.onImgClick] - Callback for when an inline rendered image has been clicked
      * @param {Function} [options.onImgLoad] - Callback for when an inline rendered image has been loaded
      * @param {boolean} [options.hide_media_urls] - Callback for when an inline rendered image has been loaded
+     * @param {boolean} [options.isacloud_sticker] - Whether the message is an iCloud sticker, which is
+     *  always rendered as a plain image, even when it's a GIF or has no image file extension
      */
     constructor(text, offset = 0, options = {}) {
         super(text);
@@ -125,19 +127,18 @@ export class Texture extends String {
         const { url } = url_obj;
         const filtered_url = filterQueryParamsFromURL(url);
         let template;
-        // WebP comes first, since a `.gif` URL may be served as WebP (going by its headers).
-        if (url_obj.is_webp && this.shouldRenderMedia(url, 'image')) {
+        // isaCloud: figurinhas - a sticker is always a plain <img>, even when the
+        // URL is a `.gif` or has no extension: the browser loops the GIF natively
+        // and a click opens the image viewer, instead of the `converse-gif` player.
+        if (this.options.isacloud_sticker && this.shouldRenderMedia(url, 'image')) {
+            template = getImageTemplate(this, filtered_url);
+        } else if (url_obj.is_webp && this.shouldRenderMedia(url, 'image')) {
+            // WebP comes before GIF, since a `.gif` URL may be served as WebP (going by its headers).
             template = tplWebP(filtered_url, this.hide_media_urls, this.onImgClick, this.onImgLoad);
         } else if (url_obj.is_gif && this.shouldRenderMedia(url, 'image')) {
             template = tplGif(filtered_url, this.hide_media_urls);
         } else if (url_obj.is_image && this.shouldRenderMedia(url, 'image')) {
-            template = tplImage({
-                src: filtered_url,
-                // XXX: bit of an abuse of `hide_media_urls`, might want a dedicated option here
-                href: this.hide_media_urls ? null : filtered_url,
-                onClick: this.onImgClick,
-                onLoad: this.onImgLoad,
-            });
+            template = getImageTemplate(this, filtered_url);
         } else if (url_obj.is_video && this.shouldRenderMedia(url, 'video')) {
             template = tplVideo(filtered_url, this.hide_media_urls);
         } else if (url_obj.is_audio && this.shouldRenderMedia(url, 'audio')) {
@@ -405,6 +406,22 @@ export class Texture extends String {
             [],
         );
     }
+}
+
+/**
+ * Create the template for an ordinary inline image.
+ * @param {Texture} texture - The {@link Texture} instance being rendered
+ * @param {string} url - The filtered URL of the image
+ * @returns {import('lit').TemplateResult}
+ */
+function getImageTemplate(texture, url) {
+    return tplImage({
+        src: url,
+        // XXX: bit of an abuse of `hide_media_urls`, might want a dedicated option here
+        href: texture.hide_media_urls ? null : url,
+        onClick: texture.onImgClick,
+        onLoad: texture.onImgLoad,
+    });
 }
 
 // Kept here to avoid circular dependencies

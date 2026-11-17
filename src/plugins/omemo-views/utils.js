@@ -124,7 +124,9 @@ function getTemplateForObjectURL(file_url, obj_url, richtext) {
         return html`<p class="error">${/** @type {Error} */ (obj_url).message}</p>`;
     }
 
-    if (isImageURL(file_url)) {
+    // isaCloud: figurinhas - a sticker is an image even when the decrypted URL
+    // keeps no image extension, so the show/hide-media check still applies to it.
+    if (isImageURL(file_url) || richtext.options?.isacloud_sticker) {
         // The decrypted image is served from an opaque `blob:` URL which has lost
         // the original filename, so the browser would otherwise save it as
         // `index.png` or the blob uuid. Pass the original filename (recovered from
@@ -173,7 +175,17 @@ function addEncryptedFiles(text, offset, richtext) {
         return;
     }
     objs.forEach((o) => {
-        const type = isImageURL(o.url) ? 'image' : isAudioURL(o.url) ? 'audio' : isVideoURL(o.url) ? 'video' : null;
+        // isaCloud: figurinhas - treat a sticker as an image even when its URL
+        // has no image extension, so hiding media still collapses it.
+        const type = richtext.options?.isacloud_sticker
+            ? 'image'
+            : isImageURL(o.url)
+              ? 'image'
+              : isAudioURL(o.url)
+                ? 'audio'
+                : isVideoURL(o.url)
+                  ? 'video'
+                  : null;
         // Generic files are rendered as download links rather than inline media
         // previews, so they're not subject to the show/hide-media toggle. For
         // actual media, honour the same render decision used for unencrypted

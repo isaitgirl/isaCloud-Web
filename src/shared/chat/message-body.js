@@ -54,6 +54,8 @@ class MessageBody extends CustomElement {
             nick: this.model.chatbox.get('nick'),
             onImgClick: /** @param {MouseEvent} ev */ (ev) => this.onImgClick(ev),
             onImgLoad: () => this.onImgLoad(),
+            // isaCloud: figurinhas - stickers always render as plain images.
+            isacloud_sticker: !!this.model.get('isacloud_sticker'),
             render_styling: !this.model.get('is_unstyled') && api.settings.get('allow_message_styling'),
             show_me_message: true,
         };

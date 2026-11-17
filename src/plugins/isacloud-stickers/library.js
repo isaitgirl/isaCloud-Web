@@ -6,6 +6,9 @@
  *  Converse's storage: it survives logout and cache clearing. It belongs to
  *  the browser, not the account, as the iOS library belongs to the device.
  *
+ *  A sticker is a 512 x 512 PNG or a GIF. GIFs are stored untouched, so that
+ *  they keep animating; they are detected by their bytes, never by a name.
+ *
  *  Every function resolves instead of throwing: when IndexedDB is missing or
  *  fails, the library behaves as empty and the error is logged. The one
  *  exception is `addSticker`, which resolves to `null` on failure, so the
@@ -14,6 +17,7 @@
  * @license Mozilla Public License (MPLv2)
  */
 import { log } from '@converse/headless';
+import { MAX_STICKER_BYTES, detectStickerFormat } from './format.js';
 
 const DB_NAME = 'isacloud-stickers';
 const DB_VERSION = 1;
@@ -25,11 +29,12 @@ let db_promise = null;
 /**
  * @typedef {Object} StickerRecord
  * @property {string} id - A UUID.
- * @property {Blob} blob - The PNG, 512 x 512 with a transparent background.
+ * @property {Blob} blob - The PNG (512 x 512 with a transparent background), or the GIF as it was received.
+ * @property {'png'|'gif'} [format] - Absent on records saved before GIF support, which are PNG.
  * @property {string} created - ISO 8601 time the sticker was added.
  * @property {string|null} last_used - ISO 8601 time the sticker was last sent, or null.
  * @property {boolean} favorite
- * @property {string} sha256 - Hex digest of the PNG, used to avoid duplicates.
+ * @property {string} sha256 - Hex digest of the image bytes, used to avoid duplicates.
  */
 
 /**
@@ -136,11 +141,19 @@ export async function listStickers({ favorites = false } = {}) {
 
 /**
  * Adds a sticker, unless one with the same content is already in the library.
- * @param {Blob} blob - A PNG already normalised by `toStickerPNG`.
+ * @param {Blob} blob - A PNG already normalised by `toStickerPNG`, or the bytes of a GIF.
+ * @param {'png'|'gif'} [format] - Detected from the bytes when omitted; PNG for unreadable ones.
  * @returns {Promise<StickerRecord|null>} The stored sticker (the existing one for a duplicate), or null on failure.
  */
-export async function addSticker(blob) {
+export async function addSticker(blob, format) {
     try {
+        const resolved_format = format ?? (await detectStickerFormat(blob)) ?? 'png';
+        if (resolved_format === 'gif' && blob.size > MAX_STICKER_BYTES) {
+            log.warn(
+                `isacloud-stickers: the GIF is larger than ${MAX_STICKER_BYTES} bytes and was not added to the library`,
+            );
+            return null;
+        }
         const sha256 = await sha256Hex(blob);
         return await transaction('readwrite', async (store) => {
             const [existing] = await requestToPromise(store.index('sha256').getAll(sha256));
@@ -150,6 +163,7 @@ export async function addSticker(blob) {
             const record = {
                 id: crypto.randomUUID(),
                 blob,
+                format: resolved_format,
                 created: new Date().toISOString(),
                 last_used: null,
                 favorite: false,
