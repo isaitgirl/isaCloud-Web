@@ -2,7 +2,8 @@
  * @description
  *  isaCloud: sending a sticker (phase 2). A sticker goes out as an ordinary
  *  HTTP Upload, plus the empty `<sticker/>` marker as a direct child of the
- *  `<message>`, outside any OMEMO payload.
+ *  `<message>`, outside any OMEMO payload. A sticker is a PNG or a GIF; GIFs
+ *  are sent byte for byte, with an `image/gif` type, so that they animate.
  *
  *  The upload's file is matched by a name this module generates, because the
  *  OMEMO `beforeFileUpload` hook swaps the File for an encrypted one that keeps
@@ -14,6 +15,7 @@
  * @license Mozilla Public License (MPLv2)
  */
 import { converse } from '@converse/headless';
+import { detectStickerFormat, stickerExtension, stickerMimeType } from './format.js';
 import { NS_STICKERS } from './utils.js';
 
 const { stx } = converse.env;
@@ -28,15 +30,17 @@ const pending_names = new Set();
 const sticker_bodies = new Set();
 
 /**
- * Uploads a sticker PNG and sends it to the chat.
+ * Uploads a sticker and sends it to the chat.
  * @param {any} chat
- * @param {Blob} blob - A PNG from `toStickerPNG`.
+ * @param {Blob} blob - A PNG from `toStickerPNG`, or the bytes of a GIF.
+ * @param {'png'|'gif'} [format] - Detected from the bytes when omitted; PNG for unreadable ones.
  * @returns {Promise<any[]>} The placeholder messages, as `sendFiles` returns them.
  */
-export async function sendSticker(chat, blob) {
-    const name = `${crypto.randomUUID()}.png`;
+export async function sendSticker(chat, blob, format) {
+    const resolved_format = format ?? (await detectStickerFormat(blob)) ?? 'png';
+    const name = `${crypto.randomUUID()}${stickerExtension(resolved_format)}`;
     pending_names.add(name);
-    const file = new File([blob], name, { type: 'image/png' });
+    const file = new File([blob], name, { type: stickerMimeType(resolved_format) });
     const messages = await chat.sendFiles([file]);
     // Without a placeholder, no upload will finish, so nothing is left to match.
     if (!messages?.length) pending_names.delete(name);

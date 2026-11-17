@@ -21,7 +21,15 @@
         }
     }
 
-    .isacloud-stickers__add {
+    .isacloud-stickers__actions {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .isacloud-stickers__add,
+    .isacloud-stickers__import-button {
         flex: none;
         display: inline-flex;
         align-items: center;
@@ -120,5 +128,113 @@
         p {
             margin: 0;
         }
+    }
+
+    // The import view (phase 1c): a link and a file picker, then a preview.
+    .isacloud-stickers__import {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .isacloud-stickers__intro {
+        margin: 0;
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .isacloud-stickers__url {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .isacloud-stickers__label {
+        margin: 0;
+        font-size: 13px;
+        color: var(--foreground-color);
+    }
+
+    // The field and "Load" share a row; the field gives way on a narrow phone,
+    // because it has `min-width: 0`, while the button keeps its size.
+    .isacloud-stickers__url-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .isacloud-stickers__url-input {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .isacloud-stickers__load {
+        flex: none;
+    }
+
+    .isacloud-stickers__file-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+
+        .isacloud-stickers__choose {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+    }
+
+    // The preview: a square over the same checkerboard as the editor's stage, so
+    // that transparency shows.
+    .isacloud-stickers__preview {
+        width: min(320px, 100%);
+        aspect-ratio: 1;
+        margin: 0 auto;
+        padding: 6px;
+        border: 1px solid var(--isa-border);
+        border-radius: 12px;
+        background-color: #ffffff;
+        background-image: conic-gradient(#d9d9d9 25%, transparent 0 50%, #d9d9d9 0 75%, transparent 0);
+        background-size: 24px 24px;
+
+        img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+
+    .isacloud-stickers__status,
+    .isacloud-stickers__error {
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .isacloud-stickers__status {
+        opacity: 0.8;
+    }
+
+    .isacloud-stickers__error {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        color: var(--pink);
+    }
+
+    .isacloud-stickers__error-hint {
+        color: var(--foreground-color);
+        opacity: 0.8;
+    }
+
+    .isacloud-stickers__import-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 4px;
     }
 }

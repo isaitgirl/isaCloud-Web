@@ -42,14 +42,17 @@ function completeUploadsAtOnce() {
 /**
  * Answers the slot request of the next upload.
  * @param {any} _converse
+ * @param {(request: Element) => void} [onRequest] - Called with the `<request/>` of the slot request.
  * @returns {Promise<string>} The download URL in the slot.
  */
-async function answerSlotRequest(_converse) {
+async function answerSlotRequest(_converse, onRequest) {
     const IQ_stanzas = _converse.api.connection.get().IQ_stanzas;
     const iq = await u.waitUntil(() =>
         IQ_stanzas.find((iq) => iq.getAttribute('to') === UPLOAD_HOST && iq.querySelector('request')),
     );
-    const filename = iq.querySelector('request').getAttribute('filename');
+    const request = iq.querySelector('request');
+    onRequest?.(request);
+    const filename = request.getAttribute('filename');
     const get_url = `https://${UPLOAD_HOST}/get/${filename}`;
     _converse.api.connection.get()._dataRecv(
         mock.createRequest(
@@ -141,6 +144,15 @@ async function answerBundles(_converse, contact_jid) {
 /** @returns {Blob} */
 const stickerBlob = () => new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'image/png' });
 
+/** A real 1 x 1 GIF89a. */
+const GIF_BASE64 = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+/** @type {Uint8Array} */
+const GIF_BYTES = Uint8Array.from(atob(GIF_BASE64), (char) => char.charCodeAt(0));
+
+/** @returns {Blob} */
+const gifStickerBlob = () => new Blob([GIF_BYTES], { type: 'image/gif' });
+
 describe('Sending a sticker', function () {
     it(
         'in a 1:1 chat is an upload with the sticker marker as a direct child',
@@ -168,6 +180,40 @@ describe('Sending a sticker', function () {
                 const local = view.model.messages.filter((m) => m.get('isacloud_sticker'));
                 expect(local.length).toBe(1);
                 await u.waitUntil(() => view.querySelector('.chat-msg--sticker'));
+            } finally {
+                restore();
+            }
+        }),
+    );
+
+    it(
+        'of a GIF is an upload named .gif with the image/gif type and the sticker marker',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const { sendSticker } = _converse.exports.isacloud_stickers;
+            await confirmUploadService(_converse);
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.openChatBoxFor(_converse, contact_jid);
+            const view = _converse.chatboxviews.get(contact_jid);
+            const restore = completeUploadsAtOnce();
+            try {
+                /** @type {Element|null} */
+                let slot_request = null;
+                // No format is passed: it must come from the bytes.
+                const sending = sendSticker(view.model, gifStickerBlob());
+                const url = await answerSlotRequest(_converse, (request) => (slot_request = request));
+                await sending;
+
+                expect(slot_request.getAttribute('filename')).toMatch(
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.gif$/,
+                );
+                expect(slot_request.getAttribute('content-type')).toBe('image/gif');
+
+                const sent_stanzas = _converse.api.connection.get().sent_stanzas;
+                const message = await u.waitUntil(() =>
+                    sent_stanzas.find((s) => isUploadMessage(s) && s.querySelector('body')?.textContent === url),
+                );
+                expect(hasDirectStickerMarker(message)).toBe(true);
             } finally {
                 restore();
             }

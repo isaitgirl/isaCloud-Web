@@ -34,8 +34,10 @@
  *
  *  Strings are in pt-BR through `i18n.js`, without `.po` edits.
  *  Everything else of the plugin lives in this directory: `library.js` (the
- *  IndexedDB library), `image.js` (normalising to a 512 x 512 PNG, for received
- *  stickers), `render.js` and `editor.js` (the sticker editor of phase 3).
+ *  IndexedDB library), `format.js` (PNG and GIF, detected by their bytes),
+ *  `image.js` (normalising to a 512 x 512 PNG, for received stickers),
+ *  `render.js` and `editor.js` (the sticker editor of phase 3), and `import.js`
+ *  (GIF stickers from a link or a file, sent untouched so that they animate).
  *
  *  See isacloud-docs analysis 2026-11-13-figurinhas (in the private docs repo).
  * @copyright 2026, the Converse.js contributors
@@ -43,10 +45,12 @@
  */
 import { _converse, api, constants, converse, log } from '@converse/headless';
 import { hasStickerMarker, getInnerMUCMessage } from './utils.js';
+import { MAX_STICKER_BYTES, detectStickerFormat } from './format.js';
 import { addStickerMarker, markUploadedSticker, sendSticker } from './send.js';
 import { toStickerPNG } from './image.js';
 import { clampOffset, drawSticker, exportSticker, layoutText, outlineColor, photoLimit } from './render.js';
 import { addSticker, deleteSticker, listStickers, setFavorite, touchSticker } from './library.js';
+import { gifFromURL, importGif } from './import.js';
 import { onSaveStickerClicked } from './save.js';
 import { openStickerPicker } from './sticker-modal.js';
 import { t } from './i18n.js';
@@ -176,6 +180,10 @@ converse.plugins.add('converse-isacloud-stickers', {
         // Shared with the specs, which need the same module state as the plugin.
         _converse.exports.isacloud_stickers = {
             sendSticker,
+            detectStickerFormat,
+            MAX_STICKER_BYTES,
+            gifFromURL,
+            importGif,
             toStickerPNG,
             drawSticker,
             exportSticker,

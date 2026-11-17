@@ -1,7 +1,7 @@
 import mock from '../../../shared/tests/mock.js';
 import converse from '../../../../dist/converse.js';
 
-const { Strophe, sizzle, stx, u } = converse.env;
+const { Strophe, stx, u } = converse.env;
 
 const SETTINGS = { whitelisted_plugins: ['converse-isacloud-stickers'], render_media: true };
 const NS_STICKERS = 'urn:xmpp:stickers:0';
@@ -31,6 +31,15 @@ async function confirmDisco(_converse, upload = true) {
 
 /** @returns {string} JID of the first roster contact. */
 const contactJID = () => mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+
+/** A real 1 x 1 GIF89a. */
+const GIF_BASE64 = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+/** @type {Uint8Array} */
+const GIF_BYTES = Uint8Array.from(atob(GIF_BASE64), (char) => char.charCodeAt(0));
+
+/** @returns {Blob} */
+const gifBlob = () => new Blob([GIF_BYTES], { type: 'image/gif' });
 
 /** @param {number} width @param {number} height */
 async function makePNG(width, height) {
@@ -199,6 +208,44 @@ describe('The stickers in the attachment menu and the message menu', function ()
                 button.click();
                 await new Promise((resolve) => setTimeout(resolve, 300));
                 expect((await library.listStickers()).length).toBe(1);
+            } finally {
+                vi.restoreAllMocks();
+            }
+        }),
+    );
+
+    it(
+        'saves a received GIF as a GIF, without converting it to a PNG',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const { library } = _converse.exports.isacloud_stickers;
+            for (const sticker of await library.listStickers()) await library.deleteSticker(sticker.id);
+
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = contactJID();
+            const view = await mock.openChatBoxFor(_converse, contact_jid);
+            const url = 'https://upload.example.org/received-sticker.gif';
+            _converse.api.connection.get()._dataRecv(
+                mock.createRequest(
+                    _converse,
+                    stx`<message xmlns="jabber:client" type="chat" id="${u.getUniqueId()}" to="${_converse.jid}" from="${contact_jid}">
+                        <body>${url}</body>
+                        <x xmlns="jabber:x:oob"><url>${url}</url></x>
+                        <sticker xmlns="${NS_STICKERS}"/>
+                    </message>`,
+                ),
+            );
+            vi.spyOn(window, 'fetch').mockImplementation(async () => new Response(gifBlob(), { status: 200 }));
+
+            try {
+                const button = await u.waitUntil(() => view.querySelector('.chat-msg__action-save-sticker'));
+                button.click();
+                await vi.waitFor(async () => expect((await library.listStickers()).length).toBe(1));
+
+                const [sticker] = await library.listStickers();
+                expect(sticker.format).toBe('gif');
+                const bytes = Array.from(new Uint8Array(await sticker.blob.arrayBuffer()));
+                expect(bytes).toEqual(Array.from(GIF_BYTES));
+                expect(bytes.slice(0, 4)).toEqual([0x47, 0x49, 0x46, 0x38]);
             } finally {
                 vi.restoreAllMocks();
             }
