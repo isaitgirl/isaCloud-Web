@@ -1,12 +1,21 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-28** · atualizada em **16/11/2026**
+Versão atual: **v15-29** · atualizada em **17/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-29 — 17/11/2026
+
+- 🎞️ **Figurinhas em GIF:** agora dá para enviar, receber e salvar figurinhas
+  animadas. Elas aparecem sem balão, no mesmo tamanho das outras, e animam em loop.
+- 🔗 **Importe seus GIFs:** no seletor de figurinhas, dá para escolher um arquivo
+  GIF ou colar o link direto de um GIF da internet, conferir a prévia e enviar.
+- 💾 **Salvar mantém a animação:** salvar uma figurinha GIF recebida e reenviar
+  continua animando. Suas figurinhas PNG antigas continuam iguais.
 
 ### v15-28 — 16/11/2026
 

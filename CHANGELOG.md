@@ -7,6 +7,22 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-29 — 2026-11-17 (`ffbb56222`)
+
+- `feat(stickers)`: figurinha GIF. A biblioteca guarda o `format` (ausente = PNG) e
+  detecta o tipo pelos primeiros bytes; o GIF é guardado e enviado byte a byte,
+  como `.gif` e `image/gif`, sem passar pelo canvas.
+- `feat(stickers)`: “Salvar figurinha” preserva a animação de um GIF recebido,
+  com e sem OMEMO. O caminho sem OMEMO passou a ler a URL do modelo da mensagem,
+  em vez de depender só do `<img>` da tela.
+- `feat(stickers)`: importação de GIF por arquivo ou por link direto, com prévia,
+  limite de 16 MiB e envio imediato como figurinha; o “+” com um GIF abre a
+  importação em vez do editor, que achataria a animação.
+- `feat(chat)`: figurinha GIF é renderizada como `<img>` nativo no quadrado de
+  128 px, animando em loop e abrindo o visualizador no toque; GIFs comuns
+  continuam no player `converse-gif`. O caminho OMEMO também trata figurinha sem
+  extensão como imagem.
+
 ## v15-28 — 2026-11-16 (`65338e64f`)
 
 - `feat(chat)`: “Notas para si mesmo” vira o primeiro item da seção Contatos e abre
