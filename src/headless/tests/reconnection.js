@@ -186,12 +186,13 @@ describe('A connection that fails', function () {
     );
 
     it(
-        'uses the other transport for the attempt after a failure',
+        'uses the other transport for the attempt after repeated failures',
         mock.initConverse(converse, [], {}, async (_converse) => {
             const { api } = _converse;
             const connection = api.connection.get();
             const switchTransport = vi.spyOn(connection, 'switchTransport').mockResolvedValue(undefined);
-            vi.spyOn(api.user, 'login').mockResolvedValue(undefined);
+            const login = vi.spyOn(api.user, 'login').mockResolvedValue(undefined);
+            connection.has_connected = true;
 
             vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
             try {
@@ -203,12 +204,60 @@ describe('A connection that fails', function () {
             } finally {
                 vi.useRealTimers();
             }
+            await u.waitUntil(() => login.mock.calls.length === 1);
+            // The first failure retries the same transport.
+            expect(switchTransport).not.toHaveBeenCalled();
+
+            // A second consecutive failure does switch to the other one.
+            vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+            try {
+                connection.onConnectStatusChanged(Strophe.Status.CONNFAIL, 'connection failed');
+                connection.requestReconnect();
+                vi.advanceTimersByTime(6000);
+            } finally {
+                vi.useRealTimers();
+            }
             await u.waitUntil(() => switchTransport.mock.calls.length === 1);
 
             await connection.reconnect();
             expect(switchTransport).toHaveBeenCalledOnce();
 
             connection.setDisconnectionCause();
+            delete connection.reconnecting;
+            connection.status = Strophe.Status.CONNECTED;
+        }),
+    );
+
+    it(
+        'retries the same transport once before switching after a working connection',
+        mock.initConverse(converse, [], {}, async (_converse) => {
+            const { api } = _converse;
+            const connection = api.connection.get();
+            const switchTransport = vi.spyOn(connection, 'switchTransport').mockResolvedValue(undefined);
+            vi.spyOn(api.user, 'login').mockResolvedValue(undefined);
+            vi.spyOn(connection, 'onConnected').mockResolvedValue(undefined);
+            connection.has_connected = true;
+
+            const fail = async () => {
+                connection.onConnectStatusChanged(Strophe.Status.CONNFAIL, 'connection failed');
+                await connection.reconnect();
+            };
+
+            // The first failure of a working session retries the same transport.
+            await fail();
+            expect(switchTransport).not.toHaveBeenCalled();
+
+            // A second consecutive failure, before anything came up, switches.
+            await fail();
+            expect(switchTransport).toHaveBeenCalledOnce();
+
+            // Coming up again resets the count, so the next single failure
+            // retries the same transport once more.
+            connection.reconnecting = true;
+            connection.onConnectStatusChanged(Strophe.Status.CONNECTED);
+            await fail();
+            expect(switchTransport).toHaveBeenCalledOnce();
+
             delete connection.reconnecting;
             connection.status = Strophe.Status.CONNECTED;
         }),
@@ -341,7 +390,7 @@ describe('A connection that fails', function () {
             const connection = api.connection.get();
             const finish = vi.spyOn(connection, 'finishDisconnection');
             const login = vi.spyOn(api.user, 'login').mockResolvedValue(undefined);
-            vi.spyOn(connection, 'switchTransport').mockResolvedValue(undefined);
+            const switchTransport = vi.spyOn(connection, 'switchTransport').mockResolvedValue(undefined);
             connection.has_connected = false;
 
             vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
@@ -355,6 +404,8 @@ describe('A connection that fails', function () {
             }
             await u.waitUntil(() => login.mock.calls.length === 1);
             expect(finish).not.toHaveBeenCalled();
+            // The first attempt that never came up still switches transport straight away.
+            expect(switchTransport).toHaveBeenCalledOnce();
 
             // The retry fails too.
             connection.onConnectStatusChanged(Strophe.Status.CONNECTING);
