@@ -83,13 +83,15 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     #finished = false;
     // How many retries have been scheduled since the connection last came up.
     #retries = 0;
+    // How many attempts have failed, in a row, since the connection last came up.
+    #transport_failures = 0;
     /** @type {ReturnType<typeof setTimeout>|null} */
     #retry_timer = null;
     // When the scheduled retry is due, in milliseconds since the epoch.
     #retry_at = 0;
     // Set while a retry is getting ready to log in, before Strophe reports on it.
     #preparing_retry = false;
-    // Set when an attempt fails, so that the next one uses the other transport.
+    // Set when the next attempt should use the other transport.
     #switch_transport = false;
 
     /**
@@ -629,6 +631,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             const reconnected = this.reconnecting && this.has_connected;
             this.has_connected = true;
             this.#retries = 0;
+            this.#transport_failures = 0;
             this.#cancelScheduledReconnect();
             emitDiagnostic('connected', { reconnected, 'resumed': this.hasResumed() });
             if (reconnected) {
@@ -670,7 +673,23 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             }
             this.setConnectionStatus(status, feedback);
             this.setDisconnectionCause(status, condition);
-            this.#switch_transport = true;
+
+            this.#transport_failures += 1;
+            if (!this.has_connected) {
+                // A transport that never worked may simply be the wrong one.
+                this.#switch_transport = true;
+            } else if (this.#transport_failures === 1) {
+                // A single failure after a working connection is often transient
+                // (e.g. the browser froze or the network changed), so the same
+                // transport is retried once before switching.
+                this.#switch_transport = false;
+                emitDiagnostic('transport_retry', {
+                    'attempt': this.#transport_failures,
+                    'transport': this.isType('bosh') ? 'bosh' : 'websocket',
+                });
+            } else {
+                this.#switch_transport = true;
+            }
         } else if (status === Strophe.Status.DISCONNECTING) {
             this.setConnectionStatus(status);
             this.setDisconnectionCause(status, condition);

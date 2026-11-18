@@ -51,6 +51,29 @@ describe('Connection diagnostics', function () {
     );
 
     it(
+        'reports a retry of the same transport after a transient failure',
+        mock.initConverse(converse, [], {}, async (_converse) => {
+            const events = recordDiagnostics(_converse);
+            const connection = _converse.api.connection.get();
+            connection.has_connected = true;
+
+            connection.onConnectStatusChanged(Strophe.Status.CONNFAIL, 'connection failed');
+            expect(lastOfType(events, 'transport_retry')).toEqual({
+                event: 'transport_retry',
+                attempt: 1,
+                transport: 'bosh',
+            });
+
+            // A second failure switches to the other transport, which is not
+            // reported as a retry of the same one.
+            connection.onConnectStatusChanged(Strophe.Status.CONNFAIL, 'connection failed');
+            expect(ofType(events, 'transport_retry')).toHaveLength(1);
+
+            connection.setDisconnectionCause();
+        }),
+    );
+
+    it(
         'reports each retry with its attempt number and a snapshot of the retry state',
         mock.initConverse(converse, [], {}, async (_converse) => {
             const events = recordDiagnostics(_converse);
