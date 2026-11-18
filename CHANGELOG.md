@@ -7,6 +7,19 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-31 — 2026-11-18 (`f0fb80b8a`)
+
+- `fix(connection)`: depois de perder uma conexão que estava funcionando, a primeira
+  tentativa de reconexão usa o mesmo transporte. Só a segunda falha consecutiva troca
+  entre WebSocket e BOSH. Um 1006 transitório depois de freeze ou troca de rede costuma
+  recuperar no mesmo transporte, e trocar para BOSH só para descobrir isso atrasava a volta.
+  O diagnóstico registra `transport_retry` quando o mesmo transporte é repetido.
+- `fix(server)`: o `/http-bind` do `isacloud.im` passou a devolver CORS para
+  `https://chat.isacloud.cc` e a responder `OPTIONS` com 204; o fallback BOSH, que estava
+  bloqueado pelo browser desde a mudança para `chat.isacloud.cc`, voltou a funcionar.
+- `test`: reconnection e diagnostics cobrem a repetição do mesmo transporte e a troca
+  apenas na segunda falha.
+
 ## v15-30 — 2026-11-18 (`99ba96013`)
 
 - `feat(isacloud)`: diagnóstico de conexão em Configurações → Sobre e no rodapé da
