@@ -7,6 +7,35 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-30 — 2026-11-18 (`99ba96013`)
+
+- `feat(isacloud)`: diagnóstico de conexão em Configurações → Sobre e no rodapé da
+  tela de login. O relatório reúne os últimos 24 h de eventos técnicos (quedas,
+  tentativas de reconexão, fechamento do WebSocket, retomada XEP-0198, pings,
+  mudanças de visibilidade/rede e erros de envio), a release, o build, o
+  navegador, o sistema e o JID do próprio usuário. Não inclui mensagens, stanzas,
+  JIDs de terceiros nem chaves.
+- `feat(isacloud)`: store próprio em IndexedDB (`isacloud-diagnostics`), com
+  janela de 24 h, teto de 5.000 entradas e fallback em memória; o arquivo pode
+  ser baixado mesmo sem conexão.
+- `feat(isacloud)`: envio por OMEMO para a conta de relatos, com guardas para
+  conexão, suporte a OMEMO e upload. Sem essas condições o arquivo não é enviado
+  em claro; o download continua disponível. A conta de destino é configurável
+  (`isacloud_diagnostics_report_jid`).
+- `feat(isacloud)`: o nome do arquivo passa a ser
+  `isacloud-web-<release>-<data>.json` (por exemplo,
+  `isacloud-web-v15.29-2026-11-18T14-21-24.json`), com a release no `meta.release`
+  e o build/commit no `meta.version`.
+- `feat(headless)`: evento `diagnosticEvent` para status/condição da conexão,
+  tentativas e atraso da reconexão, decisão de desistir, troca de transporte,
+  código/motivo do fechamento do WebSocket, condição do `<failed/>` do XEP-0198,
+  timeout/erro de ping e falhas de envio. A instrumentação não grava corpo de
+  mensagem nem XML.
+- `test`: 9 testes no headless e 26 no plugin de diagnóstico; a suíte reduzida
+  passou com 479 + 31 testes e `types:check`.
+- Botão de teste que derruba a conexão: fica disponível só em
+  `localhost`/`127.0.0.1` e não aparece para quem usa o chat.
+
 ## v15-29 — 2026-11-17 (`ffbb56222`)
 
 - `feat(stickers)`: figurinha GIF. A biblioteca guarda o `format` (ausente = PNG) e

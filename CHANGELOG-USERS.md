@@ -1,12 +1,27 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-29** · atualizada em **17/11/2026**
+Versão atual: **v15-30** · atualizada em **18/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-30 — 18/11/2026
+
+- 🩺 **Diagnóstico de conexão:** se o chat cair ou não voltar sozinho, agora dá
+  para enviar um relatório técnico dos últimos 24 h para a equipe. Ele mostra
+  horários de queda, tentativas de reconexão, tipo de conexão, versão do
+  navegador e do sistema — e **não inclui o conteúdo das suas mensagens**.
+- 🔐 **Só por OMEMO:** o relatório vai como arquivo anexo cifrado. Se a conexão
+  ou o OMEMO não estiverem disponíveis, o chat oferece baixar o arquivo em vez
+  de enviar qualquer coisa em claro.
+- 📥 **Onde encontrar:** em **Configurações → Sobre → Diagnóstico de conexão**,
+  ou no link **Diagnóstico** ao lado da versão, na tela de login. Dá para baixar
+  o arquivo mesmo sem estar conectado.
+- 🏷️ **Nome fácil de achar:** o arquivo chega como
+  `isacloud-web-v15.30-data-hora.json`, com a versão e o horário no nome.
 
 ### v15-29 — 17/11/2026
 
