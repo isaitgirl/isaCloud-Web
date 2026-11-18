@@ -1,0 +1,125 @@
+// isaCloud diagnostics: the section in Settings → About, the footer link on the
+// login screen and the dialog. Only theme variables are used, so the light and
+// the dark themes stay readable without separate rules.
+
+.conversejs {
+    .isacloud-diagnostics {
+        margin-top: 1.5em;
+        padding-top: 1.25em;
+        border-top: 1px solid var(--isa-border);
+        color: var(--foreground-color);
+        text-align: start;
+
+        &__title {
+            margin: 0 0 0.4em;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        &__text {
+            margin: 0 0 0.75em;
+            color: var(--subdued-color);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        &__summary {
+            margin: 0 0 0.9em;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        &__actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75em;
+        }
+
+        // A quiet, link-like button: the test is secondary to sending.
+        &__test {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: var(--subdued-color);
+            font-size: 12px;
+            text-align: start;
+            text-decoration: underline;
+            cursor: pointer;
+
+            &:hover,
+            &:focus-visible {
+                color: var(--pink);
+            }
+        }
+    }
+
+    // The second entry point, on the login screen's footer.
+    .isacloud-footer-diagnostics {
+        color: var(--subdued-color);
+        font-size: 0.9em;
+        text-decoration: underline;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            color: var(--pink);
+        }
+    }
+
+    converse-isacloud-diagnostics-modal {
+        .isacloud-diagnostics-modal__text,
+        .isacloud-diagnostics-modal__summary,
+        .isacloud-diagnostics-modal__state,
+        .isacloud-diagnostics-modal__target,
+        .isacloud-diagnostics-modal__no-connection {
+            margin-bottom: 0.6em;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .isacloud-diagnostics-modal__text {
+            color: var(--foreground-color);
+        }
+
+        .isacloud-diagnostics-modal__summary,
+        .isacloud-diagnostics-modal__state,
+        .isacloud-diagnostics-modal__target {
+            color: var(--subdued-color);
+        }
+
+        .isacloud-diagnostics-modal__no-connection {
+            color: var(--error-color);
+        }
+
+        .isacloud-diagnostics-modal__note {
+            min-height: 4.5em;
+            resize: vertical;
+        }
+
+        .isacloud-diagnostics-modal__hint {
+            margin: 0.25em 0 0.5em;
+            color: var(--subdued-color);
+            font-size: 12px;
+        }
+
+        .isacloud-diagnostics-modal__status {
+            min-height: 1.4em;
+            margin: 0;
+            font-size: 13px;
+
+            &--success {
+                color: var(--success-color);
+            }
+
+            &--error {
+                color: var(--error-color);
+            }
+        }
+
+        .isacloud-diagnostics-modal__footer {
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+    }
+}
