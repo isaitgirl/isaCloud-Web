@@ -17,6 +17,29 @@ const { Strophe } = converse.env;
 
 Strophe.addNamespace('SM', 'urn:xmpp:sm:3');
 
+/**
+ * The local name of the first child of a `<failed/>` nonza, such as
+ * `item-not-found`. Strophe hands the page adapter a `StanzaView` (whose
+ * `serialized` is an XML string), but a DOM Element is accepted too. Returns
+ * `undefined` when it can't be read, so that the caller can leave it out.
+ * @param {any} el
+ * @returns {string|undefined}
+ */
+function getFailedCondition(el) {
+    try {
+        let node = el;
+        if (node && typeof node.serialized === 'string') {
+            if (typeof DOMParser === 'undefined') return;
+            node = new DOMParser().parseFromString(node.serialized, 'text/xml').documentElement;
+        }
+        if (!node || node.nodeType !== 1 || node.localName !== 'failed') return;
+        const child = node.firstElementChild;
+        return child?.localName || child?.nodeName || undefined;
+    } catch {
+        return;
+    }
+}
+
 converse.plugins.add('converse-smacks', {
     initialize() {
         // Configuration values for this plugin
@@ -47,16 +70,20 @@ converse.plugins.add('converse-smacks', {
             };
 
             /**
-             * @param {Element} _el
+             * @param {any} el - The `<failed/>` nonza, as a StanzaView or an Element.
              * @param {boolean} resume_failed
              */
-            sm.onFailed = (_el, resume_failed) => {
+            sm.onFailed = (el, resume_failed) => {
                 if (resume_failed) {
+                    const condition = getFailedCondition(el);
                     /**
                      * Triggered when the XEP-0198 stream could not be resumed.
                      * @event _converse#streamResumptionFailed
+                     * @param {object} data
+                     * @param {string} [data.condition] - The local name of the
+                     *  first child of the `<failed/>` nonza, e.g. `item-not-found`.
                      */
-                    api.trigger('streamResumptionFailed');
+                    api.trigger('streamResumptionFailed', condition ? { condition } : {});
                 }
             };
         });

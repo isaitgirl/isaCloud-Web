@@ -626,6 +626,11 @@ export default function ModelWithMessages(BaseModel) {
             });
             const timer = setTimeout(() => this.#onPendingSendTimeout(message), api.settings.get('send_queue_timeout'));
             pending_send_timers.set(message, timer);
+            api.trigger('diagnosticEvent', {
+                'event': 'send_queued',
+                'chat_type': this.get('type'),
+                'timeout_ms': api.settings.get('send_queue_timeout'),
+            });
         }
 
         /**
@@ -641,6 +646,10 @@ export default function ModelWithMessages(BaseModel) {
 
                 message.save({ send_status: 'failed', send_error_code: 'not-connected' });
                 log.debug(`Gave up waiting for a connection to send message ${message.get('id')}`);
+                api.trigger('diagnosticEvent', {
+                    'event': 'send_queue_timeout',
+                    'chat_type': this.get('type'),
+                });
 
                 // The connection can come back just after the timeout fired.
                 if (api.connection.authenticated()) {
@@ -729,6 +738,11 @@ export default function ModelWithMessages(BaseModel) {
                 const { code, iq, can_send_unencrypted } =
                     /** @type {{code?: string, iq?: Element, can_send_unencrypted?: boolean}} */ (e);
                 // The sender of a failed IQ is the JID that the reason names.
+                api.trigger('diagnosticEvent', {
+                    'event': 'send_failed',
+                    'code': code ?? 'send-failed',
+                    'chat_type': this.get('type'),
+                });
                 message.save({
                     send_status: 'failed',
                     send_error_code: code ?? 'send-failed',

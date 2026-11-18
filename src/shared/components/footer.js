@@ -24,7 +24,26 @@ export class ConverseFooter extends CustomElement {
                                 />
                                 <span class="isacloud-footer-byline">comunidade brasileira de XMPP</span>
                             </a>
-                            <p class="brand-subtitle mb-2 subdued">Versão: ${converse.env.VERSION_NAME}</p>
+                            <p class="brand-subtitle mb-2 subdued">
+                                Versão: ${converse.env.VERSION_NAME}
+                                ${
+                                    api.settings.get('isacloud_diagnostics')
+                                        ? html` ·
+                                              <a
+                                                  class="isacloud-footer-diagnostics"
+                                                  href="#"
+                                                  role="button"
+                                                  title="Diagnóstico de conexão"
+                                                  aria-label="Diagnóstico de conexão"
+                                                  @click=${(/** @type {MouseEvent} */ ev) => {
+                                                      ev.preventDefault();
+                                                      api.trigger('isacloudDiagnosticsRequested');
+                                                  }}
+                                                  >Diagnóstico</a
+                                              >`
+                                        : ''
+                                }
+                            </p>
                             <p class="brand-subtitle mb-2">
                                 Feito com
                                 <a target="_blank" rel="noopener" href="https://conversejs.org">Converse</a>

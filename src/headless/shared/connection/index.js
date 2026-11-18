@@ -13,6 +13,67 @@ const RETRY_BASE_DELAY = 3000;
 const RETRY_MAX_DELAY = 60000;
 
 /**
+ * Emits a structured diagnostic event, to be recorded by a listener of
+ * `diagnosticEvent`. The payload must never contain message bodies, stanza
+ * XML, contact JIDs, passwords, tokens or OMEMO keys.
+ * @param {string} event
+ * @param {object} [data]
+ */
+function emitDiagnostic(event, data = {}) {
+    _converse.api.trigger('diagnosticEvent', { event, ...data });
+}
+
+/**
+ * The transport methods that have already been wrapped, per transport, so
+ * that wrapping again after a reconnection doesn't nest the wrappers.
+ * @type {WeakMap<object, Set<string>>}
+ */
+const wrapped_transport_methods = new WeakMap();
+
+/**
+ * Wraps one method of a transport so that it reports a diagnostic event
+ * before calling through. The original is always called with the original
+ * `this` and arguments, and its return value is passed on.
+ * @param {any} transport
+ * @param {string} name
+ * @param {string} event
+ * @param {(...args: any[]) => object|undefined} get_data - Builds the payload
+ *  from the call's arguments, or returns `undefined` to skip the event.
+ */
+function wrapTransportMethod(transport, name, event, get_data) {
+    if (!transport || typeof transport[name] !== 'function') return;
+    const wrapped = wrapped_transport_methods.get(transport) ?? new Set();
+    if (wrapped.has(name)) return;
+    wrapped.add(name);
+    wrapped_transport_methods.set(transport, wrapped);
+
+    const original = transport[name];
+    const wrapper = function (...args) {
+        try {
+            const data = get_data(...args);
+            if (data) emitDiagnostic(event, data);
+        } catch (e) {
+            log.debug(e);
+        }
+        return original.apply(this, args);
+    };
+    Object.defineProperty(transport, name, { 'configurable': true, 'writable': true, 'value': wrapper });
+}
+
+/**
+ * The HTTP status of a BOSH request, whichever transport version is in use:
+ * older ones pass it as an argument, newer ones report it on the request.
+ * @param {any[]} args
+ * @returns {number|undefined}
+ */
+function getBoshRequestStatus(args) {
+    const status = args.find((arg) => typeof arg === 'number');
+    if (status !== undefined) return status;
+    const req = args.find((arg) => arg && typeof arg === 'object' && 'xhr' in arg);
+    return req?.xhr?.status;
+}
+
+/**
  * The Connection class manages the connection to the XMPP server. It's
  * agnostic concerning the underlying protocol (i.e. websocket, long-polling
  * via BOSH or websocket inside a shared worker).
@@ -44,6 +105,53 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
         this.send_initial_presence = true;
         // Whether this connection has ever been established.
         this.has_connected = false;
+        this.#wrapTransport();
+    }
+
+    /**
+     * Reports what the transport itself sees, since Strophe's own log doesn't
+     * reach `@converse/log`. Strophe replaces `_proto` when the transport is
+     * switched or discovered, so this has to be re-run afterwards.
+     */
+    #wrapTransport() {
+        const proto = this._proto;
+        if (!proto) return;
+
+        wrapTransportMethod(proto, '_onClose', 'transport_closed', (e) => ({
+            'transport': 'websocket',
+            'code': e?.code,
+            'reason': e?.reason,
+            'was_clean': e?.wasClean,
+        }));
+        wrapTransportMethod(proto, '_onError', 'transport_error', (e) => ({
+            'transport': 'websocket',
+            'type': e?.type,
+        }));
+        wrapTransportMethod(proto, '_onRequestError', 'transport_error', (_req, status) => ({
+            'transport': 'bosh',
+            status,
+        }));
+        // A BOSH request reports every readyState change; only a completed
+        // request that failed says anything about the connection.
+        wrapTransportMethod(proto, '_onRequestStateChange', 'transport_error', (...args) => {
+            const req = args.find((arg) => arg && typeof arg === 'object' && 'xhr' in arg);
+            if (req && req.xhr?.readyState !== 4) return;
+            const status = getBoshRequestStatus(args);
+            if (status !== 0 && !(status >= 400)) return;
+            return { 'transport': 'bosh', status };
+        });
+    }
+
+    /**
+     * A snapshot of the reconnection state, for diagnostics.
+     * @returns {{retries: number, retry_at: number, retry_scheduled: boolean}}
+     */
+    get retry_info() {
+        return {
+            'retries': this.#retries,
+            'retry_at': this.#retry_at,
+            'retry_scheduled': this.#retry_timer !== null,
+        };
     }
 
     /**
@@ -57,6 +165,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
      *  an attempt that's underway, and doesn't wait out a long backoff.
      */
     requestReconnect({ explicit = false } = {}) {
+        emitDiagnostic('reconnect_requested', { explicit });
         if (explicit && this.#isRetrying()) return;
 
         const wait =
@@ -98,6 +207,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this.#retry_timer = null;
             this.reconnect();
         }, delay);
+        emitDiagnostic('reconnect_scheduled', { 'attempt': this.#retries, 'delay_ms': delay });
     }
 
     #cancelScheduledReconnect() {
@@ -145,6 +255,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             api.settings.set('bosh_service_url', bosh_methods.pop());
             this.service = api.settings.get('websocket_url') || api.settings.get('bosh_service_url');
             this.setProtocol();
+            this.#wrapTransport();
         }
     }
 
@@ -229,12 +340,17 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
         const { api } = _converse;
 
         const bare_jid = _converse.session.get('bare_jid');
+        let from, to;
         if (api.connection.isType('websocket') && api.settings.get('bosh_service_url')) {
+            from = 'websocket';
+            to = 'bosh';
             await setUserJID(bare_jid);
             this._proto._doDisconnect();
             this._proto = new Strophe.Bosh(this);
             this.service = api.settings.get('bosh_service_url');
         } else if (api.connection.isType('bosh') && api.settings.get('websocket_url')) {
+            from = 'bosh';
+            to = 'websocket';
             if (api.settings.get('authentication') === ANONYMOUS) {
                 // When reconnecting anonymously, we need to connect with only
                 // the domain, not the full JID that we had in our previous
@@ -247,6 +363,8 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this._proto = new Strophe.Websocket(this);
             this.service = api.settings.get('websocket_url');
         }
+        this.#wrapTransport();
+        if (to) emitDiagnostic('transport_switched', { from, to });
     }
 
     async reconnect() {
@@ -261,6 +379,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     async #prepareAndLogIn() {
         const { api } = _converse;
 
+        emitDiagnostic('reconnect_start', { 'attempt': this.#retries });
         log.debug('RECONNECTING: the connection has dropped, attempting to reconnect.');
         this.reconnecting = true;
         await tearDown(_converse);
@@ -372,6 +491,10 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     }
 
     async finishDisconnection() {
+        emitDiagnostic('finish_disconnection', {
+            'cause': this.disconnection_cause,
+            'reason': this.disconnection_reason,
+        });
         this.#finished = true;
         this.#cancelScheduledReconnect();
         this.setConnectionStatus(Strophe.Status.DISCONNECTED, this.disconnection_reason);
@@ -447,6 +570,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
                     // or with a cached JID and password
                     return this.requestReconnect();
                 } else {
+                    emitDiagnostic('give_up', { 'reason': 'authfail' });
                     return this.finishDisconnection();
                 }
             } else if (this.#shouldGiveUp()) {
@@ -455,8 +579,12 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
                     Strophe.Status.CONNFAIL,
                     __('An error occurred while connecting to the chat server.'),
                 );
+                emitDiagnostic('give_up', { 'reason': 'initial_connection_failed' });
                 return this.finishDisconnection();
             } else if (this.#isUnrecoverable()) {
+                emitDiagnostic('give_up', {
+                    'reason': 'unrecoverable:' + (this.disconnection_reason ?? this.disconnection_cause),
+                });
                 return this.finishDisconnection();
             }
             this.requestReconnect();
@@ -474,6 +602,11 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
      */
     onConnectStatusChanged(status, condition) {
         const { __ } = _converse;
+        emitDiagnostic('connection_status', {
+            'status': CONNECTION_STATUS[status] ?? status,
+            'status_code': status,
+            condition,
+        });
         log.debug(`Status changed to: ${CONNECTION_STATUS[status]}`);
         if (status === Strophe.Status.ATTACHFAIL) {
             this.setConnectionStatus(status);
@@ -497,6 +630,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this.has_connected = true;
             this.#retries = 0;
             this.#cancelScheduledReconnect();
+            emitDiagnostic('connected', { reconnected, 'resumed': this.hasResumed() });
             if (reconnected) {
                 log.debug(status === Strophe.Status.CONNECTED ? 'Reconnected' : 'Reattached');
                 this.onConnected(true);

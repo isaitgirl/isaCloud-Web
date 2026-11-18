@@ -42,6 +42,11 @@ export function getSendErrorMessages(code, details = {}) {
  */
 export function alertSendError(e) {
     const messages = getSendErrorMessages(e.code, { from: e.iq?.getAttribute('from'), iq: e.iq });
+    api.trigger('diagnosticEvent', {
+        'event': 'send_error_shown',
+        'code': e.code ?? 'send-failed',
+        'kind': e.code === 'not-connected' ? 'toast' : 'modal',
+    });
 
     if (e.code === 'not-connected') {
         api.toast?.show?.('send-failed-not-connected', {

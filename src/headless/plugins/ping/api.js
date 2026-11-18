@@ -6,6 +6,18 @@ import { setLastStanzaDate } from './utils.js';
 
 const { Strophe, u, stx } = converse.env;
 
+/**
+ * The local name of the first child of an `<error/>`, such as
+ * `service-unavailable`. The stanza itself is never reported.
+ * @param {Element} stanza
+ * @returns {string|undefined}
+ */
+function getErrorCondition(stanza) {
+    const error = Array.from(stanza?.children ?? []).find((el) => el.localName === 'error');
+    const child = error?.firstElementChild;
+    return child?.localName || child?.nodeName || undefined;
+}
+
 export default {
     /**
      * Pings the entity represented by the passed in JID by sending an IQ stanza to it.
@@ -42,12 +54,15 @@ export default {
         if (result === null) {
             log.warn(`Timeout while pinging ${jid}`);
             if (jid === Strophe.getDomainFromJid(bare_jid)) {
+                // Only a ping to our own domain says anything about the connection.
+                api.trigger('diagnosticEvent', { 'event': 'ping_timeout', 'timeout_ms': timeout || 10000 });
                 api.connection.reconnect();
             }
             return false;
         } else if (u.isErrorStanza(result)) {
             log.error(`Error while pinging ${jid}`);
             log.error(result);
+            api.trigger('diagnosticEvent', { 'event': 'ping_error', 'condition': getErrorCondition(result) });
             return false;
         }
         return true;
