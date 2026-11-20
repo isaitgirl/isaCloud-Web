@@ -68,6 +68,90 @@ describe('The home state with no conversation open', function () {
     );
 
     it(
+        'shows the deployment brand logo on the empty state',
+        mock.initConverse(
+            converse,
+            ['chatBoxesFetched'],
+            {
+                open_last_conversation: false,
+                view_mode: 'fullscreen',
+                brand_logo_url: '/brand/logo.png',
+                brand_name: 'Example',
+            },
+            async function (_converse) {
+                await mock.waitForRoster(_converse, 'current', 1);
+                const app = await getChatApp();
+                await settleBootHide();
+
+                await _converse.api.chats.open(first_jid, {}, true);
+                const chatbox = _converse.state.chatboxes.get(first_jid);
+                await u.waitUntil(() => chatbox.get('hidden') === false);
+                app.hideVisibleConversations();
+
+                const placeholder = await u.waitUntil(() => app.querySelector('.chat-placeholder'));
+                const logo = await u.waitUntil(() => placeholder.querySelector('converse-logo img'));
+                expect(logo.getAttribute('src')).toBe('/brand/logo.png');
+                expect(logo.getAttribute('alt')).toBe('Example');
+            },
+        ),
+    );
+
+    it(
+        'does not hide a conversation opened after the boot empty-state hide',
+        mock.initConverse(
+            converse,
+            ['chatBoxesFetched'],
+            { open_last_conversation: false, view_mode: 'fullscreen' },
+            async function (_converse) {
+                await mock.waitForRoster(_converse, 'current', 1);
+                const app = await getChatApp();
+                await settleBootHide();
+
+                // A link can open a conversation while the boot hide is still
+                // pending, or the hide's second path can run after it. Either way
+                // the conversation is the reason the page was opened.
+                await _converse.api.chats.open(first_jid, {}, true);
+                const chatbox = _converse.state.chatboxes.get(first_jid);
+                await u.waitUntil(() => chatbox.get('hidden') === false);
+
+                _converse.api.trigger('chatBoxesFetched');
+                await settleBootHide();
+
+                expect(chatbox.get('hidden')).toBe(false);
+                expect(app.querySelector('.chat-placeholder')).toBe(null);
+            },
+        ),
+    );
+
+    it(
+        'does not hide a conversation opened before a late-mounting app hide',
+        mock.initConverse(
+            converse,
+            ['chatBoxesFetched'],
+            { open_last_conversation: false, view_mode: 'fullscreen' },
+            async function (_converse) {
+                await mock.waitForRoster(_converse, 'current', 1);
+                await settleBootHide();
+
+                const jid = first_jid;
+                _converse.api.trigger('openConversation', { view: 'chat', jid });
+                const chatbox = await u.waitUntil(() => _converse.state.chatboxes.get(jid));
+                await u.waitUntil(() => chatbox.get('hidden') === false);
+
+                // A late app mount registers the boot hide after the link already
+                // opened the conversation. The JID marked by `openConversation`
+                // must exempt it.
+                const late_app = document.createElement('converse-app-chat');
+                document.querySelector('converse-root').append(late_app);
+                await new Promise((resolve) => setTimeout(resolve));
+
+                expect(chatbox.get('hidden')).toBe(false);
+                late_app.remove();
+            },
+        ),
+    );
+
+    it(
         'hides the restored conversations on request, showing the empty state',
         mock.initConverse(
             converse,

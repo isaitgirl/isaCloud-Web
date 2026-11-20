@@ -49,6 +49,7 @@ import './plugins/roomslist/index.js'; // Show currently open chat rooms
 import './plugins/rootview/index.js';
 import './plugins/rosterview/index.js';
 import './plugins/recent-list/index.js'; // Conversation list in the Chat app's sidebar
+import './plugins/isacloud-brand/index.js'; // isaCloud: marca por domínio
 import './plugins/isacloud-diagnostics/index.js'; // isaCloud: diagnóstico de conexão
 import './plugins/isacloud-session/index.js'; // isaCloud: login por sessão do navegador
 import './plugins/isacloud-stickers/index.js'; // isaCloud: figurinhas

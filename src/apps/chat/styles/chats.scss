@@ -22,7 +22,8 @@
         display: block;
         width: clamp(96px, 16vw, 150px);
 
-        svg {
+        svg,
+        img {
             display: block;
             width: 100%;
             height: auto;

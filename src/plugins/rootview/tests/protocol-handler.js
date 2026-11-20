@@ -139,6 +139,35 @@ describe('The xmpp: protocol handler', function () {
         );
 
         it(
+            'keeps a groupchat opened from a link visible after the empty-state hide',
+            mock.initConverse(
+                converse,
+                ['chatBoxesFetched'],
+                { open_last_conversation: false, view_mode: 'fullscreen' },
+                async function (_converse) {
+                    const { api, state } = _converse;
+                    const muc_jid = 'coven@chat.shakespeare.lit';
+                    await mock.openAndEnterMUC(_converse, muc_jid, 'romeo');
+                    const room = state.chatboxes.get(muc_jid);
+                    room.save({ hidden: true });
+                    clearHash();
+                    spyOn(api, 'confirm').and.returnValue(Promise.resolve(true));
+
+                    location.hash = `#converse/room?jid=${muc_jid}`;
+                    await u.waitUntil(() => room.get('hidden') === false);
+
+                    // The second path of the boot empty-state hide must not undo
+                    // the link that was just handled.
+                    api.trigger('chatBoxesFetched');
+                    await new Promise((resolve) => setTimeout(resolve));
+
+                    expect(room.get('hidden')).toBe(false);
+                    expect(document.querySelector('converse-app-chat .chat-placeholder')).toBe(null);
+                },
+            ),
+        );
+
+        it(
             "waits for the groupchats joined automatically, and doesn't ask about one of them",
             mock.initConverse(
                 converse,

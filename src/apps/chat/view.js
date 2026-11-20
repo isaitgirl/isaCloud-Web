@@ -8,6 +8,29 @@ import tplChats from './templates/chats.js';
 const { PRIVATE_CHAT_TYPE, CHATROOMS_TYPE, CONTROLBOX_TYPE } = constants;
 
 /**
+ * JIDs that the user (or an `xmpp:` link) explicitly opened since boot.
+ *
+ * The boot-time empty-state hide runs once to hide the conversations restored
+ * from the previous session. A conversation opened by a link can be created
+ * before that hide runs (the app may mount late, or the fetch promise may
+ * resolve in a later microtask), and must not be hidden: it is the reason the
+ * page was opened.
+ * @type {Set<string>}
+ */
+const user_opened = new Set();
+
+/**
+ * @param {string} [jid]
+ */
+export function markUserOpened(jid) {
+    if (jid) user_opened.add(jid.toLowerCase());
+}
+
+export function clearUserOpened() {
+    user_opened.clear();
+}
+
+/**
  * The Chat app container. Renders the open chatboxes and, when
  * `enable_url_routing` is on and the view mode is `fullscreen`, keeps
  * `location.hash` in sync with the foregrounded conversation.
@@ -23,6 +46,8 @@ const { PRIVATE_CHAT_TYPE, CHATROOMS_TYPE, CONTROLBOX_TYPE } = constants;
  * back stack.
  */
 class ChatApp extends CustomElement {
+    #restored_hidden = false;
+
     constructor() {
         super();
         this.router = new HashRouter({ root: CHAT_ROUTE_ROOT, onRoute: () => this.syncFromHash() });
@@ -51,6 +76,13 @@ class ChatApp extends CustomElement {
         this.listenTo(_converse, 'connected', () => this.requestUpdate());
         this.listenTo(_converse, 'reconnected', () => this.requestUpdate());
         this.listenTo(_converse, 'disconnected', () => this.requestUpdate());
+        this.listenTo(_converse, 'clearSession', () => {
+            // A new login is a new boot: restored conversations should be hidden
+            // again, and links opened in the previous session must not exempt any
+            // JID from it.
+            this.#restored_hidden = false;
+            clearUserOpened();
+        });
 
         const settings = api.settings.get();
         this.listenTo(settings, 'change:view_mode', () => this.requestUpdate());
@@ -64,8 +96,8 @@ class ChatApp extends CustomElement {
         // the listener covers a logout/login without a reload, and the wait covers the
         // case where the fetch finished before this view mounted. Reconnects don't refetch.
         if (!api.settings.get('open_last_conversation')) {
-            this.listenTo(_converse, 'chatBoxesFetched', () => this.hideVisibleConversations());
-            api.waitUntil('chatBoxesFetched').then(() => this.hideVisibleConversations());
+            this.listenTo(_converse, 'chatBoxesFetched', () => this.#hideRestoredConversations());
+            api.waitUntil('chatBoxesFetched').then(() => this.#hideRestoredConversations());
         }
 
         /**
@@ -83,6 +115,27 @@ class ChatApp extends CustomElement {
     hideVisibleConversations() {
         this.model
             .filter((c) => c.get('type') !== CONTROLBOX_TYPE && !c.get('hidden') && !c.get('closed'))
+            .forEach((c) => u.safeSave(c, { hidden: true }));
+    }
+
+    /**
+     * The boot-time empty-state hide. Runs once per login and leaves alone the
+     * conversations the user explicitly opened before it — a channel from an
+     * `xmpp:` link, for example, which may be created while this hide is still
+     * waiting for its turn.
+     */
+    #hideRestoredConversations() {
+        if (this.#restored_hidden) return;
+        this.#restored_hidden = true;
+
+        this.model
+            .filter(
+                (c) =>
+                    c.get('type') !== CONTROLBOX_TYPE &&
+                    !c.get('hidden') &&
+                    !c.get('closed') &&
+                    !user_opened.has(c.get('jid')?.toLowerCase()),
+            )
             .forEach((c) => u.safeSave(c, { hidden: true }));
     }
 
