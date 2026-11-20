@@ -7,6 +7,19 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-32 — 2026-11-20 (`ca8f10f96`)
+
+- `feat(isacloud)`: marca por implantação. O fork passa a aceitar `brand_logo_url`,
+  `brand_logo_link` e `brand_name` na configuração da página; quando há logo próprio, o
+  componente renderiza um `<img>` com o tamanho certo para login, tela sem conversa e
+  “Sobre”. As cores continuam num CSS por custom, carregado depois do tema. Sem as
+  settings, o isaCloud fica exatamente como antes.
+- `fix(chat)`: canal aberto por link `xmpp:...?join` não some mais. O hide do estado
+  vazio (`open_last_conversation: false`) roda uma vez por login e poupa os JIDs abertos
+  por `openConversation`, então o canal que o link acabou de abrir permanece na tela.
+- `test`: marca por implantação e o link de canal; a suíte reduzida passou com 479 + 31
+  testes e `types:check`.
+
 ## v15-31 — 2026-11-18 (`f0fb80b8a`)
 
 - `fix(connection)`: depois de perder uma conexão que estava funcionando, a primeira
