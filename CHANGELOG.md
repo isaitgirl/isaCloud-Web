@@ -7,6 +7,11 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-33 — 2026-11-20 (`35628287a`)
+
+- `fix(login)`: o label do campo de login passa de “XMPP Address” para “Username”; em
+  pt_BR fica “Nome de usuário”. A tradução de `Username` já existia no `.po`.
+
 ## v15-32 — 2026-11-20 (`ca8f10f96`)
 
 - `feat(isacloud)`: marca por implantação. O fork passa a aceitar `brand_logo_url`,
