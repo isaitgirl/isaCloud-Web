@@ -8,6 +8,7 @@ import './view.js';
 import ChatBoxViews from './container.js';
 import { calculateViewportHeightUnit } from './utils.js';
 import { openConversationRouted } from './navigation.js';
+import { markUserOpened } from './view.js';
 import { addShortcuts } from './shortcuts.js';
 import 'plugins/rootview/index.js';
 
@@ -69,7 +70,12 @@ converse.plugins.add('converse-app-chat', {
         api.listen.on(
             'openConversation',
             /** @param {{ view: 'chat'|'room', jid: string, attrs?: object }} data */
-            ({ view, jid, attrs }) => openConversationRouted(view, jid, attrs),
+            ({ view, jid, attrs }) => {
+                // A conversation opened before the boot empty-state hide runs (an
+                // `xmpp:` link arriving on a cold page, for example) must survive it.
+                markUserOpened(jid);
+                openConversationRouted(view, jid, attrs);
+            },
         );
 
         api.listen.on('cleanup', () => Object.assign(_converse, { chatboxviews: null })); // DEPRECATED
