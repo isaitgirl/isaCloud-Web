@@ -44,6 +44,7 @@ describe('The Login Form', function () {
                 expect(addons.length).toBe(1);
 
                 expect(cbview.querySelector('div.input-group').textContent, 'jabber.hot-chilli.eu');
+                expect(cbview.querySelector('label[for="converse-login-jid"]').textContent.trim()).toBe('Username:');
             },
         ),
     );

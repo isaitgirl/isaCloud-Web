@@ -79,7 +79,7 @@ function tplDomain(domain) {
 function tplAuthFields() {
     const authentication = api.settings.get('authentication');
     const i18n_login = __('Log in');
-    const i18n_xmpp_address = __('XMPP Address');
+    const i18n_username = __('Username');
     const locked_domain = api.settings.get('locked_domain');
     const default_domain = api.settings.get('default_domain');
     const placeholder_username = ((locked_domain || default_domain) && __('Username')) || __('user@domain');
@@ -88,7 +88,7 @@ function tplAuthFields() {
 
     return html`
         <div class="mb-3">
-            <label for="converse-login-jid" class="form-label">${i18n_xmpp_address}:</label>
+            <label for="converse-login-jid" class="form-label">${i18n_username}:</label>
             <div class="${locked_domain ? 'input-group' : ''}">
                 <input
                     id="converse-login-jid"
