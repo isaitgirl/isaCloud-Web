@@ -37,6 +37,12 @@
         text-align: center;
     }
 
+    .converse-logo__img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+
     .brand-heading {
         display: inline-flex;
         flex-direction: row;

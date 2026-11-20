@@ -6,6 +6,30 @@ const u = converse.env.utils;
 
 describe('The Login Form', function () {
     it(
+        'shows the deployment brand logo and link when configured',
+        mock.initConverse(
+            converse,
+            ['chatBoxesInitialized'],
+            {
+                auto_login: false,
+                allow_registration: false,
+                brand_logo_url: '/brand/logo.png',
+                brand_logo_link: 'https://example.org',
+                brand_name: 'Example',
+            },
+            async function (_converse) {
+                mock.toggleControlBox(_converse);
+                const cbview = await u.waitUntil(() => _converse.chatboxviews.get('controlbox'));
+                const logo = await u.waitUntil(() => cbview.querySelector('converse-brand-logo img'));
+
+                expect(logo.getAttribute('src')).toBe('/brand/logo.png');
+                expect(logo.getAttribute('alt')).toBe('Example');
+                expect(logo.closest('a').getAttribute('href')).toBe('https://example.org');
+            },
+        ),
+    );
+
+    it(
         'shows the domain name when locked_domain is set',
         mock.initConverse(
             converse,
