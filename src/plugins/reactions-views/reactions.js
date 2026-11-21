@@ -28,9 +28,13 @@ class Reactions extends CustomElement {
     /**
      * Recomputes the emoji map and clears the tooltip cache.
      * Called when the model is first assigned and on every change:reactions event.
+     * Emojis listed in `hidden_reaction_emojis` are left out: another element
+     * (such as a poll card) already shows them.
      */
     #updateEmojiMap() {
-        this.emoji_map = getEmojiKeyedReactions(this.model.get('reactions') || {});
+        const hidden = new Set(this.model.get('hidden_reaction_emojis') || []);
+        const map = getEmojiKeyedReactions(this.model.get('reactions') || {});
+        this.emoji_map = Object.fromEntries(Object.entries(map).filter(([emoji]) => !hidden.has(emoji)));
         this._tooltip_cache = new Map();
     }
 
@@ -45,6 +49,7 @@ class Reactions extends CustomElement {
         this.stopListening();
         if (this.model) {
             this.listenTo(this.model, 'change:reactions', () => this.#updateEmojiMap());
+            this.listenTo(this.model, 'change:hidden_reaction_emojis', () => this.#updateEmojiMap());
             // Compute the initial map in case reactions were already set on the model
             // before this component's listener was attached (e.g. dangling reactions).
             this.#updateEmojiMap();

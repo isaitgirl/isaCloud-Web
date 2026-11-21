@@ -1,0 +1,194 @@
+/**
+ * isaCloud: the poll card inside a groupchat message.
+ *
+ * Received bubbles get a light tint of the room colour; the sender's own bubble
+ * is already the brand colour, so the card is drawn with `currentColor` there
+ * (the Android/iOS apps make the same switch).
+ */
+
+.isacloud-poll {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: min(18rem, 70vw);
+    max-width: 32rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--muc-color) 22%, transparent);
+    border-radius: 0.7rem;
+    background-color: color-mix(in srgb, var(--muc-color) 8%, transparent);
+    color: inherit;
+    font-size: 0.95em;
+}
+
+.isacloud-poll__title {
+    font-weight: 600;
+    font-size: 1.05em;
+    overflow-wrap: anywhere;
+}
+
+.isacloud-poll__description,
+.isacloud-poll__hint {
+    font-size: 0.85em;
+    opacity: 0.8;
+    overflow-wrap: anywhere;
+}
+
+.isacloud-poll__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.isacloud-poll__option {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0;
+    padding: 0.15rem 0.2rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+}
+
+button.isacloud-poll__option {
+    cursor: pointer;
+}
+
+button.isacloud-poll__option:hover {
+    background-color: color-mix(in srgb, var(--muc-color) 12%, transparent);
+}
+
+button.isacloud-poll__option:focus-visible {
+    outline: 2px solid var(--muc-color);
+    outline-offset: 1px;
+}
+
+.isacloud-poll__emoji {
+    flex-shrink: 0;
+    line-height: 1.4;
+}
+
+.isacloud-poll__option-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.isacloud-poll__option-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.isacloud-poll__label {
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+
+.isacloud-poll__count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+.isacloud-poll__check {
+    flex-shrink: 0;
+    color: var(--muc-color);
+}
+
+.isacloud-poll__option--mine .isacloud-poll__label {
+    font-weight: 600;
+}
+
+.isacloud-poll__bar {
+    display: block;
+    height: 0.35rem;
+    margin-top: 0.25rem;
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--muc-color) 15%, transparent);
+    overflow: hidden;
+}
+
+.isacloud-poll__bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--muc-color);
+    transition: width 0.2s ease;
+}
+
+.isacloud-poll__footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+.chat-msg--self .isacloud-poll {
+    border-color: color-mix(in srgb, currentColor 30%, transparent);
+    background-color: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.chat-msg--self .isacloud-poll__bar {
+    background-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.chat-msg--self .isacloud-poll__bar-fill,
+.chat-msg--self .isacloud-poll__check {
+    color: currentColor;
+    background-color: currentColor;
+}
+
+.chat-msg--self button.isacloud-poll__option:hover {
+    background-color: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.chat-msg--self button.isacloud-poll__option:focus-visible {
+    outline-color: currentColor;
+}
+
+/* The creation dialog */
+
+.isacloud-poll-form__options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.isacloud-poll-form__option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.isacloud-poll-form__emoji {
+    width: 1.5rem;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.isacloud-poll-form__remove {
+    flex-shrink: 0;
+    padding: 0.25rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.isacloud-poll-form__remove:disabled {
+    opacity: 0.25;
+}
+
+.isacloud-poll-form__remove:hover:not(:disabled) {
+    opacity: 1;
+}
+
+.isacloud-poll-form__add {
+    padding-inline-start: 0;
+}
