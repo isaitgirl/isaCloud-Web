@@ -7,6 +7,20 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-34 — 2026-11-21 (`3e9bcf550`)
+
+- `feat(isacloud)`: vídeo conferência com o Galene (`meet.isacloud.cc`). Botão de câmera na
+  barra, logo depois do telefone (1:1); cria a sala pelo meet-api, guarda o `hostURL` no
+  `localStorage` por conta/sala, insere o link público no compositor sem enviar e troca o link
+  da mensagem pelo `hostURL` ao clicar. O CORS do meet-api ficou no nginx do srv-05.
+- `feat(isacloud)`: enquetes compatíveis com o Fluux (`urn:fluux:poll:0`). Cartão no grupo, voto
+  por reação XEP-0444 (enviado em claro também em OMEMO), criação pelo clipe e encerramento pelo
+  criador com `<poll-closed>`; body de fallback escondido em MUC e opções fora dos chips de
+  reação.
+- `refactor(isacloud)`: figurinhas saem do clipe; fica só o atalho da barra.
+- `test`: specs da conferência, das enquetes e das figurinhas; suíte reduzida com 536 + 31
+  testes e `types:check`.
+
 ## v15-33 — 2026-11-20 (`35628287a`)
 
 - `fix(login)`: o label do campo de login passa de “XMPP Address” para “Username”; em

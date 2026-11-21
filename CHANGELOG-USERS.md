@@ -1,12 +1,20 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-33** · atualizada em **20/11/2026**
+Versão atual: **v15-34** · atualizada em **21/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-34 — 21/11/2026
+
+- 📹 **Vídeo conferência:** crie uma sala pelo ícone de câmera na barra da conversa, envie o
+  link e entre por ele. Quem receber o link entra pela página do meet, sem instalar nada.
+- 📊 **Enquetes:** crie uma enquete no canal pelo clipe, vote tocando nas opções e veja o
+  placar ao vivo. Quem criou pode encerrar; funciona junto com o Fluux, o Android e o iOS.
+- ✨ **Barra mais limpa:** as figurinhas agora ficam só no atalho da barra, fora do clipe.
 
 ### v15-33 — 20/11/2026
 

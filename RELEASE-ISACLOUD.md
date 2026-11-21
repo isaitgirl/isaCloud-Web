@@ -1,9 +1,9 @@
 # Release atual do isaCloud Web
 
-- **Versão:** `v15-33`
-- **Publicada em:** 2026-11-20
-- **Commit publicado:** `5006c0653`
-- **Próximo build:** `34`
+- **Versão:** `v15-34`
+- **Publicada em:** 2026-11-21
+- **Commit publicado:** `3e9bcf550`
+- **Próximo build:** `35`
 
 O formato é `v15-<build>`. O build começa em **0** no primeiro commit do fork
 (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação** em
