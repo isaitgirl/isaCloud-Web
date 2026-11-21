@@ -24,12 +24,19 @@ export default {
          * stanza is sent as is, and one that bounces is rolled back by the
          * `getErrorAttributesForMessage` hook.
          *
+         * `encrypted: false` sends the plain `<reactions>` stanza even in an
+         * OMEMO chat. Polls (`urn:fluux:poll:0`) need it: Fluux and the native
+         * apps count votes from a cleartext reaction, and the poll itself
+         * already travels outside the encryption.
+         *
          * @method _converse.api.reactions.send
          * @param {import('../../shared/message').default} message - The message reacted to
          * @param {string[]} emojis - Our whole set of reactions to it, as unicode emojis
+         * @param {Object} [options]
+         * @param {boolean} [options.encrypted=true] - Encrypt in OMEMO chats.
          * @returns {Promise<void>}
          */
-        async send(message, emojis) {
+        async send(message, emojis, { encrypted = true } = {}) {
             /** @type {import('../../shared/types').ChatBoxOrMUC} */
             const chatbox = message.collection.chatbox;
             const to_jid = chatbox.get('jid');
@@ -43,7 +50,7 @@ export default {
 
             // Reactions are body-coupled metadata: when the chat is OMEMO-encrypted we
             // must not leak them in cleartext, so route them through OMEMO.
-            if (chatbox.get('omemo_active')) {
+            if (encrypted && chatbox.get('omemo_active')) {
                 try {
                     await sendEncryptedReaction(chatbox, message, msg_id, emojis);
                 } catch (e) {
