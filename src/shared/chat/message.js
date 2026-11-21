@@ -160,9 +160,7 @@ export default class Message extends ObservableElement {
      * @param {MouseEvent} ev
      */
     async onLinkClick(ev) {
-        // Only an explicit `false` turns it off, so that a setting which was
-        // never registered doesn't silently disable the confirmation.
-        if (ev.defaultPrevented || api.settings.get('confirm_external_links') === false) return;
+        if (ev.defaultPrevented) return;
 
         const link = /** @type {Element} */ (ev.target).closest('a[href]');
         if (!(link instanceof HTMLAnchorElement)) return;
@@ -175,16 +173,61 @@ export default class Message extends ObservableElement {
         }
         if (url && !isExternalURL(url)) return;
 
-        ev.preventDefault();
+        // Only an explicit `false` turns it off, so that a setting which was
+        // never registered doesn't silently disable the confirmation.
+        const confirm = api.settings.get('confirm_external_links') !== false;
+
+        // Claim the click now, before the hook's `await`: a listener runs in the
+        // same task as the event, and the browser would otherwise act on the
+        // link as soon as this handler suspends.
+        if (confirm) ev.preventDefault();
+
+        /**
+         * *Hook* which allows plugins to change where a link in a chat message
+         * leads. The handler receives the anchor element and `{ url }`, and
+         * returns the data to pass on. Returning the same `url` keeps the
+         * normal behaviour: the browser follows the link itself when
+         * `confirm_external_links` is off. A different `url` is always opened
+         * by Converse, with the confirmation when it is on.
+         *
+         * This runs before the early return for a disabled confirmation, so
+         * that a plugin can still redirect a link in that case.
+         * @event _converse#getMessageLinkTarget
+         * @example
+         *  api.listen.on('getMessageLinkTarget', (link, data) => {
+         *      const target = privateURLFor(data.url);
+         *      return target ? { ...data, url: target } : data;
+         *  });
+         */
+        let target = link.href;
+        try {
+            const result = await api.hook('getMessageLinkTarget', link, { url: link.href });
+            if (result && typeof result.url === 'string' && result.url) target = result.url;
+        } catch {
+            target = link.href;
+        }
+
+        if (!confirm) {
+            // The link is followed by the browser itself when a plugin did not
+            // redirect it; only a changed target needs to be opened here.
+            if (target === link.href) return;
+            ev.preventDefault();
+            // Opened the way the link's `target="_blank" rel="noopener"` would have.
+            window.open(target, '_blank', ev.shiftKey ? 'noopener,popup' : 'noopener');
+            return;
+        }
+
+        // The dialog shows the link's own `href`, never `target`: a plugin may
+        // have swapped in a URL carrying a private token (a conference host
+        // URL), which must not appear on screen.
         const confirmed = await api.confirm(__('Open external link?'), [
             url ? __('This link will take you to %1$s', url.hostname) : __('This link will take you to:'),
             link.href,
         ]);
-        // Opened the way the link's `target="_blank" rel="noopener"` would have.
-        // Clicking it again instead would hand the click back to the link's own
+        // Clicking the link again instead would hand the click back to its own
         // handlers, and browsers ignore the modifier keys of a scripted click,
         // except that a shift-click's request for a new window can be honoured.
-        if (confirmed) window.open(link.href, '_blank', ev.shiftKey ? 'noopener,popup' : 'noopener');
+        if (confirmed) window.open(target, '_blank', ev.shiftKey ? 'noopener,popup' : 'noopener');
     }
 
     /**

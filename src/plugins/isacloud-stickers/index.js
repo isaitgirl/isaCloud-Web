@@ -14,18 +14,16 @@
  *  - `parseMessage` (1:1 chats, carbons and MAM: the stanza is already unwrapped)
  *  - `parseMUCMessage` (groupchats; the stanza is the original, so the inner
  *    message of a MAM result is looked up in `utils.js`)
- *  - `getAttachmentMenuItems` (phase 2: the "Stickers" item, after the image
- *    item, only when HTTP Upload is supported; opens the picker in `sticker-modal.js`)
  *  - `afterFileUploaded` (phase 2: marks the upload of a sticker in `send.js`)
  *  - `createMessageStanza` (phase 2: adds the `<sticker/>` marker in `send.js`;
  *    it is registered after OMEMO's handler, so the marker sits outside the
  *    encrypted payload, as on iOS)
  *  - `getMessageActionButtons` (phase 2: "Save sticker" on received stickers, `save.js`)
  *  - `getToolbarButtons` (a shortcut button right after the paperclip, which
- *    opens the same picker as the attachment menu item)
+ *    opens the picker)
  *
  *  The sticker icon (`icon.js`) is the plugin's own SVG symbol, added to the
- *  page next to Converse's icon sprite, used by the menu item and the button.
+ *  page next to Converse's icon sprite, used by the toolbar button.
  *
  *  The message element has no hook for its CSS classes, so `index.js` wraps
  *  `getExtraMessageClasses()` on the `converse-chat-message` prototype to add
@@ -59,9 +57,6 @@ import { html } from 'lit';
 import './styles/isacloud-stickers.scss';
 
 const { Strophe } = converse.env;
-
-/** Between the image item (200) and the location item (300) of the attachment menu. */
-export const STICKER_ORDER = 250;
 
 const WRAPPED = Symbol('isacloud-stickers-wrapped');
 
@@ -129,24 +124,6 @@ async function addStickerToolbarButton(toolbar_el, buttons) {
 }
 
 /**
- * `getAttachmentMenuItems` handler: the "Stickers" item, listed only where
- * HTTP Upload works, as the image item is, and hidden with the file button.
- * @param {import('../../shared/chat/attachment-menu').default} menu
- * @param {import('../../shared/chat/types').AttachmentMenuItem[]} items
- */
-async function getStickerMenuItem(menu, items) {
-    if (!(await canSendStickers())) return items;
-    items.push({
-        name: 'stickers',
-        order: STICKER_ORDER,
-        icon: STICKER_ICON,
-        label: t('Stickers'),
-        handler: () => openStickerPicker(menu.model),
-    });
-    return items;
-}
-
-/**
  * `getMessageActionButtons` handler: "Save sticker" on a received sticker only.
  * @param {HTMLElement & { model: any }} el - The message actions element.
  * @param {Array<Object>} buttons
@@ -195,7 +172,6 @@ converse.plugins.add('converse-isacloud-stickers', {
             library: { addSticker, deleteSticker, listStickers, setFavorite, touchSticker },
         };
 
-        api.listen.on('getAttachmentMenuItems', getStickerMenuItem);
         api.listen.on('getToolbarButtons', addStickerToolbarButton);
         api.listen.on('createMessageStanza', addStickerMarker);
         api.listen.on('afterFileUploaded', markUploadedSticker);

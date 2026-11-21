@@ -30,6 +30,7 @@ MAIN_SPECS=(
     src/plugins/profile/tests/
     src/plugins/roomslist/tests/
     src/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
+    src/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
     src/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
     src/plugins/muc-views/tests/muc-messages.js
     src/plugins/muc-views/tests/nickname.js
