@@ -50,37 +50,7 @@ async function makePNG(width, height) {
     return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
 }
 
-describe('The stickers in the attachment menu and the message menu', function () {
-    it(
-        'adds a Stickers item after the image item when uploads are supported',
-        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
-            await confirmDisco(_converse, true);
-            await mock.waitForRoster(_converse, 'current', 1);
-            await mock.openChatBoxFor(_converse, contactJID());
-            const view = _converse.chatboxviews.get(contactJID());
-            const menu = await u.waitUntil(() => view.querySelector('converse-attachment-menu'));
-            await menu.initialized;
-            const names = Array.from(view.querySelectorAll('.attachment-menu__item')).map((el) => el.dataset.name);
-            expect(names.indexOf('stickers')).toBe(names.indexOf('image') + 1);
-            expect(view.querySelector('.attachment-menu__item[data-name="stickers"]').textContent).toContain(
-                'Stickers',
-            );
-        }),
-    );
-
-    it(
-        'has no Stickers item when the server has no HTTP Upload',
-        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
-            await confirmDisco(_converse, false);
-            await mock.waitForRoster(_converse, 'current', 1);
-            await mock.openChatBoxFor(_converse, contactJID());
-            const view = _converse.chatboxviews.get(contactJID());
-            const menu = await u.waitUntil(() => view.querySelector('converse-attachment-menu'));
-            await menu.initialized;
-            expect(view.querySelector('.attachment-menu__item[data-name="stickers"]')).toBeNull();
-        }),
-    );
-
+describe('The stickers in the toolbar and the message menu', function () {
     it(
         'puts a stickers shortcut with the sticker icon right after the paperclip',
         mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
@@ -93,10 +63,10 @@ describe('The stickers in the attachment menu and the message menu', function ()
             expect(button.querySelector('converse-icon').getAttribute('class')).toContain('fa-isacloud-sticker');
             expect(document.getElementById('icon-isacloud-sticker')).not.toBeNull();
 
+            // The sticker picker is not offered in the attachment menu anymore.
             const menu = view.querySelector('converse-attachment-menu');
             await menu.initialized;
-            const item = await u.waitUntil(() => view.querySelector('.attachment-menu__item[data-name="stickers"]'));
-            expect(item.querySelector('converse-icon').getAttribute('class')).toContain('fa-isacloud-sticker');
+            expect(view.querySelector('.attachment-menu__item[data-name="stickers"]')).toBeNull();
 
             button.click();
             const modal = await u.waitUntil(() => document.querySelector('converse-isacloud-stickers-modal'));
@@ -111,8 +81,6 @@ describe('The stickers in the attachment menu and the message menu', function ()
             await mock.waitForRoster(_converse, 'current', 1);
             await mock.openChatBoxFor(_converse, contactJID());
             const view = _converse.chatboxviews.get(contactJID());
-            const menu = await u.waitUntil(() => view.querySelector('converse-attachment-menu'));
-            await menu.initialized;
             await u.waitUntil(() => view.querySelector('.toolbar-buttons converse-attachment-menu'));
             expect(view.querySelector('.isacloud-stickers-button')).toBeNull();
         }),
