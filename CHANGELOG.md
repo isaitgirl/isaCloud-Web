@@ -7,6 +7,23 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-35 — 2026-11-22 (`1a574c019`)
+
+- `fix(isacloud)`: encerramento de enquete mais seguro. A original (e todas as cópias) é
+  marcada como encerrada, com o tally congelado, **antes** do envio do `<poll-closed>`; se o
+  envio falhar, o estado volta. Um crash no meio do envio não reabre a enquete. O cartão da
+  original passa a mostrar o resultado congelado mesmo que as reações tenham sido podadas.
+- `fix(isacloud)`: o `<poll-closed>` válido é aplicado na original e consumido, sem virar um
+  segundo cartão. Fechamentos repetidos são ignorados; de quem entrou depois (sem a
+  original) continua como cartão "Resultado final". A mensagem de fechamento enviada por nós
+  também é consumida.
+- `fix(chat)`: replay de MAM de uma mensagem própria sem `stanza-id`/`origin-id` não duplica
+  mais em conversas 1:1 quando o arquivo reescreve o `from`; a dedupe reconhece o nosso
+  `msgid` em itens arquivados. Em salas o caso já era coberto.
+- `test`: specs de encerramento (ordem do envio, falha, repetição, fechamento inválido e
+  original tardia) e de dedupe de replay em chat e sala; suíte reduzida com 538 + 36 testes
+  e `types:check`.
+
 ## v15-34 — 2026-11-21 (`3e9bcf550`)
 
 - `feat(isacloud)`: vídeo conferência com o Galene (`meet.isacloud.cc`). Botão de câmera na

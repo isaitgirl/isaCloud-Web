@@ -1,12 +1,23 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-34** · atualizada em **21/11/2026**
+Versão atual: **v15-35** · atualizada em **22/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-35 — 22/11/2026
+
+- ✅ **Enquetes mais estáveis:** encerrar uma enquete agora é definitivo na hora — se o
+  envio falhar ou o app fechar no meio, ela não volta a ficar aberta.
+- 🗳️ **Um cartão só:** o resultado aparece na própria enquete, com o placar congelado, e
+  não se multiplica em vários cartões de "resultado" quando o fechamento chega mais de uma
+  vez.
+- 🔄 **Menos mensagens repetidas:** depois de recarregar ou reconectar, uma mensagem que
+  você já tinha enviado não aparece mais duplicada em conversas que arquivam o histórico de
+  um jeito diferente.
 
 ### v15-34 — 21/11/2026
 
