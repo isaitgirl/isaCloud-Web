@@ -48,6 +48,8 @@ HEADLESS_SPECS=(
     src/headless/plugins/muc/tests/muc.js
     src/headless/plugins/reactions/tests/
     src/headless/shared/connection/tests/resource.js # isaCloud: resource isaCloudWeb-
+    src/headless/plugins/chat/tests/mam-dedupe.js # isaCloud: dedupe de replay de MAM
+    src/headless/plugins/muc/tests/mam-dedupe.js # isaCloud: dedupe de replay de MAM em sala
 )
 
 npx vitest run --project main "${MAIN_SPECS[@]}"

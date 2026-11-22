@@ -1253,6 +1253,7 @@ export default function ModelWithMessages(BaseModel) {
                 ...this.getStanzaIdQueryAttrs(attrs),
                 this.getOriginIdQueryAttrs(attrs),
                 this.getMessageBodyQueryAttrs(attrs),
+                this.getClientIdQueryAttrs(attrs),
                 ...extra_queries,
             ].filter((s) => s);
 
@@ -1314,6 +1315,25 @@ export default function ModelWithMessages(BaseModel) {
                     query['body'] = attrs.body;
                 }
                 return query;
+            }
+        }
+
+        /**
+         * Some archives leave out the XEP-0359 `<stanza-id>` and `<origin-id>` of
+         * a message we sent, keeping only the `id` which our client assigned. Our
+         * own copy can then only be recognized by that id, because the archive
+         * may also have rewritten `from` to our bare JID (or the nick we had when
+         * it was sent).
+         *
+         * Only replays of our own messages are matched this way. Another sender's
+         * client id may legitimately repeat ours (some clients use counters rather
+         * than UUIDs), and merging those would lose a message, so `from` is still
+         * required for them.
+         * @param {object} attrs - Attributes representing a received message
+         */
+        getClientIdQueryAttrs(attrs) {
+            if (attrs.is_archived && attrs.sender === 'me' && attrs.msgid) {
+                return { msgid: attrs.msgid, sender: 'me' };
             }
         }
 
