@@ -141,9 +141,42 @@ describe('Closing a poll', function () {
                 model.messages.find((m) => m.get('isacloud_poll_client_id') === 'own-poll-1'),
             );
             await u.waitUntil(() => original.get('isacloud_poll_closed_at'));
+            expect(original.get('isacloud_poll_closed').tally).toEqual([
+                { emoji: '1️⃣', label: 'Pizza', count: 1, voters: ['juliet'] },
+                { emoji: '2️⃣', label: 'Sushi', count: 1, voters: ['benvolio'] },
+            ]);
+            // The closing message is consumed: only the original card remains.
+            await u.waitUntil(
+                () => !model.messages.find((m) => m.get('isacloud_poll_closed') && !m.get('isacloud_poll')),
+            );
+            await u.waitUntil(() => view.querySelectorAll('converse-isacloud-poll').length === 1);
             const card = await u.waitUntil(() => view.querySelector('.isacloud-poll'));
+            expect(card.classList.contains('isacloud-poll--closed')).toBe(true);
             expect(card.querySelector('.isacloud-poll__footer').textContent).toContain('Poll closed · 2 votes');
             expect(view.querySelectorAll('button.isacloud-poll__option')).toHaveLength(0);
+        }),
+    );
+
+    it(
+        'reopens the poll when the closing message fails to send',
+        mock.initConverse(converse, [], SETTINGS, async function (_converse) {
+            const { view, model } = await openRoom(_converse);
+            receive(_converse, pollFrom(_converse, 'romeo', 'own-poll-2', 'own-poll-2-stanza'));
+            await u.waitUntil(() => view.querySelector('.isacloud-poll'));
+
+            vi.spyOn(_converse.api, 'confirm').mockResolvedValue(true);
+            const alert = vi.spyOn(_converse.api, 'alert').mockImplementation(() => {});
+            vi.spyOn(model, 'sendMessage').mockRejectedValue(new Error('x'));
+
+            const message_el = await openMessageActions(view, 'own-poll-2');
+            const close_button = await u.waitUntil(() => message_el.querySelector('.chat-msg__action-close-poll'));
+            close_button.click();
+
+            await u.waitUntil(() => alert.mock.calls.length);
+            const original = model.messages.find((m) => m.get('isacloud_poll_client_id') === 'own-poll-2');
+            expect(original.get('isacloud_poll_closed')).toBeUndefined();
+            expect(original.get('isacloud_poll_closed_at')).toBeUndefined();
+            await u.waitUntil(() => view.querySelectorAll('button.isacloud-poll__option').length === 2);
         }),
     );
 
@@ -158,15 +191,48 @@ describe('Closing a poll', function () {
                 model.messages.find((m) => m.get('isacloud_poll_client_id') === 'poll-a'),
             );
             await u.waitUntil(() => original.get('isacloud_poll_closed_at'));
+            expect(original.get('isacloud_poll_closed').tally.map((entry) => entry.count)).toEqual([1, 1]);
+            // The closing is consumed instead of becoming a second card.
+            expect(model.messages.filter((m) => m.get('isacloud_poll_closed') && !m.get('isacloud_poll'))).toHaveLength(
+                0,
+            );
             expect(await u.waitUntil(() => view.querySelector('.isacloud-poll--closed'))).not.toBeNull();
             expect(view.querySelector('.isacloud-poll__footer').textContent).toContain('Poll closed');
         }),
     );
 
     it(
+        'consumes a repeated poll-closed from the creator',
+        mock.initConverse(converse, [], SETTINGS, async function (_converse) {
+            const { view, model } = await openRoom(_converse);
+            receive(_converse, pollFrom(_converse, 'juliet', 'poll-d', 'poll-d-stanza'));
+            receive(_converse, closeFrom(_converse, 'juliet', 'poll-d'));
+
+            const original = await u.waitUntil(() =>
+                model.messages.find((m) => m.get('isacloud_poll_client_id') === 'poll-d'),
+            );
+            await u.waitUntil(() => original.get('isacloud_poll_closed_at'));
+            const closed_at = original.get('isacloud_poll_closed_at');
+            const closed = original.get('isacloud_poll_closed');
+
+            // The second closing is valid too: it is ignored, not accumulated.
+            const discarded = new Promise((resolve) => model.messages.once('remove', resolve));
+            receive(_converse, closeFrom(_converse, 'juliet', 'poll-d'));
+            await discarded;
+
+            expect(original.get('isacloud_poll_closed_at')).toBe(closed_at);
+            expect(original.get('isacloud_poll_closed')).toBe(closed);
+            expect(model.messages.filter((m) => m.get('isacloud_poll_closed') && !m.get('isacloud_poll'))).toHaveLength(
+                0,
+            );
+            await u.waitUntil(() => view.querySelectorAll('converse-isacloud-poll').length === 1);
+        }),
+    );
+
+    it(
         'does not close the poll when the sender is not the creator',
         mock.initConverse(converse, [], SETTINGS, async function (_converse) {
-            const { model } = await openRoom(_converse);
+            const { view, model } = await openRoom(_converse);
             receive(_converse, pollFrom(_converse, 'juliet', 'poll-b', 'poll-b-stanza'));
             receive(_converse, closeFrom(_converse, 'benvolio', 'poll-b'));
 
@@ -175,13 +241,23 @@ describe('Closing a poll', function () {
             );
             await u.waitUntil(() => model.messages.find((m) => m.get('isacloud_poll_closed')));
             expect(original.get('isacloud_poll_closed_at')).toBeUndefined();
+            // An invalid closing is not consumed: it stays as the result card.
+            expect(model.messages.filter((m) => m.get('isacloud_poll_closed') && !m.get('isacloud_poll'))).toHaveLength(
+                1,
+            );
+            const cards = await u.waitUntil(() => {
+                const els = view.querySelectorAll('converse-isacloud-poll');
+                return els.length === 2 ? els : null;
+            });
+            expect([...cards].some((el) => el.textContent.includes('Final result'))).toBe(true);
+            expect(view.querySelectorAll('button.isacloud-poll__option')).toHaveLength(2);
         }),
     );
 
     it(
         'applies a closing message that arrived before the poll',
         mock.initConverse(converse, [], SETTINGS, async function (_converse) {
-            const { model } = await openRoom(_converse);
+            const { view, model } = await openRoom(_converse);
             receive(_converse, closeFrom(_converse, 'juliet', 'poll-c'));
             receive(_converse, pollFrom(_converse, 'juliet', 'poll-c', 'poll-c-stanza'));
 
@@ -189,6 +265,12 @@ describe('Closing a poll', function () {
                 model.messages.find((m) => m.get('isacloud_poll_client_id') === 'poll-c'),
             );
             await u.waitUntil(() => original.get('isacloud_poll_closed_at'));
+            expect(original.get('isacloud_poll_closed').tally.map((entry) => entry.count)).toEqual([1, 1]);
+            // The pending closing message is removed once the original adopts it.
+            expect(model.messages.filter((m) => m.get('isacloud_poll_closed') && !m.get('isacloud_poll'))).toHaveLength(
+                0,
+            );
+            await u.waitUntil(() => view.querySelectorAll('converse-isacloud-poll').length === 1);
         }),
     );
 });

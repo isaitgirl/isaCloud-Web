@@ -11,8 +11,10 @@
  *  poll element itself already travels outside the encryption).
  *
  *  The card replaces the textual `<body>` fallback in groupchats (see
- *  `index.js`); in 1:1 chats the body is shown as an ordinary message. A
- *  `<poll-closed>` message gets a frozen result card.
+ *  `index.js`); in 1:1 chats the body is shown as an ordinary message. A poll
+ *  keeps this card once closed, with the tally frozen by the closing message;
+ *  only a `<poll-closed>` without its original (someone who joined later) gets
+ *  the frozen result card.
  * @copyright 2026, the Converse.js contributors
  * @license Mozilla Public License (MPLv2)
  */
@@ -55,6 +57,7 @@ class PollCard extends CustomElement {
 
     initialize() {
         this.listenTo(this.model, 'change:reactions', () => this.requestUpdate());
+        this.listenTo(this.model, 'change:isacloud_poll_closed', () => this.requestUpdate());
         this.listenTo(this.model, 'change:isacloud_poll_closed_at', () => this.requestUpdate());
         this.requestUpdate();
     }
@@ -129,20 +132,33 @@ class PollCard extends CustomElement {
     }
 
     /**
+     * The card of a poll. A closed poll keeps the layout of an open one, but
+     * shows the frozen tally kept by the closing message: the reactions may
+     * have been pruned since, and the result must survive the closing card
+     * being consumed.
      * @param {import('./tally').Poll} poll
      */
     renderPoll(poll) {
+        const closed = this.model.get('isacloud_poll_closed');
+        const closed_at = this.model.get('isacloud_poll_closed_at');
+        const is_closed = !!closed_at || !!closed;
         const chatbox = this.model.collection?.chatbox;
         const reactor_key = chatbox ? u.reactions.getOwnReactionJID(chatbox) : null;
         const { options, total, my_votes } = computePollTally(poll, this.model.get('reactions'), reactor_key);
-        const closed_at = this.model.get('isacloud_poll_closed_at');
-        const show_results = !!closed_at || !poll.hide_results || my_votes.length > 0;
+
+        // Frozen counts per option, keeping every option of the poll visible.
+        const frozen =
+            is_closed && closed?.tally ? new Map(closed.tally.map((entry) => [entry.emoji, entry.count])) : null;
+        const tally = frozen ? options.map((option) => ({ ...option, count: frozen.get(option.emoji) ?? 0 })) : options;
+        const frozen_total = is_closed && closed?.tally ? closedTallyTotal(closed.tally) : total;
+
+        const show_results = is_closed || !poll.hide_results || my_votes.length > 0;
         const expired = isPollExpired(poll);
         const deadline = poll.deadline ? formatDeadline(poll.deadline) : null;
 
         let footer;
-        if (closed_at) {
-            footer = total ? `${t('Poll closed')} · ${votesLabel(total)}` : t('Poll closed');
+        if (is_closed) {
+            footer = frozen_total ? `${t('Poll closed')} · ${votesLabel(frozen_total)}` : t('Poll closed');
         } else if (expired) {
             footer = deadline ? `${t('Poll closed')} · ${t('Ended on %1$s', deadline)}` : t('Poll closed');
         } else if (poll.hide_results && !my_votes.length) {
@@ -153,7 +169,10 @@ class PollCard extends CustomElement {
             footer = votesLabel(total);
         }
 
-        return html`<section class="isacloud-poll" aria-label="${t('Poll')}">
+        return html`<section
+            class="isacloud-poll ${is_closed ? 'isacloud-poll--closed' : ''}"
+            aria-label="${t('Poll')}"
+        >
             <div class="isacloud-poll__title">${poll.title}</div>
             ${poll.description ? html`<div class="isacloud-poll__description">${poll.description}</div>` : nothing}
             ${
@@ -162,20 +181,20 @@ class PollCard extends CustomElement {
                     : nothing
             }
             <div class="isacloud-poll__options" aria-label="${t('Poll options')}">
-                ${options.map((option) =>
+                ${tally.map((option) =>
                     this.renderOption(
                         option,
-                        total,
+                        frozen_total,
                         my_votes.includes(option.emoji),
                         show_results,
-                        !expired && !closed_at,
+                        !expired && !is_closed,
                     ),
                 )}
             </div>
             <div class="isacloud-poll__footer">
                 <span>${footer}</span>
                 ${
-                    !expired && !closed_at && deadline
+                    !expired && !is_closed && deadline
                         ? html`<span class="isacloud-poll__deadline">${t('Ends on %1$s', deadline)}</span>`
                         : nothing
                 }
@@ -209,10 +228,13 @@ class PollCard extends CustomElement {
 
     render() {
         if (!this.model) return nothing;
-        const closed = this.model.get('isacloud_poll_closed');
-        if (closed) return this.renderClosedPoll(closed);
+        // A poll keeps its own card once closed, using the frozen tally. Only a
+        // closing message whose original is not here (we joined later) gets the
+        // frozen-result card.
         const poll = this.model.get('isacloud_poll');
         if (poll) return this.renderPoll(poll);
+        const closed = this.model.get('isacloud_poll_closed');
+        if (closed) return this.renderClosedPoll(closed);
         return nothing;
     }
 }
