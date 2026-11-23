@@ -3543,6 +3543,18 @@ msgstr "Mensagem criptografada"
 msgid "Remove from list"
 msgstr "Remover da lista"
 
+msgid "Pin to top"
+msgstr "Fixar no topo"
+
+msgid "Unpin from top"
+msgstr "Desafixar do topo"
+
+msgid "Pinned conversation"
+msgstr "Conversa fixada"
+
+msgid "You can pin up to 3 conversations"
+msgstr "Você pode fixar até 3 conversas"
+
 msgid "No conversations yet"
 msgstr "Nenhuma conversa ainda"
 

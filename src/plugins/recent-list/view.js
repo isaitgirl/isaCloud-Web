@@ -10,12 +10,14 @@ import { __ } from 'i18n';
 import { CustomElement } from 'shared/components/element.js';
 import tplRecentList from './templates/recent-list.js';
 import {
+    MAX_PINNED,
     computePreview,
     getConversationKind,
     getLastActivity,
     getLastDisplayableMessage,
     hasConversationContent,
     isConversation,
+    isPinned,
     matchesFilter,
 } from './utils.js';
 
@@ -32,6 +34,30 @@ function compareNames(a, b) {
     const name_b = b.getDisplayName().toLowerCase();
     if (name_a !== name_b) return name_a < name_b ? -1 : 1;
     return a.get('jid') < b.get('jid') ? -1 : a.get('jid') > b.get('jid') ? 1 : 0;
+}
+
+/**
+ * One entry of the conversation list.
+ * @typedef {Object} RecentItem
+ * @property {import('@converse/headless').Model} model
+ * @property {string} kind
+ * @property {number} activity
+ * @property {number} pinned_order The pin position, 0 when not pinned.
+ */
+
+/**
+ * Pinned conversations come first, in the order they were pinned, so the
+ * first pin stays on top. The rest follow by most recent activity.
+ * @param {RecentItem} a
+ * @param {RecentItem} b
+ */
+function compareItems(a, b) {
+    if (a.pinned_order && b.pinned_order) {
+        return a.pinned_order - b.pinned_order || compareNames(a.model, b.model);
+    }
+    if (a.pinned_order) return -1;
+    if (b.pinned_order) return 1;
+    return b.activity - a.activity || compareNames(a.model, b.model);
 }
 
 /**
@@ -137,17 +163,70 @@ export class RecentList extends CustomElement {
     }
 
     /**
-     * The conversations with content matching the active filter, most recent
-     * activity first. Empty groupchats are omitted.
-     * @returns {{ model: import('@converse/headless').Model, kind: string, activity: number }[]}
+     * The conversations shown in the list: those with something to show, plus
+     * any pinned conversation (an explicit pin keeps it visible), matching the
+     * active filter. Pinned conversations first, in the order they were
+     * pinned, then the rest by most recent activity.
+     * @returns {RecentItem[]}
      */
     getItems() {
         const filter = this.model.get('filter');
         return this.getConversations()
-            .filter((model) => hasConversationContent(model))
+            .filter((model) => isPinned(model) || hasConversationContent(model))
             .filter((model) => matchesFilter(model, filter))
-            .map((model) => ({ model, kind: getConversationKind(model), activity: getLastActivity(model) }))
-            .sort((a, b) => b.activity - a.activity || compareNames(a.model, b.model));
+            .map((model) => ({
+                model,
+                kind: getConversationKind(model),
+                activity: getLastActivity(model),
+                pinned_order: isPinned(model) ? Number(model.get('pinned_order')) : 0,
+            }))
+            .sort(compareItems);
+    }
+
+    /**
+     * The number of pinned conversations. The limit is global, so it counts
+     * every conversation and not only the ones matching the active filter.
+     * @returns {number}
+     */
+    getPinnedCount() {
+        return this.getConversations().filter((model) => isPinned(model)).length;
+    }
+
+    /**
+     * Whether a conversation can be pinned: it isn't pinned already and there
+     * is room below the limit.
+     * @param {import('@converse/headless').Model} model
+     * @returns {boolean}
+     */
+    canPin(model) {
+        return !isPinned(model) && this.getPinnedCount() < MAX_PINNED;
+    }
+
+    /**
+     * Pins a conversation below the ones already pinned.
+     * @param {import('@converse/headless').Model} model
+     */
+    pinConversation(model) {
+        if (!this.canPin(model)) return;
+        const orders = this.getConversations()
+            .filter((m) => isPinned(m))
+            .map((m) => Number(m.get('pinned_order')));
+        // The first pinned conversation is 1; later pins append below it.
+        u.safeSave(model, { pinned_order: Math.max(0, ...orders) + 1 });
+    }
+
+    /** @param {import('@converse/headless').Model} model */
+    unpinConversation(model) {
+        if (isPinned(model)) u.safeSave(model, { pinned_order: 0 });
+    }
+
+    /** @param {import('@converse/headless').Model} model */
+    togglePin(model) {
+        if (isPinned(model)) {
+            this.unpinConversation(model);
+        } else {
+            this.pinConversation(model);
+        }
     }
 
     showContacts() {

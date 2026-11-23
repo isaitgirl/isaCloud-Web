@@ -11,6 +11,7 @@ import {
     getPreview,
     getUnreadCount,
     isNotesToSelf,
+    isPinned,
     isUnread,
 } from '../utils.js';
 
@@ -46,47 +47,113 @@ function tplUnreadBadge(model) {
  * @param {string} config.text
  * @param {string} config.title
  * @param {string} config.icon_class
- * @param {(ev: Event) => void} config.handler
+ * @param {string} [config.item_class] Extra class, for tests and styling.
+ * @param {boolean} [config.disabled] Render the item inert, without a handler.
+ * @param {(ev: Event) => void} [config.handler]
  */
-function tplMenuItem({ text, title, icon_class, handler }) {
-    return html`<a class="dropdown-item" role="button" tabindex="0" title="${title}" @click=${handler}>
+function tplMenuItem({ text, title, icon_class, item_class, disabled, handler }) {
+    const classes = ['dropdown-item', disabled ? 'disabled' : '', item_class ?? ''].filter(Boolean).join(' ');
+    if (disabled) {
+        return html`<a
+            class="${classes}"
+            role="button"
+            tabindex="-1"
+            aria-disabled="true"
+            title="${title}"
+            aria-label="${text}. ${title}"
+        >
+            <converse-icon aria-hidden="true" class="fa ${icon_class}" size="1em"></converse-icon>
+            ${text}
+        </a>`;
+    }
+    return html`<a class="${classes}" role="button" tabindex="0" title="${title}" @click=${handler}>
         <converse-icon aria-hidden="true" class="fa ${icon_class}" size="1em"></converse-icon>
         ${text}
     </a>`;
 }
 
 /**
+ * The pin/unpin entry of the row's menu. When the limit is reached, the entry
+ * stays visible but disabled, so the user can see why it does nothing.
+ * @param {RecentList} el
+ * @param {Model} model
+ */
+function tplPinMenuItem(el, model) {
+    if (isPinned(model)) {
+        return tplMenuItem({
+            text: __('Unpin from top'),
+            title: __('Unpin from top'),
+            icon_class: 'fa-thumbtack',
+            item_class: 'unpin-conversation',
+            handler: () => el.togglePin(model),
+        });
+    }
+    if (!el.canPin(model)) {
+        return tplMenuItem({
+            text: __('Pin to top'),
+            title: __('You can pin up to 3 conversations'),
+            icon_class: 'fa-thumbtack',
+            item_class: 'pin-conversation',
+            disabled: true,
+        });
+    }
+    return tplMenuItem({
+        text: __('Pin to top'),
+        title: __('Pin to top'),
+        icon_class: 'fa-thumbtack',
+        item_class: 'pin-conversation',
+        handler: () => el.togglePin(model),
+    });
+}
+
+/**
+ * The pin indicator shown on the right of a pinned row. Pinned rows are marked
+ * only by this icon; they stay in the single list.
+ * @param {Model} model
+ */
+function tplPinIndicator(model) {
+    if (!isPinned(model)) return '';
+    const label = __('Pinned conversation');
+    return html`<span class="recent-item__pin" role="img" title="${label}" aria-label="${label}">
+        <converse-icon class="fa fa-thumbtack" size="0.75em" aria-hidden="true"></converse-icon>
+    </span>`;
+}
+
+/**
  * One row of the conversation list.
  * @param {RecentList} el
- * @param {{ model: Model, kind: string, activity: number }} item
+ * @param {{ model: Model, kind: string, activity: number, pinned_order: number }} item
  */
 export default function tplRecentRow(el, { model, kind, activity }) {
     const is_room = kind !== 'chat';
     const is_notes = isNotesToSelf(model);
+    const is_pinned = isPinned(model);
     const is_unread = isUnread(model);
     const preview = getPreview(model);
-    const buttons = is_notes
-        ? []
-        : is_room
-          ? [
-                tplMenuItem({
-                    text: __('Leave this groupchat'),
-                    title: __('Leave this groupchat'),
-                    icon_class: 'fa-sign-out-alt',
-                    handler: () => el.leaveRoom(model),
-                }),
-            ]
-          : [
-                tplMenuItem({
-                    text: __('Remove from list'),
-                    title: __('Remove from list'),
-                    icon_class: 'fa-times',
-                    handler: () => el.removeChat(model),
-                }),
-            ];
+    // The pin comes first, then the action that removes the row, if any.
+    const buttons = [tplPinMenuItem(el, model)];
+    if (is_room) {
+        buttons.push(
+            tplMenuItem({
+                text: __('Leave this groupchat'),
+                title: __('Leave this groupchat'),
+                icon_class: 'fa-sign-out-alt',
+                handler: () => el.leaveRoom(model),
+            }),
+        );
+    } else if (!is_notes) {
+        buttons.push(
+            tplMenuItem({
+                text: __('Remove from list'),
+                title: __('Remove from list'),
+                icon_class: 'fa-times',
+                handler: () => el.removeChat(model),
+            }),
+        );
+    }
 
     return html`<li
-        class="recent-item ${isCurrentlyOpen(model) ? 'open' : ''} ${is_unread ? 'unread' : ''} ${model.get('closed') ? 'closed' : ''}"
+        class="recent-item ${is_pinned ? 'pinned' : ''} ${isCurrentlyOpen(model) ? 'open' : ''} ${is_unread ? 'unread' : ''} ${model.get('closed') ? 'closed' : ''}"
         data-jid="${model.get('jid')}"
     >
         <a
@@ -112,15 +179,11 @@ export default function tplRecentRow(el, { model, kind, activity }) {
                     >${preview.prefix ? html`<span class="recent-item__prefix">${`${preview.prefix}: `}</span>` : ''}${preview.text}</span
                 >
             </span>
-            <time class="recent-item__time">${formatActivityTime(activity)}</time>
+            <span class="recent-item__meta">
+                <time class="recent-item__time">${formatActivityTime(activity)}</time>
+                ${tplPinIndicator(model)}
+            </span>
         </a>
-        ${
-            buttons.length
-                ? html`<converse-dropdown
-                      class="btn-group dropstart recent-item__action"
-                      .items=${buttons}
-                  ></converse-dropdown>`
-                : ''
-        }
+        <converse-dropdown class="btn-group dropstart recent-item__action" .items=${buttons}></converse-dropdown>
     </li>`;
 }

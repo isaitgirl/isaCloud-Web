@@ -252,10 +252,37 @@ $blue: #1780ad;
             font-weight: 600;
         }
 
-        &__time {
-            align-self: flex-start;
+        // The right-hand column: the activity time and, on pinned rows, the
+        // pin indicator. Pinned rows reserve space on the right for the row
+        // menu, which is positioned over the row's right edge when it appears,
+        // so the pin never ends up underneath it. Unpinned rows keep the time
+        // against the edge; it is hidden while the menu is shown.
+        &__meta {
+            display: flex;
             flex: 0 0 auto;
+            flex-direction: column;
+            align-self: flex-start;
+            align-items: flex-end;
+            gap: 2px;
             margin-top: 2px;
+        }
+
+        &.pinned &__meta {
+            padding-right: 30px;
+        }
+
+        &__pin {
+            display: inline-flex;
+            color: $pink;
+            line-height: 1;
+
+            converse-icon svg {
+                fill: currentColor;
+            }
+        }
+
+        &__time {
+            flex: 0 0 auto;
             color: var(--subdued-color, #6c757d);
             font-size: 12px;
             white-space: nowrap;

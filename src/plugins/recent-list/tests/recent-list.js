@@ -39,6 +39,44 @@ const chip = (list, label) =>
     Array.from(list.querySelectorAll('.recent-list__chip')).find((el) => el.textContent.trim() === label);
 
 /**
+ * @param {Element} list
+ * @param {string} jid
+ */
+const rowOf = (list, jid) => list.querySelector(`.recent-item[data-jid="${jid}"]`);
+
+/**
+ * The labels of the actions in a row's dropdown menu.
+ * @param {Element} row
+ */
+const rowActions = (row) =>
+    Array.from(row.querySelectorAll('converse-dropdown .dropdown-item')).map((el) =>
+        el.textContent.replace(/\s+/g, ' ').trim(),
+    );
+
+/**
+ * Clicks "Pin to top" or "Unpin from top" in a row's menu and waits for the
+ * row to show the result.
+ * @param {any} _converse
+ * @param {string} jid
+ * @param {'pin'|'unpin'} action
+ */
+async function setPinned(_converse, jid, action) {
+    const selector = action === 'pin' ? '.pin-conversation' : '.unpin-conversation';
+    const action_el = await u.waitUntil(() => rowOf(currentList(_converse), jid)?.querySelector(selector));
+    action_el.click();
+    await u.waitUntil(() => {
+        const row = rowOf(currentList(_converse), jid);
+        return action === 'pin' ? !!row?.classList.contains('pinned') : !row?.classList.contains('pinned');
+    });
+}
+
+/** @param {any} _converse @param {string} jid */
+const pin = (_converse, jid) => setPinned(_converse, jid, 'pin');
+
+/** @param {any} _converse @param {string} jid */
+const unpin = (_converse, jid) => setPinned(_converse, jid, 'unpin');
+
+/**
  * @param {string} muc_jid
  * @param {string} nick
  * @param {string} body
@@ -380,7 +418,7 @@ describe('The "Notes to self" conversation', function () {
     );
 
     it(
-        'has no "Remove from list" menu in the conversation list, unlike other 1:1 chats',
+        'has a pin action but no "Remove from list" menu, unlike other 1:1 chats',
         mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 1);
             const contact_jid = mock.getContactJID(0);
@@ -392,11 +430,18 @@ describe('The "Notes to self" conversation', function () {
 
             const list = await getRecentList(_converse);
             const self_jid = _converse.bare_jid;
-            await u.waitUntil(() => rowJIDs(list).includes(self_jid));
-            const self_row = list.querySelector(`.recent-item[data-jid="${self_jid}"]`);
-            const contact_row = list.querySelector(`.recent-item[data-jid="${contact_jid}"]`);
-            expect(self_row.querySelector('converse-dropdown')).toBeNull();
-            expect(contact_row.querySelector('converse-dropdown')).not.toBeNull();
+            await u.waitUntil(
+                () =>
+                    rowOf(list, self_jid)?.querySelector('.pin-conversation') &&
+                    rowOf(list, contact_jid)?.querySelector('.pin-conversation'),
+            );
+            const self_row = rowOf(list, self_jid);
+            const contact_row = rowOf(list, contact_jid);
+            expect(self_row.querySelector('converse-dropdown')).not.toBeNull();
+            expect(rowActions(self_row)).toContain('Pin to top');
+            expect(rowActions(self_row)).not.toContain('Remove from list');
+            expect(rowActions(contact_row)).toContain('Remove from list');
+            expect(rowActions(contact_row)).toContain('Pin to top');
         }),
     );
 
@@ -416,6 +461,231 @@ describe('The "Notes to self" conversation', function () {
             expect(view.querySelector('.unblock-user')).toBeNull();
             // "Details" and "Close" stay.
             expect(view.querySelector('.close-chatbox-button')).not.toBeNull();
+        }),
+    );
+});
+
+describe('Pinning conversations in the recent list', function () {
+    // Notes to self needs the same settings as in the conversation list specs.
+    const NOTES_SETTINGS = { ...SETTINGS, allow_non_roster_messaging: true, notes_to_self: true };
+
+    it(
+        'pins a 1:1 chat to the top and unpins it',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.getContactJID(0);
+            await mock.openChatBoxFor(_converse, contact_jid);
+            await _converse.handleMessageStanza(mock.createChatMessage(_converse, contact_jid, 'Oi'));
+
+            await sleep(5);
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            await room.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Bem-vindo'));
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).length === 2);
+            // The room's message is more recent, so it is on top.
+            expect(rowJIDs(list)).toEqual([LOUNGE, contact_jid]);
+
+            const pin_action = await u.waitUntil(() =>
+                rowOf(currentList(_converse), contact_jid)?.querySelector('.pin-conversation'),
+            );
+            expect(pin_action.textContent.trim()).toBe('Pin to top');
+
+            await pin(_converse, contact_jid);
+            const current = currentList(_converse);
+            expect(rowJIDs(current)).toEqual([contact_jid, LOUNGE]);
+            const pinned_row = rowOf(current, contact_jid);
+            expect(pinned_row.classList.contains('pinned')).toBe(true);
+            expect(pinned_row.querySelector('.recent-item__pin')).not.toBeNull();
+            expect(_converse.state.chatboxes.get(contact_jid).get('pinned_order')).toBeGreaterThan(0);
+            expect(pinned_row.querySelector('.pin-conversation')).toBeNull();
+            expect(pinned_row.querySelector('.unpin-conversation').textContent.trim()).toBe('Unpin from top');
+
+            await unpin(_converse, contact_jid);
+            const unpinned_row = rowOf(currentList(_converse), contact_jid);
+            expect(unpinned_row.classList.contains('pinned')).toBe(false);
+            expect(unpinned_row.querySelector('.recent-item__pin')).toBeNull();
+            expect(_converse.state.chatboxes.get(contact_jid).get('pinned_order') > 0).toBe(false);
+            expect(rowJIDs(currentList(_converse))).toEqual([LOUNGE, contact_jid]);
+            expect(unpinned_row.querySelector('.pin-conversation')).not.toBeNull();
+        }),
+    );
+
+    it(
+        'pins a groupchat and "Notes to self", which has no "Remove from list" action',
+        mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            await room.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Bem-vindo'));
+
+            const notes = await _converse.api.chats.open(_converse.bare_jid);
+            await notes.initialized;
+            await _converse.handleMessageStanza(mock.createChatMessage(_converse, _converse.bare_jid, 'Uma nota'));
+
+            const list = await getRecentList(_converse);
+            const self_jid = _converse.bare_jid;
+            await u.waitUntil(() => rowJIDs(list).length === 2);
+            expect(rowJIDs(list).sort()).toEqual([LOUNGE, self_jid].sort());
+
+            const notes_row = await u.waitUntil(() => {
+                const row = rowOf(list, self_jid);
+                return row?.querySelector('.pin-conversation') ? row : null;
+            });
+            expect(rowActions(notes_row)).toContain('Pin to top');
+            expect(rowActions(notes_row)).not.toContain('Remove from list');
+
+            await pin(_converse, LOUNGE);
+            await pin(_converse, self_jid);
+
+            const current = currentList(_converse);
+            for (const jid of [LOUNGE, self_jid]) {
+                const row = rowOf(current, jid);
+                expect(row.classList.contains('pinned')).toBe(true);
+                expect(row.querySelector('.recent-item__pin')).not.toBeNull();
+                expect(row.querySelector('.unpin-conversation')).not.toBeNull();
+            }
+            // The room was pinned first, so it stays above Notes to self.
+            expect(rowJIDs(current).slice(0, 2)).toEqual([LOUNGE, self_jid]);
+            expect(rowActions(rowOf(current, self_jid))).not.toContain('Remove from list');
+        }),
+    );
+
+    it(
+        'orders pinned conversations by pin order, not by activity or name',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 3);
+            const jids = [0, 1, 2].map((i) => mock.getContactJID(i));
+            // Each message is newer than the previous one, so activity order is
+            // the reverse of the pin order below.
+            for (const jid of jids) {
+                const view = await mock.openChatBoxFor(_converse, jid);
+                await mock.sendMessage(_converse, view, `Oi ${jid}`);
+                await sleep(20);
+            }
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).length === 3);
+            expect(rowJIDs(list)).toEqual([...jids].reverse());
+
+            for (const jid of jids) await pin(_converse, jid);
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).join() === jids.join());
+            expect(rowJIDs(currentList(_converse))).toEqual(jids);
+            expect(currentList(_converse).querySelectorAll('.recent-item.pinned').length).toBe(3);
+
+            const orders = jids.map((jid) => _converse.state.chatboxes.get(jid).get('pinned_order'));
+            expect(orders[0]).toBeLessThan(orders[1]);
+            expect(orders[1]).toBeLessThan(orders[2]);
+        }),
+    );
+
+    it(
+        'allows at most 3 pinned conversations',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 4);
+            const jids = [0, 1, 2, 3].map((i) => mock.getContactJID(i));
+            for (const jid of jids) {
+                const view = await mock.openChatBoxFor(_converse, jid);
+                await mock.sendMessage(_converse, view, `Oi ${jid}`);
+                await sleep(10);
+            }
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).length === 4);
+            for (const jid of jids.slice(0, 3)) await pin(_converse, jid);
+
+            const unpinned_jid = jids[3];
+            const pin_action = await u.waitUntil(() =>
+                rowOf(currentList(_converse), unpinned_jid)?.querySelector('.pin-conversation'),
+            );
+            expect(pin_action.classList.contains('disabled')).toBe(true);
+            expect(pin_action.getAttribute('aria-disabled')).toBe('true');
+
+            // A disabled pin does nothing.
+            pin_action.click();
+            await sleep(50);
+            expect(_converse.state.chatboxes.get(unpinned_jid).get('pinned_order') > 0).toBe(false);
+            expect(currentList(_converse).querySelectorAll('.recent-item.pinned').length).toBe(3);
+            expect(rowOf(currentList(_converse), unpinned_jid).classList.contains('pinned')).toBe(false);
+        }),
+    );
+
+    it(
+        'keeps filters applied to pinned conversations',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.getContactJID(0);
+            const view = await mock.openChatBoxFor(_converse, contact_jid);
+            await mock.sendMessage(_converse, view, 'Oi');
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).includes(contact_jid));
+            await pin(_converse, contact_jid);
+
+            // The 1:1 is pinned, but it is still not a group.
+            chip(currentList(_converse), 'Groups').click();
+            await u.waitUntil(() => !rowJIDs(currentList(_converse)).includes(contact_jid));
+            expect(rowOf(currentList(_converse), contact_jid)).toBeNull();
+
+            chip(currentList(_converse), 'Groups').click();
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(contact_jid));
+            const row = rowOf(currentList(_converse), contact_jid);
+            expect(row.classList.contains('pinned')).toBe(true);
+            expect(row.querySelector('.recent-item__pin')).not.toBeNull();
+            expect(_converse.state.chatboxes.get(contact_jid).get('pinned_order')).toBeGreaterThan(0);
+        }),
+    );
+
+    it(
+        'saves the pin on the chatbox, so it survives a re-render',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 2);
+            const contact_jid = mock.getContactJID(0);
+            const other_jid = mock.getContactJID(1);
+            const view = await mock.openChatBoxFor(_converse, contact_jid);
+            await mock.sendMessage(_converse, view, 'Oi');
+            await sleep(5);
+            const other_view = await mock.openChatBoxFor(_converse, other_jid);
+            await mock.sendMessage(_converse, other_view, 'Oi');
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).length === 2);
+            await pin(_converse, contact_jid);
+
+            const model = _converse.state.chatboxes.get(contact_jid);
+            expect(Number.isInteger(model.get('pinned_order'))).toBe(true);
+            expect(model.get('pinned_order')).toBeGreaterThan(0);
+
+            // Going to the contacts view and back re-renders the list.
+            list.querySelector('.recent-list__contacts-btn').click();
+            await u.waitUntil(() => currentList(_converse).querySelector('converse-roster'));
+            currentList(_converse).querySelector('.recent-list__back').click();
+            await u.waitUntil(() => rowJIDs(currentList(_converse)).includes(contact_jid));
+
+            const row = rowOf(currentList(_converse), contact_jid);
+            expect(row.classList.contains('pinned')).toBe(true);
+            expect(row.querySelector('.recent-item__pin')).not.toBeNull();
+            expect(rowJIDs(currentList(_converse))[0]).toBe(contact_jid);
+        }),
+    );
+
+    it(
+        'keeps a pinned room with an empty archive visible, and drops it when unpinned',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            expect(room.session.get('mam_initialized')).toBe(false);
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).includes(LOUNGE));
+            await pin(_converse, LOUNGE);
+
+            // The archive settles empty; an unpinned room would disappear.
+            room.session.save({ mam_initialized: true });
+            await sleep(150);
+            expect(rowJIDs(currentList(_converse))).toContain(LOUNGE);
+            expect(rowOf(currentList(_converse), LOUNGE).classList.contains('pinned')).toBe(true);
+
+            await unpin(_converse, LOUNGE);
+            await u.waitUntil(() => !rowJIDs(currentList(_converse)).includes(LOUNGE));
         }),
     );
 });

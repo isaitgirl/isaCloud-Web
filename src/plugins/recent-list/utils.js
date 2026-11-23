@@ -11,6 +11,19 @@ const { CHATROOMS_TYPE, PRIVATE_CHAT_TYPE } = constants;
 const MAX_PREVIEW_LENGTH = 120;
 const URL_ONLY_REGEX = /^https?:\/\/\S+$/;
 
+/** The most conversations that can be pinned to the top of the list. */
+export const MAX_PINNED = 3;
+
+/**
+ * Whether a conversation is pinned to the top of the list. `pinned_order` is 0
+ * or absent for unpinned conversations, and the pin position otherwise.
+ * @param {Model} model
+ * @returns {boolean}
+ */
+export function isPinned(model) {
+    return Number(model.get('pinned_order')) > 0;
+}
+
 /** @param {Model} model */
 export function isConversation(model) {
     const type = model.get('type');
