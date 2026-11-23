@@ -38,8 +38,10 @@
         width: auto;
         max-width: none;
     }
-    // The empty area takes the conversation card's place on the right.
-    .chat-placeholder {
+    // The empty area takes the conversation card's place on the right. The
+    // changelog view is a direct child of the app and sits in the same place.
+    .chat-placeholder,
+    converse-isacloud-changelog {
         left: calc(#{$share} + var(--isa-gap) * 0.5);
         right: var(--isa-gap);
     }
@@ -364,8 +366,10 @@
                 border-radius: var(--isa-card-radius);
             }
             // The empty area is a card like the conversation's, in the same place
-            // (the split mixin below gives it the same left and right).
-            .chat-placeholder {
+            // (the split mixin below gives it the same left and right). The
+            // changelog view is a card in the same place.
+            .chat-placeholder,
+            converse-isacloud-changelog {
                 position: absolute;
                 top: var(--isa-gap);
                 bottom: var(--isa-gap);

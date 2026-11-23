@@ -7,6 +7,19 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## Preparação da próxima release (branch `feat/novidades-lista`)
+
+- `feat(isacloud)`: “Novidades do isaCloud” na lista de conversas. Plugin novo
+  `converse-isacloud-changelog`: o `CHANGELOG-USERS.md` vira `changelog.json` embutido
+  (gerado por `scripts/generate-changelog-json.mjs`, conferido no build e na suíte), e um item
+  fixo acima das conversas fixadas abre uma view no lugar da conversa, com o lote de releases
+  desde a última abertura (primeira execução mostra só a release atual). Estado por conta
+  (`u.initStorage`): lido e arquivado por versão; o ícone de arquivar só existe nessa linha e
+  não apaga o acesso em Configurações → Sobre. O item aparece só na visão de Conversas com o
+  filtro “Todas”. A view não é um `ChatBox`: é um card anexado ao app de Chat, posicionado pelo
+  `isa-split` no desktop e ocupando a área do app no celular. Textos pt-BR no plugin, sem
+  `.po`; ícone `box-archive` acrescentado ao sprite. Specs de `batch`, estado, linha e view.
+
 ## v15-38 — 2026-11-23 (`72f56a4a7`)
 
 - `feat(recent-list)`: conversas podem ser fixadas no topo da lista, até **3** por conta. O

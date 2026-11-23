@@ -6,6 +6,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 OUT=isacloud/out
 
+# The embedded "Novidades do isaCloud" must match CHANGELOG-USERS.md.
+node scripts/generate-changelog-json.mjs --check
 npm run build
 rm -rf "$OUT"
 mkdir -p "$OUT"

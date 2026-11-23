@@ -6,6 +6,14 @@ O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
+## 🛠️ Preparação da próxima release
+
+- 🆕 **Novidades do isaCloud na lista:** um item fixo no topo das conversas
+  recentes, com o balão do isaCloud, mostra o que mudou na versão. Toque para
+  ler as novidades e as correções; o ícone de arquivar só esconde o item da
+  lista, e ele volta sozinho na próxima versão. O changelog continua disponível
+  em **Configurações → Sobre**, com o histórico completo no GitHub.
+
 ## 📅 Todas as releases
 
 ### v15-38 — 23/11/2026
