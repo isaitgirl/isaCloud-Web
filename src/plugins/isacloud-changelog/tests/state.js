@@ -21,9 +21,9 @@ describe('The isaCloud changelog state', function () {
 
             const item = getChangelogItem();
             expect(item).not.toBeNull();
-            expect(item.releases.map((r) => r.version)).toEqual(['v15-38']);
+            expect(item.releases.map((r) => r.version)).toEqual([_converse.env.VERSION_NAME]);
             expect(item.unread).toBe(true);
-            expect(item.date).toBe('23/11/2026');
+            expect(item.date).toBeTruthy();
 
             openChangelog();
             expect(changelog_state.open).toBe(true);

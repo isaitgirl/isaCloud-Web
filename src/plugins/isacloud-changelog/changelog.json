@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "v15-39",
+      "date": "23/11/2026",
+      "items": [
+        {
+          "title": "🆕 Novidades do isaCloud na lista",
+          "text": "um item fixo no topo das conversas recentes, com o balão do isaCloud, mostra o que mudou na versão. Toque para ler as novidades e as correções; o ícone de arquivar só esconde o item da lista, e ele volta sozinho na próxima versão. O changelog continua disponível em **Configurações → Sobre**, com o histórico completo no GitHub."
+        }
+      ]
+    },
+    {
       "version": "v15-38",
       "date": "23/11/2026",
       "items": [

@@ -50,7 +50,9 @@ describe('The isaCloud changelog row', function () {
 
             expect(items(list).firstElementChild).toBe(changelog_row);
             expect(changelog_row.querySelector('.recent-item__name').textContent).toContain('What’s new in isaCloud');
-            expect(changelog_row.querySelector('.recent-item__preview').textContent).toContain('v15-38');
+            expect(changelog_row.querySelector('.recent-item__preview').textContent).toContain(
+                _converse.env.VERSION_NAME,
+            );
             expect(changelog_row.classList.contains('unread')).toBe(true);
             expect(changelog_row.querySelector('.recent-item__new').textContent).toBe('New');
 
@@ -67,7 +69,9 @@ describe('The isaCloud changelog row', function () {
             expect(changelog(_converse).changelog_state.open).toBe(true);
             expect(view.querySelector('.isacloud-changelog__title').textContent).toContain('What’s new in isaCloud');
             expect(view.querySelectorAll('.isacloud-changelog__release').length).toBe(1);
-            expect(view.querySelector('.isacloud-changelog__release-title').textContent).toContain('v15-38');
+            expect(view.querySelector('.isacloud-changelog__release-title').textContent).toContain(
+                _converse.env.VERSION_NAME,
+            );
             await u.waitUntil(() => !row(list).classList.contains('unread'));
 
             view.querySelector('.isacloud-changelog__back').click();

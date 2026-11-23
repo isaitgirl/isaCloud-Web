@@ -7,7 +7,7 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
-## Preparação da próxima release (branch `feat/novidades-lista`)
+## v15-39 — 2026-11-23 (`72b10f4d2`)
 
 - `feat(isacloud)`: “Novidades do isaCloud” na lista de conversas. Plugin novo
   `converse-isacloud-changelog`: o `CHANGELOG-USERS.md` vira `changelog.json` embutido
