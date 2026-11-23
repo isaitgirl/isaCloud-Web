@@ -13,6 +13,7 @@ converse.plugins.add('converse-roomslist', {
 
     initialize() {
         api.settings.extend({
+            allow_room_pinning: true,
             muc_grouped_by_domain: false,
             muc_grouped_by_kind: false,
         });

@@ -124,7 +124,7 @@ export class RoomsList extends CustomElement {
     }
 
     canPinRooms() {
-        return this.getBookmarks()?.supportsPinning() === true;
+        return api.settings.get('allow_room_pinning') && this.getBookmarks()?.supportsPinning() === true;
     }
 
     /** @param {import('@converse/headless').MUC} room */

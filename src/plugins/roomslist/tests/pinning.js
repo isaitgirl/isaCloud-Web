@@ -636,4 +636,37 @@ describe('Pinned groupchats in the list of open groupchats', function () {
             expect(state.bookmarks.get(muc_jid)).toBeUndefined();
         }),
     );
+
+    it(
+        'are hidden and ignored when the deployment disables room pinning',
+        mock.initConverse(
+            converse,
+            ['connected', 'chatBoxesFetched'],
+            { allow_room_pinning: false },
+            async function (_converse) {
+                await mock.waitForRoster(_converse, 'current', 0);
+                await mock.waitUntilBookmarksReturned(_converse);
+                await mock.openControlBox(_converse);
+                const list = document.querySelector('converse-rooms-list');
+
+                // A bookmark that is already pinned must not be moved to the
+                // top of the list when the deployment disables room pinning.
+                await openRoom(_converse, 'aardvark@montague.lit');
+                await openPinnedRoom(_converse, 'zebra@montague.lit', 'Zebra');
+                await openPinnedRoom(_converse, 'lounge@montague.lit', 'Lounge');
+                await u.waitUntil(() => getRoomJIDs(list).length === 3);
+
+                expect(getPinnedLabels(list).length).toBe(0);
+                expect(getRoomJIDs(list)).toEqual([
+                    'aardvark@montague.lit',
+                    'lounge@montague.lit',
+                    'zebra@montague.lit',
+                ]);
+                expect(list.querySelector('.pin-room')).toBeNull();
+                expect(list.querySelector('.unpin-room')).toBeNull();
+                expect(getRoomAction(list, 'lounge@montague.lit', 'Pin to top')).toBeNull();
+                expect(getRoomAction(list, 'lounge@montague.lit', 'Unpin from top')).toBeNull();
+            },
+        ),
+    );
 });
