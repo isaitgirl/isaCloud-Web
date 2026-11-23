@@ -76,8 +76,11 @@ class ReplyContext extends CustomElement {
         }
 
         const sender = replied_message.getDisplayName();
-        const body = replied_message.getMessageText();
-        const truncated_body = body && body.length > 80 ? body.slice(0, 80) + '...' : body;
+        // isaCloud: quote a media marker instead of the upload URL, and cut at
+        // 80 code points (XEP-0426) rather than UTF-16 units.
+        const body = replied_message.getReplyQuoteText?.() ?? replied_message.getMessageText();
+        const chars = [...(body ?? '')];
+        const truncated_body = chars.length > 80 ? chars.slice(0, 80).join('') + '...' : body;
 
         return html`
             <div

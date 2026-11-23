@@ -32,7 +32,10 @@ MAIN_SPECS=(
     src/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
     src/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
     src/plugins/isacloud-polls/tests/ # isaCloud: enquetes (Fluux)
+    src/plugins/isacloud-replies/tests/ # isaCloud: respostas (XEP-0461)
     src/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
+    src/plugins/chatview/tests/replies.js # isaCloud: núcleo das respostas
+    src/plugins/muc-views/tests/replies.js # isaCloud: respostas em grupo
     src/plugins/muc-views/tests/muc-messages.js
     src/plugins/muc-views/tests/nickname.js
     src/plugins/muc-views/tests/add-private-group.js # isaCloud: criar grupo privado

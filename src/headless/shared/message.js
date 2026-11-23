@@ -258,6 +258,17 @@ class BaseMessage extends ModelWithVCard(ModelWithContact(ColorAwareModel(Model)
     }
 
     /**
+     * The text quoted in the XEP-0461 compatibility fallback when replying to
+     * this message. It is the displayed text; the isaCloud replies plugin wraps
+     * this method to quote a marker (such as "📷 Foto") for media instead of the
+     * upload URL.
+     * @returns {string}
+     */
+    getReplyQuoteText() {
+        return this.getMessageText();
+    }
+
+    /**
      * Strip the XEP-0461 compatibility fallback — the `>`-quoted copy of the
      * replied-to message — from `text`. Converse renders the reply context from
      * the structured `<reply>`, so per XEP-0461 it must not also show the quoted
@@ -270,6 +281,19 @@ class BaseMessage extends ModelWithVCard(ModelWithContact(ColorAwareModel(Model)
         const fallback = this.get('fallback')?.[Strophe.NS.REPLY];
         if (!text || !fallback || !this.get('reply_to_id')) return text;
         const chars = [...text];
+        if (this.get('edited')) {
+            // isaCloud: a correction may have been stored with a range that no
+            // longer matches its body (from the build that dropped the fallback
+            // on corrections). Only strip when the range still is the quote.
+            const quoted = chars.slice(fallback.start, fallback.end).join('');
+            if (!quoted.trimStart().startsWith('>')) return text;
+        }
+        // isaCloud: per XEP-0428 §2.2, keep the fallback when the referenced
+        // message cannot be shown, because then it is the only copy of the
+        // quoted context. Older isaCloud Android builds send a synthesized
+        // fallback, and their original may not be loaded.
+        const chatbox = this.collection?.chatbox;
+        if (chatbox?.getReferencedMessage && !chatbox.getReferencedMessage(this.get('reply_to_id'))) return text;
         return chars.slice(0, fallback.start).join('') + chars.slice(fallback.end).join('');
     }
 

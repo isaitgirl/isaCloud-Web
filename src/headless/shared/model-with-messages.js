@@ -431,7 +431,8 @@ export default function ModelWithMessages(BaseModel) {
         addReplyFallback(attrs) {
             if (!attrs.reply_to_id || !attrs.body) return attrs;
             const replied = this.getReferencedMessage(attrs.reply_to_id);
-            const quoted = replied?.getMessageText();
+            // isaCloud: quote the media marker instead of the upload URL.
+            const quoted = replied?.getReplyQuoteText?.();
             if (!quoted) return attrs;
 
             // Truncate the quoted original (by code points, XEP-0426) so replying
@@ -516,9 +517,39 @@ export default function ModelWithMessages(BaseModel) {
             if (correcting && (correcting.collection !== this.messages || !correcting.get('editable'))) {
                 throw new Error("Can't correct a message that isn't an editable one of ours in this conversation");
             }
+            // The UI marks the message with `correcting` and calls sendMessage
+            // without the option, so resolve it before the stanza attributes.
+            let message = correcting ?? this.messages.findWhere('correcting');
+            if (message?.get('reply_to_id')) {
+                // isaCloud: a correction replaces the whole body, and the apps that
+                // draw the quote from the body (iOS and Android) would lose it.
+                // Rebuild the XEP-0461 quote and fallback for the corrected text.
+                const reply_to_id = message.get('reply_to_id');
+                attrs = { ...attrs, reply_to_id, reply_to: message.get('reply_to') };
+
+                const range = message.get('fallback')?.[Strophe.NS.REPLY];
+                const old_quote = range ? [...(message.get('body') ?? '')].slice(0, range.end).join('') : '';
+                if (!this.getReferencedMessage(reply_to_id) && old_quote.trimStart().startsWith('>')) {
+                    // The original isn't loaded, so the quote can't be rebuilt from
+                    // it. Keep the one the message already carries so it doesn't
+                    // vanish from the corrected message.
+                    attrs.body = old_quote + (attrs.body ?? '');
+                    attrs.message = attrs.body;
+                    if (attrs.references?.length) {
+                        attrs.references = attrs.references.map((r) => ({
+                            ...r,
+                            begin: r.begin + old_quote.length,
+                            end: r.end + old_quote.length,
+                        }));
+                    }
+                    attrs.fallback = {
+                        ...attrs.fallback,
+                        [Strophe.NS.REPLY]: { start: 0, end: [...old_quote].length },
+                    };
+                }
+            }
 
             attrs = await this.getOutgoingMessageAttributes(attrs);
-            let message = correcting ?? this.messages.findWhere('correcting');
             if (message) {
                 const older_versions = { ...message.get('older_versions') };
                 const edited_time = message.get('edited') || message.get('time');
@@ -538,6 +569,10 @@ export default function ModelWithMessages(BaseModel) {
                         before_correction,
                         correcting: false,
                         edited: new Date().toISOString(),
+                        // isaCloud: keep the fallback rebuilt for the corrected
+                        // body (or clear it when the quote couldn't be rebuilt,
+                        // e.g. the original isn't loaded anymore).
+                        fallback: attrs.fallback,
                         message: attrs.body,
                         ogp_metadata: [],
                         older_versions,
@@ -1546,6 +1581,8 @@ export default function ModelWithMessages(BaseModel) {
                 spoiler_hint,
                 type,
             } = message.attributes;
+            // isaCloud: corrections rebuild the quote and its fallback for the
+            // corrected body (see `sendMessage`), so it is sent here too.
             const reply_fallback = message.get('fallback')?.[Strophe.NS.REPLY];
 
             const stanza = stx`

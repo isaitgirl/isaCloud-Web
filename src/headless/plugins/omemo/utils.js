@@ -821,6 +821,8 @@ function getSCEExtensions(message) {
     });
     if (reply_to_id) {
         extensions.push(stx`<reply xmlns="${Strophe.NS.REPLY}" id="${reply_to_id}" to="${reply_to || ''}"></reply>`);
+        // isaCloud: corrections rebuild the quote and its fallback for the
+        // corrected body (see `sendMessage`), so it is sent here too.
         const reply_fallback = message.get('fallback')?.[Strophe.NS.REPLY];
         if (reply_fallback) {
             extensions.push(

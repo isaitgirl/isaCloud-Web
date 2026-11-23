@@ -63,8 +63,11 @@ class ReplyPreview extends CustomElement {
         if (!reply_message) return nothing;
 
         const sender = reply_message.getDisplayName();
-        const body = reply_message.getMessageText();
-        const truncated_body = body.length > 100 ? body.slice(0, 100) + '...' : body;
+        // isaCloud: quote a media marker instead of the upload URL, and cut at
+        // 100 code points (XEP-0426) rather than UTF-16 units.
+        const body = reply_message.getReplyQuoteText?.() ?? reply_message.getMessageText();
+        const chars = [...(body ?? '')];
+        const truncated_body = chars.length > 100 ? chars.slice(0, 100).join('') + '...' : body;
 
         return tplComposerPanel({
             kind: 'context',

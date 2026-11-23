@@ -53,6 +53,7 @@ import './plugins/isacloud-brand/index.js'; // isaCloud: marca por domínio
 import './plugins/isacloud-conference/index.js'; // isaCloud: vídeo conferência
 import './plugins/isacloud-diagnostics/index.js'; // isaCloud: diagnóstico de conexão
 import './plugins/isacloud-polls/index.js'; // isaCloud: enquetes compatíveis com o Fluux
+import './plugins/isacloud-replies/index.js'; // isaCloud: respostas (XEP-0461)
 import './plugins/isacloud-session/index.js'; // isaCloud: login por sessão do navegador
 import './plugins/isacloud-stickers/index.js'; // isaCloud: figurinhas
 import './plugins/isacloud-update/index.js'; // isaCloud: aviso de nova versão
