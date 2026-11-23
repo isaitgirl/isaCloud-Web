@@ -46,7 +46,10 @@ class MessageBody extends CustomElement {
 
     render() {
         const callback = () => this.model.collection?.trigger('rendered', this.model);
-        const offset = 0;
+        // isaCloud: the reply fallback (XEP-0461) is not displayed, but the media
+        // and mention offsets are counted on the raw text. Shifting them by the
+        // stripped prefix keeps a URL in the quote from swallowing the message.
+        const offset = this.model.getReplyFallbackOffset?.() ?? 0;
         /** @type {{ [key: string]: any }} */
         const options = {
             media_urls: this.model.get('media_urls'),

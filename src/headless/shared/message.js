@@ -245,16 +245,39 @@ class BaseMessage extends ModelWithVCard(ModelWithContact(ColorAwareModel(Model)
     }
 
     getMessageText() {
-        let text;
+        const raw = this.getRawMessageText();
+        return raw ? this.stripReplyFallback(raw) : raw;
+    }
+
+    /**
+     * The text as stored on the message, before the XEP-0461 reply fallback is
+     * stripped. Positional metadata (media URLs, mentions) is relative to this
+     * text, which is why {@link BaseMessage#getReplyFallbackOffset} exists.
+     * @returns {string|undefined}
+     */
+    getRawMessageText() {
         if (this.get('is_encrypted')) {
             const { __ } = _converse;
-            text = this.get('plaintext') || this.get('body') || __('Undecryptable OMEMO message');
+            return this.get('plaintext') || this.get('body') || __('Undecryptable OMEMO message');
         } else if (['groupchat', 'chat', 'normal'].includes(this.get('type'))) {
-            text = this.get('body');
-        } else {
-            text = this.get('message');
+            return this.get('body');
         }
-        return this.stripReplyFallback(text);
+        return this.get('message');
+    }
+
+    /**
+     * isaCloud: how many UTF-16 units the reply fallback took off the start of
+     * the displayed text (0 when nothing was stripped). Rich-text offsets such
+     * as `media_urls` and mentions are counted on the raw text, so the renderer
+     * has to shift them by this, otherwise a URL inside the hidden quote (a
+     * Gajim reply to a photo quotes the upload link) swallows the whole body.
+     * @returns {number}
+     */
+    getReplyFallbackOffset() {
+        const raw = this.getRawMessageText();
+        if (!raw) return 0;
+        const visible = this.stripReplyFallback(raw);
+        return visible ? raw.length - visible.length : 0;
     }
 
     /**

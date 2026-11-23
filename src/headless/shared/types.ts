@@ -7,6 +7,7 @@ import VCard from '../plugins/vcard/vcard';
 import RosterContact from '../plugins/roster/contact';
 import Profile from '../plugins/status/profile';
 import { MUCMessageAttributes } from '../plugins/muc/types';
+import type { MediaURLMetadata } from '../utils/types';
 
 export type MessageAndStanza = {
     message: BaseMessage; // The message object from which the stanza is created and which gets persisted to storage.
@@ -345,6 +346,8 @@ export type MessageAttributes = EncryptionAttrs &
         is_unstyled: boolean; // Whether XEP-0393 styling hints should be ignored
         is_valid_receipt_request: boolean; // Does this message request a XEP-0184 receipt (and is not from us or a carbon or archived message)
         marker: string; // The XEP-0333 Chat Marker value
+        // isaCloud: media URLs found in the text, with their offsets in the raw body
+        media_urls?: MediaURLMetadata[];
         marker_id: string; // The `id` attribute of a XEP-0333 chat marker
         msgid: string; // The root `id` attribute of the stanza
         nick: string; // The roster nickname of the sender

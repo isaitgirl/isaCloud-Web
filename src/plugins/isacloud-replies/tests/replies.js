@@ -109,6 +109,69 @@ describe('isaCloud replies (XEP-0461)', function () {
         );
     });
 
+    describe('rendering', function () {
+        const VIDEO =
+            'https://upload.isacloud.im/file_share/01a20953-ed37-71db-9023-2e0a6661a9fe/WhatsApp%20Video%202026-11-23%20at%2010.42.48%20AM.mp4';
+        // The quoted block, as Gajim counts it (XEP-0426 code points).
+        const QUOTE_END = [...`> ${VIDEO}\n`].length;
+
+        it(
+            'shows the text of a reply that quotes a media URL (Gajim)',
+            mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+                // Real stanza from the Blambers channel: Gajim quotes the upload
+                // URL (132 code points, newline included) instead of a label.
+                const muc_jid = 'blambers@conference.isacloud.cc';
+                await mock.openAndEnterMUC(_converse, muc_jid, 'romeo');
+                const view = _converse.chatboxviews.get(muc_jid);
+                const muc = view.model;
+
+                await muc.handleMessageStanza(stx`<message xmlns="jabber:client" type="groupchat" from="${muc_jid}/OG" to="${_converse.jid}" id="og-video">
+                    <body>${VIDEO}</body>
+                    <x xmlns="jabber:x:oob"><url>${VIDEO}</url></x>
+                    <stanza-id xmlns="urn:xmpp:sid:0" id="og-video" by="${muc_jid}"/>
+                </message>`);
+                await u.waitUntil(() => muc.messages.length >= 1);
+
+                const body = `> ${VIDEO}\nque barbaridade hehehehehe`;
+                await muc.handleMessageStanza(stx`<message xmlns="jabber:client" type="groupchat" from="${muc_jid}/isafashiondev" id="gajim-reply">
+                    <body>${body}</body>
+                    <origin-id xmlns="urn:xmpp:sid:0" id="gajim-reply"/>
+                    <reply xmlns="urn:xmpp:reply:0" id="og-video" to="${muc_jid}/OG"/>
+                    <fallback xmlns="urn:xmpp:fallback:0" for="urn:xmpp:reply:0"><body end="${QUOTE_END}" start="0"/></fallback>
+                </message>`);
+                await u.waitUntil(() => muc.messages.length >= 2);
+
+                const reply = muc.messages.at(1);
+                expect(reply.getMessageText()).toBe('que barbaridade hehehehehe');
+                expect(reply.getReplyFallbackOffset()).toBe(`> ${VIDEO}\n`.length);
+
+                // The URL in the hidden quote must not swallow the visible text.
+                await u.waitUntil(() => view.querySelectorAll('.chat-msg__text').length >= 2);
+                const texts = Array.from(view.querySelectorAll('.chat-msg__text')).map((el) => el.textContent.trim());
+                expect(texts).toContain('que barbaridade hehehehehe');
+            }),
+        );
+
+        it(
+            'keeps a reply URL in place after the quote is hidden',
+            mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+                const { chat } = await openChat(_converse);
+                const original = await createOriginal(chat, {});
+                const reply = await chat.sendMessage(
+                    { body: 'olha https://upload.example.org/foto.jpg aqui' },
+                    { replying_to: original },
+                );
+
+                expect(reply.getMessageText()).toBe('olha https://upload.example.org/foto.jpg aqui');
+                const offset = reply.getReplyFallbackOffset();
+                expect(offset).toBeGreaterThan(0);
+                // media_urls and mentions are counted on the raw body
+                const media = reply.get('media_urls')[0];
+                expect(reply.get('body').substring(media.start, media.end)).toBe('https://upload.example.org/foto.jpg');
+            }),
+        );
+    });
+
     describe('reading', function () {
         it(
             'takes reply_to_id from <isacloud-quote> in a 1:1 and hides the quote behind the card',

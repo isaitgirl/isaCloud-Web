@@ -454,13 +454,22 @@ export default function ModelWithMessages(BaseModel) {
             attrs.body = quote + attrs.body;
             attrs.message = attrs.body;
 
-            // References use UTF-16 offsets (match.index); shift by the same unit.
+            // References and media URLs use UTF-16 offsets (match.index) and are
+            // counted on the raw body, so they move with the prepended quote.
+            // The renderer shifts them back for display (getReplyFallbackOffset).
+            const shift = quote.length;
             if (attrs.references?.length) {
-                const shift = quote.length;
                 attrs.references = attrs.references.map((r) => ({
                     ...r,
                     begin: r.begin + shift,
                     end: r.end + shift,
+                }));
+            }
+            if (attrs.media_urls?.length) {
+                attrs.media_urls = attrs.media_urls.map((m) => ({
+                    ...m,
+                    start: m.start + shift,
+                    end: m.end + shift,
                 }));
             }
 

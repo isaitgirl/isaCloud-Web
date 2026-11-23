@@ -306,6 +306,12 @@ export function addMediaURLsOffset(arr, text, offset = 0) {
             if (start < 0 || start >= text.length) {
                 return null;
             }
+            // isaCloud: a range that runs past the text would replace the rest of
+            // it (a URL in the hidden reply fallback, before the offset shift).
+            // Better to leave the text alone than to swallow it.
+            if (end > text.length) {
+                return null;
+            }
             return Object.assign({}, o, {
                 start,
                 end,
