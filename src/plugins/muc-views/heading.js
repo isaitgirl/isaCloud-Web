@@ -17,6 +17,7 @@ export default class MUCHeading extends CustomElement {
     async initialize() {
         const { chatboxes } = _converse.state;
         this.model = chatboxes.get(this.getAttribute('jid'));
+        this.listenTo(chatboxes, 'change:pinned_order', () => this.requestUpdate());
         this.listenTo(this.model, 'change', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:add', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:change', () => this.requestUpdate());

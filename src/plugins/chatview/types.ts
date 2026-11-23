@@ -6,4 +6,5 @@ export type HeadingButtonAttributes = {
     i18n_title: string; // The tooltip text for this button
     icon_class: string; // What kind of CSS class to use for the icon
     name: string; // The internal name of the button
+    disabled?: boolean; // Rendered inert in the dropdown, with i18n_title as the explanation.
 };

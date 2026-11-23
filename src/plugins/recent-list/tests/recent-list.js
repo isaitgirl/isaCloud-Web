@@ -512,6 +512,55 @@ describe('Pinning conversations in the recent list', function () {
     );
 
     it(
+        'pins a 1:1 chat from the conversation header menu',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            await mock.waitForRoster(_converse, 'current', 1);
+            // The 1:1 heading only renders its buttons once the blocklist query
+            // settles (the blocking check is part of getHeadingButtons).
+            await mock.waitUntilBlocklistInitialized(_converse);
+            const contact_jid = mock.getContactJID(0);
+            const view = await mock.openChatBoxFor(_converse, contact_jid);
+            await mock.sendMessage(_converse, view, 'Oi');
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).includes(contact_jid));
+
+            const header_pin = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .pin-conversation'));
+            expect(header_pin.textContent.trim()).toBe('Pin to top');
+            header_pin.click();
+
+            await u.waitUntil(() => _converse.state.chatboxes.get(contact_jid).get('pinned_order') > 0);
+            await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .unpin-conversation'));
+            await u.waitUntil(() => rowOf(currentList(_converse), contact_jid)?.classList.contains('pinned'));
+
+            view.querySelector('.chatbox-title__buttons .unpin-conversation').click();
+            await u.waitUntil(() => !(_converse.state.chatboxes.get(contact_jid).get('pinned_order') > 0));
+            await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .pin-conversation'));
+            await u.waitUntil(() => !rowOf(currentList(_converse), contact_jid)?.classList.contains('pinned'));
+        }),
+    );
+
+    it(
+        'pins a groupchat from its header menu',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            await room.handleMessageStanza(mucMessage(LOUNGE, 'capulet', 'Bem-vindo'));
+
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).includes(LOUNGE));
+
+            const view = await u.waitUntil(() => _converse.chatboxviews.get(LOUNGE));
+            const header_pin = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .pin-conversation'));
+            header_pin.click();
+
+            await u.waitUntil(() => room.get('pinned_order') > 0);
+            await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .unpin-conversation'));
+            await u.waitUntil(() => rowOf(currentList(_converse), LOUNGE)?.classList.contains('pinned'));
+            expect(rowOf(currentList(_converse), LOUNGE).querySelector('.recent-item__pin')).not.toBeNull();
+        }),
+    );
+
+    it(
         'pins a groupchat and "Notes to self", which has no "Remove from list" action',
         mock.initConverse(converse, ['chatBoxesFetched'], NOTES_SETTINGS, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 1);
@@ -582,6 +631,7 @@ describe('Pinning conversations in the recent list', function () {
         'allows at most 3 pinned conversations',
         mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 4);
+            await mock.waitUntilBlocklistInitialized(_converse);
             const jids = [0, 1, 2, 3].map((i) => mock.getContactJID(i));
             for (const jid of jids) {
                 const view = await mock.openChatBoxFor(_converse, jid);
@@ -600,8 +650,14 @@ describe('Pinning conversations in the recent list', function () {
             expect(pin_action.classList.contains('disabled')).toBe(true);
             expect(pin_action.getAttribute('aria-disabled')).toBe('true');
 
+            const view = await u.waitUntil(() => _converse.chatboxviews.get(unpinned_jid));
+            const header_pin = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .pin-conversation'));
+            expect(header_pin.classList.contains('disabled')).toBe(true);
+            expect(header_pin.getAttribute('aria-disabled')).toBe('true');
+
             // A disabled pin does nothing.
             pin_action.click();
+            header_pin.click();
             await sleep(50);
             expect(_converse.state.chatboxes.get(unpinned_jid).get('pinned_order') > 0).toBe(false);
             expect(currentList(_converse).querySelectorAll('.recent-item.pinned').length).toBe(3);

@@ -6,6 +6,7 @@ import { html } from 'lit';
 import { u } from '@converse/headless';
 import { __ } from 'i18n';
 import {
+    canPin,
     formatActivityTime,
     formatUnreadCount,
     getPreview,
@@ -13,6 +14,7 @@ import {
     isNotesToSelf,
     isPinned,
     isUnread,
+    togglePin,
 } from '../utils.js';
 
 /** @param {Model} model */
@@ -75,20 +77,19 @@ function tplMenuItem({ text, title, icon_class, item_class, disabled, handler })
 /**
  * The pin/unpin entry of the row's menu. When the limit is reached, the entry
  * stays visible but disabled, so the user can see why it does nothing.
- * @param {RecentList} el
  * @param {Model} model
  */
-function tplPinMenuItem(el, model) {
+function tplPinMenuItem(model) {
     if (isPinned(model)) {
         return tplMenuItem({
             text: __('Unpin from top'),
             title: __('Unpin from top'),
             icon_class: 'fa-thumbtack',
             item_class: 'unpin-conversation',
-            handler: () => el.togglePin(model),
+            handler: () => togglePin(model),
         });
     }
-    if (!el.canPin(model)) {
+    if (!canPin(model)) {
         return tplMenuItem({
             text: __('Pin to top'),
             title: __('You can pin up to 3 conversations'),
@@ -102,7 +103,7 @@ function tplPinMenuItem(el, model) {
         title: __('Pin to top'),
         icon_class: 'fa-thumbtack',
         item_class: 'pin-conversation',
-        handler: () => el.togglePin(model),
+        handler: () => togglePin(model),
     });
 }
 
@@ -131,7 +132,7 @@ export default function tplRecentRow(el, { model, kind, activity }) {
     const is_unread = isUnread(model);
     const preview = getPreview(model);
     // The pin comes first, then the action that removes the row, if any.
-    const buttons = [tplPinMenuItem(el, model)];
+    const buttons = [tplPinMenuItem(model)];
     if (is_room) {
         buttons.push(
             tplMenuItem({

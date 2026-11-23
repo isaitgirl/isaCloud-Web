@@ -23,6 +23,9 @@ export default class ChatHeading extends CustomElement {
     initialize() {
         const { chatboxes } = _converse.state;
         this.model = chatboxes.get(this.jid);
+        // The pin limit and state are global, so another conversation's pin can
+        // change this header's menu item.
+        this.listenTo(chatboxes, 'change:pinned_order', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:add', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:change', () => this.requestUpdate());
         if (this.model.contact) {

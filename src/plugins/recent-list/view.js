@@ -5,14 +5,14 @@
  * @copyright 2026, the Converse.js contributors
  * @license Mozilla Public License (MPLv2)
  */
-import { _converse, api, constants, Model, u } from '@converse/headless';
+import { _converse, api, Model, u } from '@converse/headless';
 import { __ } from 'i18n';
 import { CustomElement } from 'shared/components/element.js';
 import tplRecentList from './templates/recent-list.js';
 import {
-    MAX_PINNED,
     computePreview,
     getConversationKind,
+    getConversations,
     getLastActivity,
     getLastDisplayableMessage,
     hasConversationContent,
@@ -20,8 +20,6 @@ import {
     isPinned,
     matchesFilter,
 } from './utils.js';
-
-const { CHATROOMS_TYPE } = constants;
 
 /**
  * Orders conversations by display name, falling back to the JID so that
@@ -124,7 +122,7 @@ export class RecentList extends CustomElement {
     }
 
     refresh() {
-        this.getConversations().forEach((model) => this.cacheSummary(model));
+        getConversations().forEach((model) => this.cacheSummary(model));
         this.requestUpdate();
     }
 
@@ -151,18 +149,6 @@ export class RecentList extends CustomElement {
     }
 
     /**
-     * The 1:1 chats and groupchats in the list. Closed groupchats have left
-     * the room and are not listed; closed 1:1 chats are kept. Empty
-     * groupchats are filtered out later by `getItems()`.
-     */
-    getConversations() {
-        const { chatboxes } = _converse.state;
-        return chatboxes.filter(
-            (model) => isConversation(model) && !(model.get('type') === CHATROOMS_TYPE && model.get('closed')),
-        );
-    }
-
-    /**
      * The conversations shown in the list: those with something to show, plus
      * any pinned conversation (an explicit pin keeps it visible), matching the
      * active filter. Pinned conversations first, in the order they were
@@ -171,7 +157,7 @@ export class RecentList extends CustomElement {
      */
     getItems() {
         const filter = this.model.get('filter');
-        return this.getConversations()
+        return getConversations()
             .filter((model) => isPinned(model) || hasConversationContent(model))
             .filter((model) => matchesFilter(model, filter))
             .map((model) => ({
@@ -181,52 +167,6 @@ export class RecentList extends CustomElement {
                 pinned_order: isPinned(model) ? Number(model.get('pinned_order')) : 0,
             }))
             .sort(compareItems);
-    }
-
-    /**
-     * The number of pinned conversations. The limit is global, so it counts
-     * every conversation and not only the ones matching the active filter.
-     * @returns {number}
-     */
-    getPinnedCount() {
-        return this.getConversations().filter((model) => isPinned(model)).length;
-    }
-
-    /**
-     * Whether a conversation can be pinned: it isn't pinned already and there
-     * is room below the limit.
-     * @param {import('@converse/headless').Model} model
-     * @returns {boolean}
-     */
-    canPin(model) {
-        return !isPinned(model) && this.getPinnedCount() < MAX_PINNED;
-    }
-
-    /**
-     * Pins a conversation below the ones already pinned.
-     * @param {import('@converse/headless').Model} model
-     */
-    pinConversation(model) {
-        if (!this.canPin(model)) return;
-        const orders = this.getConversations()
-            .filter((m) => isPinned(m))
-            .map((m) => Number(m.get('pinned_order')));
-        // The first pinned conversation is 1; later pins append below it.
-        u.safeSave(model, { pinned_order: Math.max(0, ...orders) + 1 });
-    }
-
-    /** @param {import('@converse/headless').Model} model */
-    unpinConversation(model) {
-        if (isPinned(model)) u.safeSave(model, { pinned_order: 0 });
-    }
-
-    /** @param {import('@converse/headless').Model} model */
-    togglePin(model) {
-        if (isPinned(model)) {
-            this.unpinConversation(model);
-        } else {
-            this.pinConversation(model);
-        }
     }
 
     showContacts() {

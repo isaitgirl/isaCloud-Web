@@ -40,20 +40,34 @@ export function getUnreadMsgsDisplay(model) {
  */
 export async function getHeadingDropdownItem(promise_or_data) {
     const data = await promise_or_data;
-    return data
-        ? html`
-              <a
-                  href="#"
-                  role="button"
-                  class="dropdown-item ${data.a_class}"
-                  @click=${data.handler}
-                  title="${data.i18n_title}"
-              >
-                  <converse-icon size="1em" class="fa ${data.icon_class}"></converse-icon>
-                  ${data.i18n_text}
-              </a>
-          `
-        : '';
+    if (!data) return '';
+    if (data.disabled) {
+        return html`
+            <span
+                class="dropdown-item ${data.a_class} disabled"
+                role="button"
+                tabindex="-1"
+                aria-disabled="true"
+                title="${data.i18n_title}"
+                aria-label="${data.i18n_text}. ${data.i18n_title}"
+            >
+                <converse-icon size="1em" class="fa ${data.icon_class}" aria-hidden="true"></converse-icon>
+                ${data.i18n_text}
+            </span>
+        `;
+    }
+    return html`
+        <a
+            href="#"
+            role="button"
+            class="dropdown-item ${data.a_class}"
+            @click=${data.handler}
+            title="${data.i18n_title}"
+        >
+            <converse-icon size="1em" class="fa ${data.icon_class}"></converse-icon>
+            ${data.i18n_text}
+        </a>
+    `;
 }
 
 /**

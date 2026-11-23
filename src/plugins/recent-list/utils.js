@@ -24,6 +24,67 @@ export function isPinned(model) {
     return Number(model.get('pinned_order')) > 0;
 }
 
+/**
+ * The 1:1 chats and groupchats in the list. Closed groupchats have left the
+ * room and are not listed; closed 1:1 chats are kept.
+ * @returns {Model[]}
+ */
+export function getConversations() {
+    const { chatboxes } = _converse.state;
+    return chatboxes.filter(
+        (model) => isConversation(model) && !(model.get('type') === CHATROOMS_TYPE && model.get('closed')),
+    );
+}
+
+/**
+ * The conversations that are pinned to the top of the list, regardless of
+ * their order.
+ * @returns {Model[]}
+ */
+export function getPinnedConversations() {
+    return getConversations().filter((model) => isPinned(model));
+}
+
+/** @returns {number} */
+export function getPinnedCount() {
+    return getPinnedConversations().length;
+}
+
+/**
+ * Whether a conversation can be pinned: it isn't pinned already and there is
+ * room below the limit.
+ * @param {Model} model
+ * @returns {boolean}
+ */
+export function canPin(model) {
+    return !isPinned(model) && getPinnedCount() < MAX_PINNED;
+}
+
+/**
+ * Pins a conversation below the ones already pinned.
+ * @param {Model} model
+ */
+export function pinConversation(model) {
+    if (!canPin(model)) return;
+    const orders = getPinnedConversations().map((m) => Number(m.get('pinned_order')));
+    // The first pinned conversation is 1; later pins append below it.
+    u.safeSave(model, { pinned_order: Math.max(0, ...orders) + 1 });
+}
+
+/** @param {Model} model */
+export function unpinConversation(model) {
+    if (isPinned(model)) u.safeSave(model, { pinned_order: 0 });
+}
+
+/** @param {Model} model */
+export function togglePin(model) {
+    if (isPinned(model)) {
+        unpinConversation(model);
+    } else {
+        pinConversation(model);
+    }
+}
+
 /** @param {Model} model */
 export function isConversation(model) {
     const type = model.get('type');
