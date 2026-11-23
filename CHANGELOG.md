@@ -7,6 +7,20 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-37 — 2026-11-23 (`970eda5a9`)
+
+- `fix(chat)`: resposta que cita uma URL não some mais. O Gajim cita o **link do upload**
+  quando responde a foto, vídeo ou arquivo; os offsets de mídia (`media_urls`) e de menções
+  eram contados no corpo inteiro, incluindo a citação, e o renderizador os aplicava no texto
+  já sem a citação — o intervalo da URL invadia o texto visível e o template de mídia engolia
+  o resto da mensagem. Agora o modelo expõe `getReplyFallbackOffset()` e o corpo da mensagem
+  renderiza com esse deslocamento; `addReplyFallback` desloca `media_urls` junto com
+  `references`, e um intervalo que passe do texto é ignorado em vez de substituir o resto.
+  O mesmo deslocamento corrige menções em respostas.
+- `test`: specs com o stanza real do canal Blambers (resposta do Gajim a um vídeo, URL com
+  `%20`, `end=132`) e com resposta que tem URL no próprio texto; suíte reduzida com 588 + 36
+  testes e `types:check`.
+
 ## v15-36 — 2026-11-23 (`e2f50d6e4`)
 
 - `feat(isacloud)`: respostas XEP-0461 compatíveis com o iOS e o Android. Com OMEMO antigo
