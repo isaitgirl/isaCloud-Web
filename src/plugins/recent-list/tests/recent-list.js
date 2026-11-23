@@ -649,11 +649,13 @@ describe('Pinning conversations in the recent list', function () {
             );
             expect(pin_action.classList.contains('disabled')).toBe(true);
             expect(pin_action.getAttribute('aria-disabled')).toBe('true');
+            expect(Number(getComputedStyle(pin_action).opacity)).toBeLessThan(1);
 
             const view = await u.waitUntil(() => _converse.chatboxviews.get(unpinned_jid));
             const header_pin = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .pin-conversation'));
             expect(header_pin.classList.contains('disabled')).toBe(true);
             expect(header_pin.getAttribute('aria-disabled')).toBe('true');
+            expect(Number(getComputedStyle(header_pin).opacity)).toBeLessThan(1);
 
             // A disabled pin does nothing.
             pin_action.click();

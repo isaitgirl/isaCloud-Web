@@ -54,6 +54,21 @@
                 &:focus {
                     background-color: var(--highlight-color-hover) !important;
                 }
+                // An unavailable action (e.g. the fourth pinned conversation)
+                // stays visible but reads as disabled. The icon is dimmed too:
+                // `converse-icon` writes its fill inline, so opacity is used.
+                &.disabled,
+                &[aria-disabled='true'] {
+                    color: var(--subdued-color, #6c757d) !important;
+                    background-color: transparent !important;
+                    opacity: 0.55;
+                    cursor: not-allowed;
+
+                    &:hover,
+                    &:focus {
+                        background-color: transparent !important;
+                    }
+                }
             }
         }
     }
