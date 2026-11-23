@@ -1,12 +1,24 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-35** · atualizada em **22/11/2026**
+Versão atual: **v15-36** · atualizada em **23/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-36 — 23/11/2026
+
+- 💬 **Responder funciona igual em todo lugar:** a resposta que você manda pelo Web agora chega
+  com a citação no iOS e no Android, com a miniatura quando é foto, GIF ou figurinha.
+- 👆 **Toque na citação:** tocar na citação leva direto à mensagem original, mesmo quando ela é
+  antiga e ainda não estava carregada na tela. Se ela não existir mais, aparece um aviso
+  curtinho.
+- ✏️ **Editar resposta:** corrigir uma resposta não apaga mais a citação no outro aparelho nem
+  deixa a mensagem em branco.
+- 🖼️ **Citação de mídia:** em vez de um link gigante, a citação mostra “📷 Foto”, “🎞️ GIF” e
+  companhia.
 
 ### v15-35 — 22/11/2026
 

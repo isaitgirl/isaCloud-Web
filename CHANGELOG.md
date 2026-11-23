@@ -7,6 +7,35 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-36 — 2026-11-23 (`e2f50d6e4`)
+
+- `feat(isacloud)`: respostas XEP-0461 compatíveis com o iOS e o Android. Com OMEMO antigo
+  (o único que os dois apps falam), o `<reply>` e o `<fallback>` passam a ir **em claro**,
+  como irmãos do `<encrypted>`, com o range calculado no corpo antes de cifrar — antes o
+  telefone recebia a resposta sem referência nenhuma. A leitura do `<reply>` em claro já
+  funcionava e ganhou teste de regressão.
+- `feat(isacloud)`: leitura do marcador antigo `<isacloud-quote>`, com o fallback sintetizado
+  a partir do bloco `>` do corpo (do `plaintext` quando a mensagem é cifrada). Sem isso, as
+  respostas antigas do Android apareciam com cartão **e** citação dupla.
+- `feat(isacloud)`: o Web volta a mandar `<isacloud-quote>` nas respostas a foto, GIF e
+  figurinha, fora da criptografia, com o mesmo id do `<reply>`, enquanto o Android não lê
+  `<reply>` (`SEND_ISACLOUD_QUOTE`; a leitura fica para sempre).
+- `feat(isacloud)`: a citação de mídia usa um marcador (“📷 Foto”, “🎞️ GIF”, “🎬 Vídeo”,
+  “🎵 Áudio”, figurinha) em vez da URL do upload — no OMEMO, a URL `aesgcm://` levava a chave
+  junto. Vale para o corpo citado e para o cartão/preview.
+- `feat(isacloud)`: tocar na citação leva à original. Carrega até 200 mensagens do histórico,
+  **move a janela da lista virtualizada** (só 100 mensagens existem no DOM) e rola/destaca;
+  original ausente, retratada ou longe demais mostra “Mensagem original indisponível”. Antes
+  o toque só funcionava com a original já desenhada.
+- `fix(chat)`: corrigir uma resposta remonta a citação e o fallback para o texto novo (o iOS e
+  o Android desenham a citação a partir do corpo, e a correção substitui o corpo inteiro) e
+  não deixa mais a mensagem corrigida em branco. A mensagem a corrigir é resolvida antes dos
+  atributos de envio, porque o formulário chama `sendMessage` sem a opção `correcting`.
+- `fix(chat)`: o fallback da resposta só é escondido quando a original resolve (XEP-0428 §2.2)
+  e quando o range ainda casa com o corpo; cartão e preview contam em pontos de código.
+- `test`: plugin `isacloud-replies` com 32 specs (fallback sintetizado, OMEMO antigo e OMEMO
+  2, marcador de mídia, correção e pulo); suíte reduzida com 586 + 36 testes e `types:check`.
+
 ## v15-35 — 2026-11-22 (`1a574c019`)
 
 - `fix(isacloud)`: encerramento de enquete mais seguro. A original (e todas as cópias) é
