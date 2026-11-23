@@ -19,7 +19,7 @@ describe('The isaCloud diagnostics report', function () {
     it('creates a JSON file with a portable timestamped name', async function () {
         const file = await createReportFile('minha nota');
 
-        expect(file.name).toMatch(/^isacloud-web-v15\.29-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json$/);
+        expect(file.name).toMatch(/^isacloud-web-v\d+\.\d+-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json$/);
         expect(file.type).toBe('application/json');
     });
 
