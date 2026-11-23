@@ -1,12 +1,22 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-37** · atualizada em **23/11/2026**
+Versão atual: **v15-38** · atualizada em **23/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-38 — 23/11/2026
+
+- 📌 **Fixar conversas:** até 3 conversas, grupos, canais ou “Notas para si mesmo” ficam no
+  topo da lista. Dá para fixar pelo menu da própria conversa ou pelo menu de cima dela, e a
+  ordem é a ordem em que você foi fixando.
+- ⚠️ **Limite visível:** quando já há 3 fixadas, a opção “Fixar no topo” fica cinza para
+  deixar claro que ela não está disponível.
+- 🧹 **Um pin só:** a lista de Contatos não tem mais um “Fixar no topo” separado; a fixação
+  fica na lista de Conversas.
 
 ### v15-37 — 23/11/2026
 

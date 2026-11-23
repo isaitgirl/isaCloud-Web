@@ -7,6 +7,25 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-38 — 2026-11-23 (`72f56a4a7`)
+
+- `feat(recent-list)`: conversas podem ser fixadas no topo da lista, até **3** por conta. O
+  estado fica em `pinned_order` no chatbox (local, por navegador), então sobrevive a reload e
+  reconexão sem sincronizar com o servidor. As fixadas vêm primeiro, na ordem em que foram
+  fixadas; os filtros continuam valendo para elas; uma conversa fixada não some por estar sem
+  conteúdo exibível. O indicador é um alfinete à direita da linha, sem seção “Fixadas”.
+- `feat(recent-list)`: o mesmo “Fixar no topo”/“Desafixar do topo” aparece no menu do cabeçalho
+  da conversa (1:1, grupo, canal e “Notas para si mesmo”), e os dois lugares compartilham o
+  mesmo estado e limite.
+- `fix(roomslist)`: a lista de Contatos não oferece mais um segundo pin por bookmark. No
+  isaCloud e no custom `mdq`, `allow_room_pinning: false` esconde a ação e ignora bookmarks já
+  fixados, deixando a fixação só na lista de Conversas.
+- `fix(dropdown)`: item de menu indisponível fica cinza, com opacidade reduzida e sem executar
+  a ação, para o limite de 3 ficar visível.
+- `test`: 23 specs do recent-list (pin pela lista e pelo cabeçalho, ordem, limite, filtros,
+  persistência e alfinete) e spec do roomslist sem pin; suíte reduzida com 598 + 36 testes e
+  `types:check`.
+
 ## v15-37 — 2026-11-23 (`970eda5a9`)
 
 - `fix(chat)`: resposta que cita uma URL não some mais. O Gajim cita o **link do upload**
