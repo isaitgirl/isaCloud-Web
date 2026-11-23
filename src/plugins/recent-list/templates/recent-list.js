@@ -3,6 +3,7 @@
  */
 import { html } from 'lit';
 import { __ } from 'i18n';
+import { hasChangelogItem, tplChangelogRow } from 'plugins/isacloud-changelog/row.js';
 import '../styles/recent-list.scss';
 import tplRecentRow from './row.js';
 
@@ -92,12 +93,13 @@ function tplEmpty(el) {
 /** @param {RecentList} el */
 function tplRecentBody(el) {
     const items = el.getItems();
+    const has_changelog = hasChangelogItem(el);
     return html`${tplFilters(el)}
         <div class="recent-list__body">
             ${
-                items.length
+                items.length || has_changelog
                     ? html`<ul class="recent-list__items">
-                          ${items.map((item) => tplRecentRow(el, item))}
+                          ${tplChangelogRow(el)} ${items.map((item) => tplRecentRow(el, item))}
                       </ul>`
                     : tplEmpty(el)
             }

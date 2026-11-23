@@ -14,6 +14,10 @@ if [[ "${1:-}" != "--sem-build" ]]; then
     npm run dev
 fi
 
+# The changelog JSON is generated from the release data; a stale copy must fail
+# the reduced suite instead of shipping old news.
+node scripts/generate-changelog-json.mjs --check
+
 MAIN_SPECS=(
     src/plugins/omemo-views/tests/
     src/plugins/reactions-views/tests/
@@ -29,6 +33,7 @@ MAIN_SPECS=(
     src/plugins/muc-views/tests/muc-list-modal.js
     src/plugins/profile/tests/
     src/plugins/roomslist/tests/
+    src/plugins/isacloud-changelog/tests/ # isaCloud: novidades na lista
     src/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
     src/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
     src/plugins/isacloud-polls/tests/ # isaCloud: enquetes (Fluux)

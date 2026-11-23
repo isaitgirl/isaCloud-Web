@@ -7,6 +7,7 @@
  */
 import { _converse, api, Model, u } from '@converse/headless';
 import { __ } from 'i18n';
+import { CHANGELOG_EVENT, changelog_state } from 'plugins/isacloud-changelog/state.js';
 import { CustomElement } from 'shared/components/element.js';
 import tplRecentList from './templates/recent-list.js';
 import {
@@ -93,7 +94,20 @@ export class RecentList extends CustomElement {
         this.watched = new WeakSet();
         this.scheduleRefresh = u.debounce(() => this.refresh(), 50);
         this.addEventListeners();
+
+        // The changelog row lives in this list but its state is kept by the
+        // isacloud-changelog plugin, outside the chatboxes collection.
+        this.onChangelogChange = () => this.requestUpdate();
+        changelog_state.addEventListener(CHANGELOG_EVENT, this.onChangelogChange);
+
         this.requestUpdate();
+    }
+
+    disconnectedCallback() {
+        if (this.onChangelogChange) {
+            changelog_state.removeEventListener(CHANGELOG_EVENT, this.onChangelogChange);
+        }
+        super.disconnectedCallback();
     }
 
     addEventListeners() {

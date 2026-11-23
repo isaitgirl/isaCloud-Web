@@ -1,0 +1,470 @@
+{
+  "releases": [
+    {
+      "version": "v15-38",
+      "date": "23/11/2026",
+      "items": [
+        {
+          "title": "📌 Fixar conversas",
+          "text": "até 3 conversas, grupos, canais ou “Notas para si mesmo” ficam no topo da lista. Dá para fixar pelo menu da própria conversa ou pelo menu de cima dela, e a ordem é a ordem em que você foi fixando."
+        },
+        {
+          "title": "⚠️ Limite visível",
+          "text": "quando já há 3 fixadas, a opção “Fixar no topo” fica cinza para deixar claro que ela não está disponível."
+        },
+        {
+          "title": "🧹 Um pin só",
+          "text": "a lista de Contatos não tem mais um “Fixar no topo” separado; a fixação fica na lista de Conversas."
+        }
+      ]
+    },
+    {
+      "version": "v15-37",
+      "date": "23/11/2026",
+      "items": [
+        {
+          "title": "🖼️ Responder a foto ou vídeo",
+          "text": "quando a resposta cita o link da imagem/vídeo (como o Gajim faz), o texto da resposta não some mais."
+        }
+      ]
+    },
+    {
+      "version": "v15-36",
+      "date": "23/11/2026",
+      "items": [
+        {
+          "title": "💬 Responder funciona igual em todo lugar",
+          "text": "a resposta que você manda pelo Web agora chega com a citação no iOS e no Android, com a miniatura quando é foto, GIF ou figurinha."
+        },
+        {
+          "title": "👆 Toque na citação",
+          "text": "tocar na citação leva direto à mensagem original, mesmo quando ela é antiga e ainda não estava carregada na tela. Se ela não existir mais, aparece um aviso curtinho."
+        },
+        {
+          "title": "✏️ Editar resposta",
+          "text": "corrigir uma resposta não apaga mais a citação no outro aparelho nem deixa a mensagem em branco."
+        },
+        {
+          "title": "🖼️ Citação de mídia",
+          "text": "em vez de um link gigante, a citação mostra “📷 Foto”, “🎞️ GIF” e companhia."
+        }
+      ]
+    },
+    {
+      "version": "v15-35",
+      "date": "22/11/2026",
+      "items": [
+        {
+          "title": "✅ Enquetes mais estáveis",
+          "text": "encerrar uma enquete agora é definitivo na hora — se o envio falhar ou o app fechar no meio, ela não volta a ficar aberta."
+        },
+        {
+          "title": "🗳️ Um cartão só",
+          "text": "o resultado aparece na própria enquete, com o placar congelado, e não se multiplica em vários cartões de \"resultado\" quando o fechamento chega mais de uma vez."
+        },
+        {
+          "title": "🔄 Menos mensagens repetidas",
+          "text": "depois de recarregar ou reconectar, uma mensagem que você já tinha enviado não aparece mais duplicada em conversas que arquivam o histórico de um jeito diferente."
+        }
+      ]
+    },
+    {
+      "version": "v15-34",
+      "date": "21/11/2026",
+      "items": [
+        {
+          "title": "📹 Vídeo conferência",
+          "text": "crie uma sala pelo ícone de câmera na barra da conversa, envie o link e entre por ele. Quem receber o link entra pela página do meet, sem instalar nada."
+        },
+        {
+          "title": "📊 Enquetes",
+          "text": "crie uma enquete no canal pelo clipe, vote tocando nas opções e veja o placar ao vivo. Quem criou pode encerrar; funciona junto com o Fluux, o Android e o iOS."
+        },
+        {
+          "title": "✨ Barra mais limpa",
+          "text": "as figurinhas agora ficam só no atalho da barra, fora do clipe."
+        }
+      ]
+    },
+    {
+      "version": "v15-33",
+      "date": "20/11/2026",
+      "items": [
+        {
+          "title": "🏷️ Login mais claro",
+          "text": "o campo de acesso agora aparece como “Nome de usuário”, em vez de “Endereço XMPP”."
+        }
+      ]
+    },
+    {
+      "version": "v15-32",
+      "date": "20/11/2026",
+      "items": [
+        {
+          "title": "🔗 Canal por link",
+          "text": "ao abrir um convite de canal (xmpp:...?join), o canal agora continua aberto, em vez de aparecer e voltar para a tela de “nenhuma conversa ativa”."
+        }
+      ]
+    },
+    {
+      "version": "v15-31",
+      "date": "18/11/2026",
+      "items": [
+        {
+          "title": "🔄 Reconexão mais previsível",
+          "text": "quando a conexão cai por um congelamento da aba ou por uma troca de rede, o chat tenta primeiro o mesmo caminho que já estava funcionando antes de trocar para o alternativo. Isso evita uma demora extra justamente quando você volta para a aba."
+        },
+        {
+          "title": "🌐 Conexão alternativa corrigida",
+          "text": "o caminho reserva voltou a funcionar para o chat.isacloud.cc. Se o WebSocket não voltar, o chat consegue reconectar por ele."
+        }
+      ]
+    },
+    {
+      "version": "v15-30",
+      "date": "18/11/2026",
+      "items": [
+        {
+          "title": "🩺 Diagnóstico de conexão",
+          "text": "se o chat cair ou não voltar sozinho, agora dá para enviar um relatório técnico dos últimos 24 h para a equipe. Ele mostra horários de queda, tentativas de reconexão, tipo de conexão, versão do navegador e do sistema — e **não inclui o conteúdo das suas mensagens**."
+        },
+        {
+          "title": "🔐 Só por OMEMO",
+          "text": "o relatório vai como arquivo anexo cifrado. Se a conexão ou o OMEMO não estiverem disponíveis, o chat oferece baixar o arquivo em vez de enviar qualquer coisa em claro."
+        },
+        {
+          "title": "📥 Onde encontrar",
+          "text": "em **Configurações → Sobre → Diagnóstico de conexão**, ou no link **Diagnóstico** ao lado da versão, na tela de login. Dá para baixar o arquivo mesmo sem estar conectado."
+        },
+        {
+          "title": "🏷️ Nome fácil de achar",
+          "text": "o arquivo chega como isacloud-web-v15.30-data-hora.json, com a versão e o horário no nome."
+        }
+      ]
+    },
+    {
+      "version": "v15-29",
+      "date": "17/11/2026",
+      "items": [
+        {
+          "title": "🎞️ Figurinhas em GIF",
+          "text": "agora dá para enviar, receber e salvar figurinhas animadas. Elas aparecem sem balão, no mesmo tamanho das outras, e animam em loop."
+        },
+        {
+          "title": "🔗 Importe seus GIFs",
+          "text": "no seletor de figurinhas, dá para escolher um arquivo GIF ou colar o link direto de um GIF da internet, conferir a prévia e enviar."
+        },
+        {
+          "title": "💾 Salvar mantém a animação",
+          "text": "salvar uma figurinha GIF recebida e reenviar continua animando. Suas figurinhas PNG antigas continuam iguais."
+        }
+      ]
+    },
+    {
+      "version": "v15-28",
+      "date": "16/11/2026",
+      "items": [
+        {
+          "title": "📝 Notas para si mesmo",
+          "text": "agora existe um contato no topo de Contatos para você mandar mensagens para si mesmo. A conversa aparece nos recentes depois da primeira nota."
+        },
+        {
+          "title": "⌨️ ESC fecha a conversa",
+          "text": "com o cursor na caixa de mensagem, ESC esconde a conversa sem sair de grupos ou canais. A área vazia mostra o balão, a versão e o aviso de criptografia, e é a página inicial do isaCloud."
+        },
+        {
+          "title": "🔐 Login ao fechar o navegador",
+          "text": "o isaCloud pede login de novo quando você fecha o navegador. Suas conversas, chaves OMEMO e configurações continuam guardadas em cada conta."
+        }
+      ]
+    },
+    {
+      "version": "v15-27",
+      "date": "16/11/2026",
+      "items": [
+        {
+          "title": "🔌 Mensagens não se perdem quando a conexão oscila",
+          "text": "o que você digita durante a reconexão fica na fila e sai sozinho quando a conexão volta. Se algo não chegou a sair, o chat tenta de novo."
+        },
+        {
+          "title": "🟢 Aviso discreto e reconexão mais rápida",
+          "text": "em vez de um popup de erro, a conversa mostra \"Reconectando…\" (legível no tema escuro) e volta sozinha ao trocar de rede, acordar o computador ou retornar para a aba."
+        },
+        {
+          "title": "🇧🇷 Textos em português",
+          "text": "nos avisos de falha de envio e nos botões de reenviar/descartar."
+        }
+      ]
+    },
+    {
+      "version": "v15-26",
+      "date": "14/11/2026",
+      "items": [
+        {
+          "title": "🔤 Contatos em ordem alfabética",
+          "text": "a lista agora ignora maiúsculas e acentos e não muda de lugar quando alguém fica online. Muito mais fácil de achar quem você procura."
+        }
+      ]
+    },
+    {
+      "version": "v15-25",
+      "date": "14/11/2026",
+      "items": [
+        {
+          "title": "💬 Conversas recentes mais limpas",
+          "text": "canais sem nenhuma mensagem não ocupam mais a lista. Sobra espaço para quem realmente conversou."
+        }
+      ]
+    },
+    {
+      "version": "v15-24",
+      "date": "14/11/2026",
+      "items": [
+        {
+          "title": "📜 Histórico sem pulinhos",
+          "text": "ao abrir uma conversa longa, as mensagens ficam no lugar durante o carregamento, com um botão para trazer as anteriores."
+        }
+      ]
+    },
+    {
+      "version": "v15-23",
+      "date": "14/11/2026",
+      "items": [
+        {
+          "title": "⚡ A conversa acompanha o presente",
+          "text": "a lista de mensagens segue a mensagem mais nova, e reações antigas não bagunçam mais a janela."
+        }
+      ]
+    },
+    {
+      "version": "v15-22",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🪞 Suas mensagens, fáceis de achar",
+          "text": "o que você enviou ganha um fundo cinza-claro para bater o olho e saber quem falou."
+        }
+      ]
+    },
+    {
+      "version": "v15-21",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "📝 Texto do jeito que você escreveu",
+          "text": "as linhas em branco entre parágrafos continuam aparecendo nas mensagens."
+        }
+      ]
+    },
+    {
+      "version": "v15-20",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🔐 Grupos privados de verdade",
+          "text": "\"Adicionar grupo\" cria um grupo fechado, com conversa cifrada e cadeado certo no painel de cada participante."
+        }
+      ]
+    },
+    {
+      "version": "v15-19",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🏷️ O isaCloud se apresenta direitinho",
+          "text": "o chat passa a usar o nome isaCloudWeb no XMPP, mantendo suas conversas organizadas."
+        }
+      ]
+    },
+    {
+      "version": "v15-18",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "✨ Atualização sem espera",
+          "text": "o aviso de nova versão gira no clique e recarrega o chat em poucos segundos."
+        }
+      ]
+    },
+    {
+      "version": "v15-17",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🔔 Aviso de nova versão",
+          "text": "quando uma atualização chega, aparece um ícone ao lado da engrenagem. Um clique e você está na versão nova."
+        }
+      ]
+    },
+    {
+      "version": "v15-16",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🇧🇷 Menu das mensagens em português",
+          "text": "Responder, Reagir, Citar, Retirar e Moderar — cada coisa no seu lugar."
+        }
+      ]
+    },
+    {
+      "version": "v15-15",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🧩 Figurinhas",
+          "text": "envie, receba, salve e crie suas próprias figurinhas, com biblioteca e editor."
+        }
+      ]
+    },
+    {
+      "version": "v15-14",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🎨 Cores no lugar certo",
+          "text": "os rótulos CANAIS e GRUPOS mantêm suas cores no menu de contatos."
+        }
+      ]
+    },
+    {
+      "version": "v15-13",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🪟 Conversa flutuante",
+          "text": "cartões mais bonitos, modais modernas, grupos e canais separados, busca de canais, menções legíveis e logout sem surpresas."
+        }
+      ]
+    },
+    {
+      "version": "v15-12",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🚀 A lista de conversas é oficial",
+          "text": "chats, grupos e canais agora vivem juntos na versão principal, e os convites repetidos ficaram para trás."
+        }
+      ]
+    },
+    {
+      "version": "v15-11",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🧵 Acabamento caprichado",
+          "text": "a coluna de participantes termina alinhada e arredondada na altura da caixa de mensagem."
+        }
+      ]
+    },
+    {
+      "version": "v15-10",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "👥 Participantes no mesmo estilo",
+          "text": "status no cantinho do avatar, etiquetas em pílula e uma coluna mais confortável para ver quem está no grupo ou canal."
+        }
+      ]
+    },
+    {
+      "version": "v15-9",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "📱 Lista mais confortável",
+          "text": "lateral mais larga, margens melhores e selos de grupo e canal no cantinho do avatar."
+        }
+      ]
+    },
+    {
+      "version": "v15-8",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "💬 Chega a lista única de conversas",
+          "text": "chats, grupos e canais juntos, com filtros, selos, prévia da última mensagem, não lidas e horário."
+        }
+      ]
+    },
+    {
+      "version": "v15-7",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "🎈 Login mais limpo",
+          "text": "a tela de entrada ficou fora dos cartões, com um visual mais leve e direto."
+        }
+      ]
+    },
+    {
+      "version": "v15-6",
+      "date": "13/11/2026",
+      "items": [
+        {
+          "title": "✨ Cara nova",
+          "text": "cartões flutuantes, cantos arredondados, sombras e botão de enviar redondo. No celular, a conversa continua de ponta a ponta."
+        }
+      ]
+    },
+    {
+      "version": "v15-5",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🔔 Aviso de mensagem protegida mais confiável",
+          "text": "erros antigos de criptografia não somem mais da contagem."
+        }
+      ]
+    },
+    {
+      "version": "v15-4",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🔐 Um aviso só, sem susto",
+          "text": "quando uma mensagem antiga não pode ser aberta neste navegador, aparece um aviso discreto por conversa, com botão \"Entendi\"."
+        }
+      ]
+    },
+    {
+      "version": "v15-3",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🛡️ Mais privacidade e conforto",
+          "text": "conversas guardadas no navegador, apelido automático nos canais, visual mais limpo e menos avisos chatos em outros aplicativos."
+        }
+      ]
+    },
+    {
+      "version": "v15-2",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🎈 Login com a nossa cara",
+          "text": "balão do isaCloud centralizado e rodapé mostrando a versão do Converse."
+        }
+      ]
+    },
+    {
+      "version": "v15-1",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🌤️ Primeiros ajustes",
+          "text": "o balão do isaCloud aparece direitinho no topo e o build fica mais limpo para publicar."
+        }
+      ]
+    },
+    {
+      "version": "v15-0",
+      "date": "12/11/2026",
+      "items": [
+        {
+          "title": "🎉 Nasce o isaCloud Web",
+          "text": "a marca da comunidade, temas claro e escuro, balão, menu, rodapé e o primeiro build em <https://chat.isacloud.cc>."
+        }
+      ]
+    }
+  ]
+}

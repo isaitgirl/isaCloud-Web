@@ -50,6 +50,7 @@ import './plugins/rootview/index.js';
 import './plugins/rosterview/index.js';
 import './plugins/recent-list/index.js'; // Conversation list in the Chat app's sidebar
 import './plugins/isacloud-brand/index.js'; // isaCloud: marca por domínio
+import './plugins/isacloud-changelog/index.js'; // isaCloud: novidades do isaCloud na lista
 import './plugins/isacloud-conference/index.js'; // isaCloud: vídeo conferência
 import './plugins/isacloud-diagnostics/index.js'; // isaCloud: diagnóstico de conexão
 import './plugins/isacloud-polls/index.js'; // isaCloud: enquetes compatíveis com o Fluux

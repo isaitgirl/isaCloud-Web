@@ -120,6 +120,7 @@ export default (el) => {
                               <p class="text-center brand-subtitle">
                                   ${unsafeHTML(DOMPurify.sanitize(second_subtitle))}
                               </p>
+                              <converse-isacloud-changelog-link></converse-isacloud-changelog-link>
                               <converse-isacloud-diagnostics></converse-isacloud-diagnostics>
                           </div>
                       </div>`

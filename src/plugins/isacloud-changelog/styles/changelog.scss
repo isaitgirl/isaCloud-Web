@@ -1,0 +1,378 @@
+// isaCloud changelog: the pseudo-conversation, its row in the conversation
+// list, and the entry in Settings → About. Only theme variables are used, so
+// the light and the dark themes stay readable without separate rules.
+
+.conversejs {
+    converse-isacloud-changelog {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        // Above the conversation and sidebar flyouts, which use z-index 2.
+        // Without this the view opened over an existing chat sat behind it.
+        z-index: 10;
+
+        // The host also carries `display: flex`, which beats the browser's
+        // `[hidden] { display: none }`; the attribute alone is not enough.
+        &[hidden] {
+            display: none;
+        }
+
+        // The theme only places the card from 768px up, where the sidebar
+        // stays visible beside it. On a phone the news takes the whole app
+        // area. Absolute, not fixed: `converse-app-chat` is a positioned
+        // stacking context (sticky) and the app switcher rail sits beside it;
+        // a fixed view would be painted under the rail and its left edge would
+        // be clipped by it. Filling the app keeps the rail usable and the
+        // whole card visible.
+        @media screen and (max-width: 767.98px) {
+            position: absolute;
+            inset: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1032;
+            width: auto;
+            height: 100%;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+    }
+
+    .isacloud-changelog {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        background-color: var(--isa-card-bg, var(--background-color));
+        color: var(--foreground-color);
+
+        &__header {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--isa-border, var(--border-color));
+            background-color: var(--chat-header-bg-color);
+            color: var(--chat-header-fg-color);
+        }
+
+        &__back {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+
+            converse-icon,
+            converse-icon svg {
+                color: inherit;
+                fill: currentColor;
+            }
+
+            &:hover,
+            &:focus-visible {
+                background-color: color-mix(in srgb, currentColor 12%, transparent);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--pink, #ff006f);
+                outline-offset: 2px;
+            }
+        }
+
+        &__avatar {
+            flex: 0 0 auto;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        &__heading {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        &__title {
+            margin: 0;
+            overflow: hidden;
+            color: var(--chat-header-fg-color);
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &__subtitle {
+            margin: 0;
+            overflow: hidden;
+            color: var(--chat-header-subdued-color);
+            font-size: 12px;
+            line-height: 1.35;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &__body {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-height: 0;
+            padding: 16px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        &__release {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+            padding-bottom: 16px;
+
+            & + & {
+                padding-top: 16px;
+                border-top: 1px solid var(--isa-border, var(--border-color));
+            }
+        }
+
+        &__release-title {
+            margin: 0;
+            color: var(--blue, #1780ad);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        &__items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 0;
+            padding-inline-start: 18px;
+        }
+
+        &__item {
+            color: var(--foreground-color);
+            font-size: 13px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+
+            &::marker {
+                color: var(--pink, #ff006f);
+            }
+
+            strong {
+                color: var(--foreground-color);
+                font-weight: 700;
+            }
+        }
+
+        &__empty {
+            margin: 24px 0;
+            color: var(--subdued-color, #6c757d);
+            text-align: center;
+        }
+
+        &__footer {
+            display: flex;
+            flex: 0 0 auto;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 4px;
+        }
+
+        &__unarchive {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: var(--link-color);
+            font-size: 13px;
+            text-align: start;
+            text-decoration: underline;
+            cursor: pointer;
+
+            &:hover,
+            &:focus-visible {
+                color: var(--link-color-hover);
+            }
+        }
+
+        &__github {
+            color: var(--link-color);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+
+            &:hover,
+            &:focus-visible {
+                color: var(--link-color-hover);
+                text-decoration: underline;
+            }
+        }
+    }
+
+    // The row in the conversation list. The base `.recent-item` rules live in
+    // recent-list.scss; only what the changelog adds is here.
+    .recent-item.recent-item--changelog {
+        .recent-item__name-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .recent-item__name {
+            overflow: hidden;
+            min-width: 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .recent-item__new {
+            flex: 0 0 auto;
+            padding: 1px 6px;
+            border-radius: 999px;
+            background-color: var(--pink, #ff006f);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
+        .recent-item__preview {
+            overflow: hidden;
+            min-width: 0;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .recent-item__link {
+            // Leave the bottom-right corner free for the archive button.
+            padding-right: 32px;
+        }
+
+        .recent-item__meta {
+            align-self: flex-start;
+        }
+
+        .recent-item__time {
+            white-space: nowrap;
+        }
+
+        // The isaCloud balloon is square-ish, so the list's round avatar rule
+        // would crop it.
+        .recent-item__avatar .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: contain;
+        }
+
+        .recent-item__archive {
+            position: absolute;
+            right: 8px;
+            bottom: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--subdued-color, #6c757d);
+            cursor: pointer;
+
+            converse-icon,
+            converse-icon svg,
+            svg {
+                color: inherit;
+                fill: var(--subdued-color, #6c757d);
+            }
+
+            &:hover,
+            &:focus-visible {
+                color: var(--pink, #ff006f);
+
+                converse-icon,
+                converse-icon svg,
+                svg {
+                    color: var(--pink, #ff006f);
+                    fill: var(--pink, #ff006f);
+                }
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--pink, #ff006f);
+                outline-offset: 2px;
+            }
+        }
+    }
+
+    // Settings → About: a light section beside the diagnostics section, not a
+    // card. The button is Bootstrap's primary button.
+    .isacloud-changelog-link {
+        margin: 1.5em 0;
+        padding-top: 1.25em;
+        border-top: 1px solid var(--isa-border);
+        color: var(--foreground-color);
+        text-align: start;
+
+        &__title {
+            margin: 0 0 0.4em;
+            font-size: 1em;
+            font-weight: 600;
+        }
+
+        &__text {
+            margin: 0 0 0.75em;
+            color: var(--subdued-color);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        &__actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75em;
+        }
+
+        &__github {
+            margin: 0.85em 0 0;
+            font-size: 13px;
+
+            a {
+                color: var(--link-color);
+                text-decoration: none;
+
+                &:hover,
+                &:focus-visible {
+                    color: var(--link-color-hover);
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+}
