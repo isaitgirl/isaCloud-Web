@@ -2,7 +2,7 @@
 
 - **Versão:** `v15-41`
 - **Publicada em:** 2026-11-24
-- **Commit publicado:** `895b1ef78`
+- **Commit publicado:** `53f9ef68c`
 - **Próximo build:** `42`
 
 O formato é `v15-<build>`. O build começa em **0** no primeiro commit do fork
