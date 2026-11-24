@@ -100,6 +100,16 @@ describe('The attachment menu in a one-to-one chat', function () {
     );
 
     it(
+        'is translated to the active pt_BR locale',
+        initConverse(converse, ['chatBoxesFetched'], { i18n: 'pt_BR' }, async function (_converse) {
+            const view = await openChat(_converse);
+            const menu = await mock.openAttachmentMenu(view);
+            expect(mock.attachmentMenuItems(view)).toEqual(['Enviar um arquivo', 'Enviar uma imagem']);
+            expect(menu.querySelector('.toggle-attachment-menu').getAttribute('aria-label')).toBe('Adicionar anexo');
+        }),
+    );
+
+    it(
         'moves focus to the item under the pointer, so that only one item is highlighted',
         initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             const view = await openChat(_converse);

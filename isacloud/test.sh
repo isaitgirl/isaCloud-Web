@@ -24,6 +24,8 @@ MAIN_SPECS=(
     src/plugins/recent-list/tests/recent-list.js
     src/plugins/rosterview/tests/
     src/plugins/chatview/tests/composer-panels.js
+    src/plugins/chatview/tests/dropdown-position.js # isaCloud: menu da mensagem fora do composer
+    src/plugins/chatview/tests/attachment-menu.js # isaCloud: anexos em pt_BR
     src/plugins/chatview/tests/markers.js
     src/plugins/chatview/tests/messages.js
     src/plugins/chatview/tests/message-window.js # isaCloud: janela da lista de mensagens
@@ -49,6 +51,7 @@ MAIN_SPECS=(
     src/plugins/muc-views/tests/muc-private-messages.js
     src/plugins/muc-views/tests/retractions.js
     src/plugins/time-views/tests/entity-time-alert.js
+    src/shared/modals/tests/image-modal.js # isaCloud: visualizador de imagem com zoom e arrasto
 )
 
 HEADLESS_SPECS=(

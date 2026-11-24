@@ -3693,6 +3693,21 @@ msgstr "Abrir suas notas"
 msgid "Your personal messages are end-to-end encrypted"
 msgstr "Suas mensagens pessoais são criptografadas ponta a ponta"
 
+msgid "Add attachment"
+msgstr "Adicionar anexo"
+
+msgid "Send a file"
+msgstr "Enviar um arquivo"
+
+msgid "Send an image"
+msgstr "Enviar uma imagem"
+
+msgid "Share your location"
+msgstr "Compartilhar sua localização"
+
+msgid "Record a voice message"
+msgstr "Gravar mensagem de voz"
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

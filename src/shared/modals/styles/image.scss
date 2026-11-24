@@ -1,6 +1,31 @@
-converse-image-modal {
+.conversejs converse-image-modal {
+    // Room for the image at its natural width (plus the body's padding). The
+    // custom property is set from the image's intrinsic size on load; until
+    // then, and for images wider than the viewport, the cap applies. The
+    // `.conversejs` prefix outranks Bootstrap's `.conversejs .modal-dialog`.
+    .modal-dialog {
+        max-width: min(92vw, 1100px, var(--image-modal-width, 1100px));
+    }
+
     .chat-image--modal {
+        display: block;
+        margin-inline: auto;
         max-height: 99%;
         max-width: 100%;
+        // Clicking enlarges the image to its original pixel size.
+        cursor: zoom-in;
+    }
+
+    // `.modal-body` already scrolls on both axes: it sets `overflow-y: auto`,
+    // which computes `overflow-x` to `auto` as well.
+    .chat-image--modal--zoomed {
+        max-height: none;
+        max-width: none;
+        cursor: grab;
+        user-select: none;
+
+        &:active {
+            cursor: grabbing;
+        }
     }
 }
