@@ -3,11 +3,15 @@
         position: fixed;
         top: 1em;
         right: 1em;
+        // Above the conversation card (z-index 2), the app switcher and the
+        // call overlay, so notices are actually visible.
+        z-index: 1060;
 
         converse-toast {
             --converse-toast-border-width: 0;
 
             .toast {
+                overflow: hidden;
                 color: var(--converse-toast-color) !important;
                 background-color: var(--converse-toast-bg) !important;
                 &.text-bg-success {
@@ -19,15 +23,64 @@
                 &.text-bg-info {
                     background-color: rgba(var(--converse-info-rgb), 0.85) !important;
                 }
+                // A neutral light card, used by the conference host-link notice.
+                &.toast--light {
+                    --converse-toast-color: #1f2933;
+                    color: #1f2933 !important;
+                    background-color: #e9edf0 !important;
+
+                    .toast-header {
+                        background-color: transparent;
+                    }
+                    .btn-close {
+                        filter: none;
+                    }
+                }
                 position: relative;
                 margin-block-start: 1em;
                 margin-inline-end: 1em;
+
+                // Anchored above the message field; `--toast-bottom` is measured
+                // from the visible `.chat-message-form` in toast.js.
+                &.toast--composer {
+                    position: fixed;
+                    left: var(--toast-left, 1em);
+                    right: auto;
+                    bottom: var(--toast-bottom, 7.5em);
+                    width: var(--toast-width, min(30rem, calc(100vw - 2em)));
+                    max-width: calc(100vw - 2em);
+                    margin: 0;
+                }
                 .toast-header {
                     img {
                         height: 1.5em;
                     }
                 }
                 .toast-body__container {
+                    gap: 0.5em;
+                    align-items: center;
+                    // Keep the action/close clear of the toast's right border.
+                    padding-inline-end: 0.75em;
+
+                    .toast-body {
+                        flex: 1 1 auto;
+                        min-width: 0;
+                    }
+                    .toast-action {
+                        flex: 0 0 auto;
+                        align-self: center;
+                        padding: 0;
+                        border: 0;
+                        background: none;
+                        color: var(--pink, #ff006f);
+                        font-weight: 600;
+                        white-space: nowrap;
+
+                        &:hover,
+                        &:focus {
+                            text-decoration: underline;
+                        }
+                    }
                     .fa-times {
                         svg {
                             fill: var(--converse-toast-color);

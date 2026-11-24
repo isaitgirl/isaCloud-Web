@@ -33,6 +33,7 @@ MAIN_SPECS=(
     src/plugins/muc-views/tests/composer-panels.js
     src/plugins/muc-views/tests/muc.js
     src/plugins/muc-views/tests/muc-list-modal.js
+    src/plugins/modal/tests/toast-action.js # isaCloud: ação no toast
     src/plugins/profile/tests/
     src/plugins/roomslist/tests/
     src/plugins/isacloud-changelog/tests/ # isaCloud: novidades na lista

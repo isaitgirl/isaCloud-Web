@@ -11,6 +11,9 @@ export default class Toast extends CustomElement {
             name: { type: String },
             title: { type: String },
             body: { type: String },
+            action: { type: Object, attribute: false },
+            placement: { type: String },
+            appearance: { type: String },
         };
     }
 
@@ -20,6 +23,20 @@ export default class Toast extends CustomElement {
         this.body = '';
         this.header = '';
         this.type = 'info';
+        this.action = null;
+        this.placement = 'top';
+        this.appearance = 'default';
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.onResize = () => this.placement === 'composer' && this.positionAboveComposer();
+        window.addEventListener('resize', this.onResize);
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener('resize', this.onResize);
+        super.disconnectedCallback();
     }
 
     /**
@@ -31,11 +48,33 @@ export default class Toast extends CustomElement {
         } else {
             clearTimeout(this.timeoutId);
         }
+        if (this.placement === 'composer') this.positionAboveComposer();
+    }
+
+    /**
+     * Keep the toast just above the visible composer, even when the composer
+     * grows with a draft or a reply preview. `placement: "composer"` is used by
+     * notices that belong to the conversation being typed in.
+     */
+    positionAboveComposer() {
+        const form = [...document.querySelectorAll('.chat-message-form')].find(
+            (el) => el.getBoundingClientRect().height > 0 && !el.closest('.hidden'),
+        );
+        if (!form) return;
+        const rect = form.getBoundingClientRect();
+        const card = form.closest('.chat-body') ?? form.closest('.box-flyout') ?? form;
+        const card_rect = card.getBoundingClientRect();
+        const bottom = Math.max(8, Math.round(window.innerHeight - rect.top + 8));
+        const left = Math.max(8, Math.round(card_rect.left + 8));
+        const width = Math.round(Math.min(480, Math.max(0, card_rect.width - 16)));
+        this.style.setProperty('--toast-bottom', `${bottom}px`);
+        this.style.setProperty('--toast-left', `${left}px`);
+        if (width > 0) this.style.setProperty('--toast-width', `${width}px`);
     }
 
     render() {
         return html`<div
-            class="toast show text-bg-${this.type ?? 'info'}"
+            class="toast show text-bg-${this.type ?? 'info'} ${this.placement === 'composer' ? 'toast--composer' : ''} ${this.appearance === 'light' ? 'toast--light' : ''}"
             role="alert"
             aria-live="assertive"
             aria-atomic="true"
@@ -61,7 +100,14 @@ export default class Toast extends CustomElement {
             ${
                 this.body
                     ? html`<div class="d-flex justify-content-between toast-body__container">
-                          <div class="toast-body w-100">${this.body ?? ''}</div>
+                          <div class="toast-body">${this.body ?? ''}</div>
+                          ${
+                              this.action
+                                  ? html`<button @click="${this.onActionClick}" type="button" class="toast-action">
+                                        ${this.action.label}
+                                    </button>`
+                                  : ''
+                          }
                           ${
                               !this.title
                                   ? html`<button
@@ -78,6 +124,16 @@ export default class Toast extends CustomElement {
                     : ''
             }
         </div>`;
+    }
+
+    /**
+     * Run the action's handler and then dismiss the toast.
+     * @param {MouseEvent} ev
+     */
+    onActionClick(ev) {
+        ev.preventDefault();
+        this.action?.handler?.();
+        this.hide();
     }
 
     /**

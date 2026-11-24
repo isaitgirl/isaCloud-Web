@@ -16,6 +16,9 @@ const PT_BR = {
     'Access the video conference via the link:': 'Acesse a vídeo conferência pelo link:',
     'Could not create the conference. Please try again.': 'Não foi possível criar a conferência. Tente novamente.',
     'Conference created. The link is in the message field.': 'Conferência criada. O link está na caixa de mensagem.',
+    'This is the link to access your new conference:': 'Este é o link para acessar sua nova conferência:',
+    'Host link sent to you!': 'Link de anfitrião enviado para você mesmo!',
+    'View': 'Ver',
 };
 
 /**

@@ -14,4 +14,12 @@ export type ToastProperties = {
     body?: string;
     name: string;
     type: 'info' | 'danger';
+    action?: {
+        label: string;
+        handler: () => void;
+    };
+    /** Where the toast sits; `composer` puts it just above the message field. */
+    placement?: 'top' | 'composer';
+    /** `light` gives a neutral light card instead of the theme's info blue. */
+    appearance?: 'default' | 'light';
 };

@@ -3,7 +3,11 @@ import converse from '../../../../dist/converse.js';
 
 const { u } = converse.env;
 
-const SETTINGS = { whitelisted_plugins: ['converse-isacloud-conference'] };
+const SETTINGS = {
+    whitelisted_plugins: ['converse-isacloud-conference'],
+    allow_non_roster_messaging: true,
+    notes_to_self: true,
+};
 const CONTACT_JID = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
 const BASE = 'https://meet.isacloud.cc';
 const TOKEN = 'secret-token';
@@ -52,9 +56,13 @@ describe('Creating a video conference', function () {
     it(
         'posts the account name, puts the public link in the composer and shows a notice',
         mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
-            const fake = vi.fn(async (/** @type {any} */ input) =>
-                String(input).includes('/meet-api/v1/rooms') ? response(201, ROOM) : response(404),
-            );
+            const fake = vi.fn(async (/** @type {any} */ input) => {
+                const url = String(input);
+                if (url.includes('/meet-api/v1/rooms')) return response(201, ROOM);
+                // `sendMessage` loads the emoji data; an empty set keeps it quiet.
+                if (url.includes('emoji.json')) return response(200, {});
+                return response(404);
+            });
             vi.stubGlobal('fetch', fake);
             const open = vi.spyOn(window, 'open');
             const toast = vi.spyOn(_converse.api.toast, 'show').mockImplementation(() => {});
@@ -80,11 +88,30 @@ describe('Creating a video conference', function () {
             // The host enters by clicking the link in the message, so creating
             // the room must not open anything.
             expect(open).not.toHaveBeenCalled();
-            expect(toast).toHaveBeenCalledWith('conference-created', {
+
+            const bare_jid = _converse.session.get('bare_jid');
+            const host_toast = toast.mock.calls.find(([name]) => name === 'conference-host-link');
+            expect(host_toast).toBeTruthy();
+            expect(host_toast[1]).toEqual({
                 type: 'info',
                 title: 'Video conference',
-                body: 'Conference created. The link is in the message field.',
+                body: 'Host link sent to you!',
+                placement: 'composer',
+                appearance: 'light',
+                action: { label: 'View', handler: expect.any(Function) },
             });
+
+            // The host link is also a note to ourselves, marked unread so that
+            // it brings the "Notes to self" chat into the conversation list.
+            const note_chat = _converse.state.chatboxes.get(bare_jid);
+            const note = note_chat.messages.last();
+            expect(note.get('body')).toBe(`This is the link to access your new conference:\n${ROOM.hostURL}`);
+            expect(note_chat.get('num_unread')).toBe(1);
+            expect(note_chat.get('first_unread_id')).toBe(note.get('id'));
+
+            const trigger = vi.spyOn(_converse.api, 'trigger').mockImplementation(() => {});
+            host_toast[1].action.handler();
+            expect(trigger).toHaveBeenCalledWith('openConversation', { 'view': 'chat', 'jid': bare_jid });
 
             await u.waitUntil(() => view.model.get('draft')?.includes(ROOM.roomURL));
             const draft = view.model.get('draft');
@@ -94,7 +121,6 @@ describe('Creating a video conference', function () {
             expect(mock.composerText(view)).not.toContain(TOKEN);
 
             const { getHostURL } = _converse.exports.isacloud_conference;
-            const bare_jid = _converse.session.get('bare_jid');
             expect(getHostURL(bare_jid, ROOM.roomID, BASE)).toBe(ROOM.hostURL);
         }),
     );

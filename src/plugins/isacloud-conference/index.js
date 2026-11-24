@@ -19,7 +19,9 @@
  *  The host enters by sending the message and clicking the public link in it:
  *  `getMessageLinkTarget` swaps that link for the stored host URL. Nothing is
  *  opened when the room is created, so there is no pop-up to allow and no
- *  extra dialog: the link in the conversation is the way in for everyone.
+ *  extra dialog: the link in the conversation is the way in for everyone. The
+ *  host URL is also sent to the account itself as a "Notes to self" note, so
+ *  it reaches the other devices.
  *
  *  Strings are in pt-BR through `i18n.js`, without `.po` edits. The icon
  *  (`icon.js`) is the plugin's own SVG symbol.
@@ -29,7 +31,7 @@
  * @license Mozilla Public License (MPLv2)
  */
 import { html } from 'lit';
-import { _converse, api, constants, converse } from '@converse/headless';
+import { _converse, api, constants, converse, log, u } from '@converse/headless';
 import { createRoom } from './meet-api.js';
 import { clearAccount, getHostURL, saveRoom } from './store.js';
 import { DEFAULT_CONFERENCE_URL, isMeetURL, normalizeBase, roomIDFromURL } from './links.js';
@@ -107,10 +109,10 @@ function getConferenceToolbarButton(toolbar_el, buttons) {
 
 /**
  * Creates a conference for the conversation whose toolbar was used: remembers
- * the host URL and puts the public link in the composer, without sending it.
- * The host enters later by clicking that link in the message, which
- * `getMessageLinkTarget` swaps for the host URL. On failure, nothing is
- * inserted.
+ * the host URL, sends it to the account as a "Notes to self" note and puts the
+ * public link in the composer, without sending it. The host enters later by
+ * clicking that link in the message, which `getMessageLinkTarget` swaps for the
+ * host URL. On failure, nothing is inserted.
  * @param {import('shared/chat/toolbar').ChatToolbar} source
  * @returns {Promise<void>}
  */
@@ -127,11 +129,38 @@ export async function createConference(source) {
         /** @type {HTMLElement & { insertAtCaret: (text: string) => void }|null} */
         const form = /** @type {any} */ (source.closest('converse-message-form, converse-muc-message-form'));
         form?.insertAtCaret(`${t('Access the video conference via the link:')} ${room.roomURL}`);
-        api.toast.show('conference-created', {
-            type: 'info',
-            title: t('Video conference'),
-            body: t('Conference created. The link is in the message field.'),
-        });
+
+        // The host URL is a credential, so it goes to the account itself
+        // instead of the conversation. A failure to send it must not cost the
+        // conference: the notice then just points at the composer.
+        let host_link_sent = false;
+        try {
+            if (!bare_jid) throw new Error('No own JID to send the conference host link to');
+            await sendHostLinkToSelf(room, bare_jid);
+            host_link_sent = true;
+        } catch (e) {
+            log.error('Could not send the conference host link to ourselves', e);
+        }
+
+        if (host_link_sent && bare_jid) {
+            api.toast.show('conference-host-link', {
+                type: 'info',
+                title: t('Video conference'),
+                body: t('Host link sent to you!'),
+                placement: 'composer',
+                appearance: 'light',
+                action: {
+                    label: t('View'),
+                    handler: () => api.trigger('openConversation', { 'view': 'chat', 'jid': bare_jid }),
+                },
+            });
+        } else {
+            api.toast.show('conference-created', {
+                type: 'info',
+                title: t('Video conference'),
+                body: t('Conference created. The link is in the message field.'),
+            });
+        }
     } catch {
         api.toast.show('conference-error', {
             type: 'danger',
@@ -141,6 +170,33 @@ export async function createConference(source) {
     } finally {
         pending.delete(model);
     }
+}
+
+/**
+ * Sends the host link to our own bare JID, in the "Notes to self" chat, so
+ * that the note also reaches the account's other devices. The note is marked
+ * unread like a received message: a "Notes to self" chat that only lived in
+ * the contacts view has no displayable message, and its unread state is what
+ * brings it into the conversation list, without opening it.
+ * @param {{ hostURL: string }} room
+ * @param {string} bare_jid - The account's bare JID.
+ * @returns {Promise<{ chat: any, message: any }>} The chat and the note.
+ */
+export async function sendHostLinkToSelf(room, bare_jid) {
+    const chat = await api.chats.get(bare_jid, {}, true);
+    if (!chat) throw new Error('Could not create the "Notes to self" chat');
+    await chat.initialized;
+
+    const body = `${t('This is the link to access your new conference:')}\n${room.hostURL}`;
+    const message = await chat.sendMessage({ body });
+    if (!message) throw new Error('Could not send the host link to ourselves');
+
+    const num_unread = chat.get('num_unread') || 0;
+    u.safeSave(chat, {
+        num_unread: num_unread + 1,
+        ...(num_unread === 0 ? { first_unread_id: message.get('id') } : null),
+    });
+    return { chat, message };
 }
 
 /**
@@ -179,6 +235,7 @@ converse.plugins.add('converse-isacloud-conference', {
             clearAccount,
             roomIDFromURL,
             isMeetURL,
+            sendHostLinkToSelf,
         };
 
         api.listen.on('getToolbarButtons', getConferenceToolbarButton);
