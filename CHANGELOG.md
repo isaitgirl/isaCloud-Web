@@ -7,6 +7,30 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-40 — 2026-11-24 (`7de34fb8a`)
+
+- `fix(chat)`: o menu de ações da mensagem fecha ao clicar fora mesmo quando o alvo
+  interrompe o evento — os botões de emoji e de anexos do compositor fazem
+  `stopPropagation`, e o listener no `document` passou a rodar na fase de captura, em
+  `pointerdown` e `click`. Escolher um item também fecha. Em canais com muitas ações e
+  pouco espaço (mensagem própria com 5 itens num composer alto), o menu escolhe o lado com
+  mais espaço e limita a altura ao `.chat-content__messages`, rolando internamente em vez
+  de cobrir o composer; o Popper `fixed` usa `altBoundary` para enxergar a lista como
+  boundary.
+- `feat(chat)`: visualizador de imagem com a largura do diálogo adaptada ao tamanho
+  intrínseco da imagem (até `92vw`/1100 px; antes ficava preso aos 500 px do Bootstrap),
+  com a imagem centralizada. Um clique alterna entre ajustada e **1:1**; em 1:1 o corpo
+  rola nos dois eixos e o botão esquerdo pressionado arrasta a imagem, sem pan no hover.
+  No toque, o scroll continua nativo; arrastar não desfaz o zoom por acidente, e o clique
+  após um arrasto é suprimido.
+- `fix(i18n)`: o menu do clipe de anexos fala pt_BR: “Adicionar anexo”, “Enviar um
+  arquivo”, “Enviar uma imagem”, “Compartilhar sua localização” e “Gravar mensagem de
+  voz”.
+- `test`: specs de `dropdown-position` (1:1 e canal, clique fora no botão de emoji, clique
+  no item, menu maior que a área de mensagens), `image-modal` (largura adaptativa, zoom,
+  arrasto e ausência de pan no hover) e a tradução do `attachment-menu`; os três entram na
+  suíte reduzida do fork (636 + 36 testes) e `types:check`.
+
 ## v15-39 — 2026-11-23 (`72b10f4d2`)
 
 - `feat(isacloud)`: “Novidades do isaCloud” na lista de conversas. Plugin novo
