@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "v15-41",
+      "date": "24/11/2026",
+      "items": [
+        {
+          "title": "🎥 Link de anfitrião na conferência",
+          "text": "ao criar uma vídeo conferência, o link de anfitrião agora é enviado para **Notas para si mesmo**. Ele aparece como não lido nas Conversas recentes, mesmo que a conversa só estivesse em Contatos, e o aviso com **Ver** abre a nota direto no link."
+        },
+        {
+          "title": "✨ Aviso no lugar certo",
+          "text": "o aviso fica acima do campo de mensagem, alinhado ao início da conversa, em cinza claro, com o “Ver” rosa e sem cobrir a caixa de digitação."
+        }
+      ]
+    },
+    {
       "version": "v15-40",
       "date": "24/11/2026",
       "items": [

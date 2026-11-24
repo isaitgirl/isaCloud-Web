@@ -1,12 +1,22 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-40** · atualizada em **24/11/2026**
+Versão atual: **v15-41** · atualizada em **24/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-41 — 24/11/2026
+
+- 🎥 **Link de anfitrião na conferência:** ao criar uma vídeo conferência, o link
+  de anfitrião agora é enviado para **Notas para si mesmo**. Ele aparece como não
+  lido nas Conversas recentes, mesmo que a conversa só estivesse em Contatos, e o
+  aviso com **Ver** abre a nota direto no link.
+- ✨ **Aviso no lugar certo:** o aviso fica acima do campo de mensagem, alinhado
+  ao início da conversa, em cinza claro, com o “Ver” rosa e sem cobrir a caixa de
+  digitação.
 
 ### v15-40 — 24/11/2026
 

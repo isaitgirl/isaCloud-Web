@@ -7,6 +7,29 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-41 — 2026-11-24 (`895b1ef78`)
+
+- `feat(isacloud)`: ao criar uma vídeo conferência, o link de anfitrião também é
+  enviado para o próprio bare JID, na conversa “Notas para si mesmo”, pelo fluxo
+  normal de `sendMessage` (chega aos outros dispositivos). A nota é marcada como
+  não lida com `num_unread` e `first_unread_id`, então o badge aparece e a conversa
+  entra nos recentes mesmo quando só existia em Contatos; não abre nem desmarca a
+  conversa por conta própria. Se a nota falhar, a conferência continua e o aviso
+  antigo aponta para a caixa de mensagem.
+- `feat(modal)`: o toast ganhou `action` (rótulo + handler), `placement: "composer"`
+  e `appearance: "light"`. O aviso da conferência usa a ação **Ver** para abrir a
+  conversa, fica logo acima do composer medindo o topo real do formulário visível,
+  alinhado à borda esquerda do cartão da conversa, com fundo cinza claro, texto
+  escuro e “Ver” rosa.
+- `fix(modal)`: o corpo do toast deixou de usar `w-100`; o container ganhou respiro
+  à direita e o toast recorta o arredondamento, para a ação não escapar da borda.
+  `converse-toasts` usa `z-index: 1060`, acima do cartão da conversa.
+- `fix(i18n)`: strings pt-BR do link de anfitrião, do “Ver” e da nota.
+- `test`: specs de `host-link` (nota enviada, não lida, badge/recentes, conversa só
+  em Contatos, conversa já existente e fallback), de ação/posicionamento/aparência
+  do toast; ambos entram na suíte reduzida do fork, com 642 + 36 testes e
+  `types:check`.
+
 ## v15-40 — 2026-11-24 (`7de34fb8a`)
 
 - `fix(chat)`: o menu de ações da mensagem fecha ao clicar fora mesmo quando o alvo
