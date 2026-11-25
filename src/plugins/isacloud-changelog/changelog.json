@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "v15-42",
+      "date": "25/11/2026",
+      "items": [
+        {
+          "title": "⌨️ Shift+Enter desde a primeira linha",
+          "text": "agora Shift+Enter quebra a linha mesmo quando a caixa de mensagem ainda está vazia. No Safari, a primeira quebra era ignorada e o texto continuava na mesma linha."
+        }
+      ]
+    },
+    {
       "version": "v15-41",
       "date": "24/11/2026",
       "items": [

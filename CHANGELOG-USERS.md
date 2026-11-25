@@ -1,12 +1,18 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-41** · atualizada em **24/11/2026**
+Versão atual: **v15-42** · atualizada em **25/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-42 — 25/11/2026
+
+- ⌨️ **Shift+Enter desde a primeira linha:** agora Shift+Enter quebra a linha mesmo
+  quando a caixa de mensagem ainda está vazia. No Safari, a primeira quebra era
+  ignorada e o texto continuava na mesma linha.
 
 ### v15-41 — 24/11/2026
 

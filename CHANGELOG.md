@@ -7,6 +7,20 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-42 — 2026-11-25 (`f1583d46e`)
+
+- `fix(composer)`: Shift+Enter volta a quebrar a linha num compositor que ainda não
+  tinha sido digitado. A seleção inicial é um *element point* na raiz, onde o Lexical
+  descarta um `LineBreakNode` sozinho: sobrava só o `<br>` que dá altura ao parágrafo
+  vazio, o modelo continuava vazio e o texto seguia na primeira linha (no Safari, o
+  caminho nativo de `beforeinput` também não colocava a quebra no modelo). O editor
+  compartilhado passou a tratar `KEY_ENTER_COMMAND` em `COMMAND_PRIORITY_HIGH`, antes
+  do rich-text, e ancora a primeira quebra com um espaço invisível — removido pelo
+  `trim` no envio. Vale para 1:1, grupos e Social.
+- `test`: dois specs de teclado real (`userEvent`) em `message-form.js`, com o composer
+  vazio e no meio do texto; o arquivo e o `compose-rich.js` do Social entraram na suíte
+  reduzida do fork, com 667 + 36 testes e `types:check`.
+
 ## v15-41 — 2026-11-24 (`895b1ef78`)
 
 - `feat(isacloud)`: ao criar uma vídeo conferência, o link de anfitrião também é
