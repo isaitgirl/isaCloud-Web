@@ -1,12 +1,18 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-42** · atualizada em **25/11/2026**
+Versão atual: **v15-43** · atualizada em **25/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-43 — 25/11/2026
+
+- 🔌 **Conexão que volta sozinha pelo caminho certo:** depois de uma queda rápida do
+  servidor, o chat reconecta pelo canal mais rápido e retoma de onde parou, sem precisar
+  recarregar a página.
 
 ### v15-42 — 25/11/2026
 

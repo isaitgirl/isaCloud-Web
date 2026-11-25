@@ -1,6 +1,16 @@
 {
   "releases": [
     {
+      "version": "v15-43",
+      "date": "25/11/2026",
+      "items": [
+        {
+          "title": "🔌 Conexão que volta sozinha pelo caminho certo",
+          "text": "depois de uma queda rápida do servidor, o chat reconecta pelo canal mais rápido e retoma de onde parou, sem precisar recarregar a página."
+        }
+      ]
+    },
+    {
       "version": "v15-42",
       "date": "25/11/2026",
       "items": [

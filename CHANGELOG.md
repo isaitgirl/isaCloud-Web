@@ -7,6 +7,24 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-43 — 2026-11-25 (`a3113d27a`)
+
+- `fix(connection)`: uma queda curta do servidor (o restart do Prosody para a 13.0.8, de
+  ~1 s) não leva mais o web para o BOSH. Uma tentativa de WebSocket que falha reporta
+  CONNFAIL duas vezes no Strophe (`error` e depois `close` 1006), e cada relato contava
+  como uma falha: a primeira tentativa já trocava de transporte. A falha agora é contada
+  uma vez por tentativa (`#attempt_failed`, zerado em CONNECTING e ao conectar), então a
+  queda curta repete o WebSocket e retoma a sessão.
+- `fix(connection)`: quando o BOSH entra no lugar de um WebSocket que funcionava nesta
+  página, o cliente abre um WebSocket de teste a cada 5 min; se abrir, encerra o BOSH e
+  reconecta pelo WebSocket. Se a volta falhar, a espera dobra até 1 h. A queda de um BOSH
+  substituto (inclusive o `terminate` de sessão esquecida depois de um freeze) tenta o
+  WebSocket primeiro. No BOSH o Strophe não usa Stream Management, por isso ficar nele
+  significava login novo a cada freeze. Diagnóstico: `transport_probe` e
+  `transport_return`.
+- `test`: 7 specs em `reconnection.js`; `reconnection.js` e `diagnostics.js` entraram na
+  suíte reduzida do fork.
+
 ## v15-42 — 2026-11-25 (`f1583d46e`)
 
 - `fix(composer)`: Shift+Enter volta a quebrar a linha num compositor que ainda não
