@@ -32,6 +32,7 @@ import {
     COMMAND_PRIORITY_HIGH,
     createEditor,
     FORMAT_TEXT_COMMAND,
+    KEY_ENTER_COMMAND,
     KEY_ESCAPE_COMMAND,
 } from 'lexical';
 import { registerRichText } from '@lexical/rich-text';
@@ -115,6 +116,32 @@ export function createRichEditor(
         editor.registerCommand(
             KEY_ESCAPE_COMMAND,
             () => !!document.querySelector('.dropdown-menu.show'),
+            COMMAND_PRIORITY_HIGH,
+        ),
+        // Shift+Enter inserts the soft break here instead of leaving it to the browser.
+        // Safari's native handling of an untouched composer leaves only the placeholder
+        // line break Lexical paints for an empty paragraph, so nothing reaches the
+        // document and typing carries on the same line. Taking the command over also
+        // keeps the break from being inserted twice, since rich text's own listener is
+        // at the editor priority.
+        editor.registerCommand(
+            KEY_ENTER_COMMAND,
+            (event) => {
+                if (!event || !event.shiftKey) return false;
+                const selection = $getSelection();
+                if (!$isRangeSelection(selection)) return false;
+                event.preventDefault();
+                if (selection.anchor.type === 'element' && $getRoot().getTextContentSize() === 0) {
+                    // An untouched composer selects its empty paragraph as a whole, where
+                    // Lexical discards a lone LineBreakNode. Give the break a character to
+                    // anchor to; the leading space is trimmed when the body is sent.
+                    selection.insertText(' ');
+                    selection.insertLineBreak();
+                } else {
+                    selection.insertLineBreak();
+                }
+                return true;
+            },
             COMMAND_PRIORITY_HIGH,
         ),
         registerRichText(editor),
