@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import mock from '../../../shared/tests/mock.js';
 import converse from '../../../../dist/converse.js';
 
@@ -266,6 +267,48 @@ describe('The rich chat composer', function () {
             expect(replaceTrigger).toHaveBeenCalledWith(':smile', '\u{1F604}');
             expect(sendMessage).not.toHaveBeenCalled();
             expect(form.typeahead.items.length).toBe(0);
+        }),
+    );
+
+    it(
+        'inserts a line break with Shift+Enter instead of sending',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            const view = await openChat(_converse);
+            await u.waitUntil(() => view.querySelector('.chat-rich__editable'));
+            const form = view.querySelector('converse-message-form');
+            const editable = view.querySelector('.chat-rich__editable');
+            const handle = await form.ensureEditor();
+            const sendMessage = vi.spyOn(view.model, 'sendMessage').mockResolvedValue({});
+
+            await userEvent.click(editable);
+            await userEvent.keyboard('abc');
+            await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+            await userEvent.keyboard('def');
+
+            expect(handle.getMarkdown()).toBe('abc\ndef');
+            expect(sendMessage).not.toHaveBeenCalled();
+        }),
+    );
+
+    it(
+        'inserts a line break with Shift+Enter in an empty composer',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            const view = await openChat(_converse);
+            await u.waitUntil(() => view.querySelector('.chat-rich__editable'));
+            const form = view.querySelector('converse-message-form');
+            const editable = view.querySelector('.chat-rich__editable');
+            const handle = await form.ensureEditor();
+
+            // Regression: on a composer that had never been typed in, the break was
+            // dropped and the text stayed on the first line.
+            await userEvent.click(editable);
+            await userEvent.keyboard('{Shift>}{Enter}{/Shift}');
+            await userEvent.keyboard('abc');
+
+            const markdown = handle.getMarkdown();
+            expect(markdown.endsWith('\nabc')).toBe(true);
+            // Whatever the editor keeps on the blank first line is not part of the body.
+            expect(form.getInputText()).toBe('abc');
         }),
     );
 });

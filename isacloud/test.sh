@@ -28,6 +28,7 @@ MAIN_SPECS=(
     src/plugins/chatview/tests/attachment-menu.js # isaCloud: anexos em pt_BR
     src/plugins/chatview/tests/markers.js
     src/plugins/chatview/tests/messages.js
+    src/plugins/chatview/tests/message-form.js # isaCloud: Shift+Enter quebra linha no compositor
     src/plugins/chatview/tests/message-window.js # isaCloud: janela da lista de mensagens
     src/plugins/chatview/tests/retractions.js
     src/plugins/muc-views/tests/composer-panels.js
@@ -53,6 +54,7 @@ MAIN_SPECS=(
     src/plugins/muc-views/tests/retractions.js
     src/plugins/time-views/tests/entity-time-alert.js
     src/shared/modals/tests/image-modal.js # isaCloud: visualizador de imagem com zoom e arrasto
+    src/apps/social/tests/compose-rich.js # isaCloud: mesmo editor Lexical do compositor
 )
 
 HEADLESS_SPECS=(
