@@ -11,6 +11,11 @@ import { setLocalStorageItem } from '../../utils/environment.js';
 
 const RETRY_BASE_DELAY = 3000;
 const RETRY_MAX_DELAY = 60000;
+// isaCloud: How long a fallback BOSH connection stays before the WebSocket is probed again, how far that delay grows
+// when a return to the WebSocket fails, and how long a probe may take to open.
+const WEBSOCKET_PROBE_DELAY = 5 * 60 * 1000;
+const WEBSOCKET_PROBE_MAX_DELAY = 60 * 60 * 1000;
+const WEBSOCKET_PROBE_TIMEOUT = 10000;
 
 /**
  * Emits a structured diagnostic event, to be recorded by a listener of
@@ -93,6 +98,18 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     #preparing_retry = false;
     // Set when the next attempt should use the other transport.
     #switch_transport = false;
+    // isaCloud: Set once the current attempt has been counted as failed, since Strophe can report one failure more than once.
+    #attempt_failed = false;
+    // isaCloud: Set once a connection has come up over the WebSocket.
+    #websocket_worked = false;
+    // isaCloud: Set while the current BOSH connection is a fallback from a working WebSocket.
+    #bosh_fallback = false;
+    /** @type {ReturnType<typeof setTimeout>|null} */
+    #probe_timer = null;
+    // isaCloud: How long to wait before probing the WebSocket again. Doubles when a return to it fails.
+    #probe_delay = WEBSOCKET_PROBE_DELAY;
+    // isaCloud: Set while a return to the WebSocket is underway, so that falling back again doubles the probe delay.
+    #returning_to_websocket = false;
 
     /**
      * @param {string} service - The BOSH or WebSocket service URL.
@@ -215,6 +232,84 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     #cancelScheduledReconnect() {
         if (this.#retry_timer !== null) clearTimeout(this.#retry_timer);
         this.#retry_timer = null;
+    }
+
+    /**
+     * isaCloud: Whether the connection is up over BOSH as a fallback from a working WebSocket.
+     * @returns {boolean}
+     */
+    #isOnBoshFallback() {
+        return !this.#finished && !!this.connected && !!this.isType('bosh') && this.#bosh_fallback;
+    }
+
+    /**
+     * isaCloud: Probes the WebSocket after a while, so that a fallback BOSH connection goes back to it.
+     */
+    #scheduleWebSocketProbe() {
+        this.#cancelWebSocketProbe();
+        this.#probe_timer = setTimeout(() => this.#probeWebSocket(), this.#probe_delay);
+    }
+
+    #cancelWebSocketProbe() {
+        if (this.#probe_timer !== null) clearTimeout(this.#probe_timer);
+        this.#probe_timer = null;
+    }
+
+    /**
+     * isaCloud: Opens a WebSocket to see whether it's reachable again. If it is, the BOSH session is ended and the
+     * connection is made again over the WebSocket. If not, the probe is tried again later.
+     */
+    #probeWebSocket() {
+        this.#probe_timer = null;
+        const { api } = _converse;
+        const url = api.settings.get('websocket_url');
+        if (
+            !this.#isOnBoshFallback() ||
+            typeof WebSocket === 'undefined' ||
+            !url ||
+            api.settings.get('connection_options')?.worker
+        ) {
+            return;
+        }
+
+        let socket = null;
+        let timeout = null;
+        let done = false;
+        const fail = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timeout);
+            socket?.close();
+            emitDiagnostic('transport_probe', { 'ok': false });
+            if (this.#isOnBoshFallback()) this.#scheduleWebSocketProbe();
+        };
+        try {
+            socket = new WebSocket(url, 'xmpp');
+        } catch (e) {
+            log.debug(e);
+            return fail();
+        }
+        timeout = setTimeout(fail, WEBSOCKET_PROBE_TIMEOUT);
+        socket.onopen = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timeout);
+            socket?.close();
+            emitDiagnostic('transport_probe', { 'ok': true });
+            if (this.#isOnBoshFallback()) this.#returnToWebSocket();
+        };
+        socket.onerror = fail;
+        socket.onclose = fail;
+    }
+
+    /**
+     * isaCloud: Ends the BOSH session, so that the reconnection that follows uses the WebSocket.
+     */
+    #returnToWebSocket() {
+        this.#returning_to_websocket = true;
+        this.#switch_transport = true;
+        emitDiagnostic('transport_return', { 'from': 'bosh', 'to': 'websocket' });
+        this.disconnect('Switching back to WebSocket');
     }
 
     /** @param {Element} body */
@@ -340,6 +435,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
      */
     async switchTransport() {
         const { api } = _converse;
+        this.#cancelWebSocketProbe(); // isaCloud: a probe belongs to the BOSH connection that is being left.
 
         const bare_jid = _converse.session.get('bare_jid');
         let from, to;
@@ -350,6 +446,13 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this._proto._doDisconnect();
             this._proto = new Strophe.Bosh(this);
             this.service = api.settings.get('bosh_service_url');
+            // isaCloud: BOSH is only a fallback when the WebSocket has worked before.
+            this.#bosh_fallback = this.#websocket_worked;
+            if (this.#returning_to_websocket) {
+                // isaCloud: The return to the WebSocket failed, so the next probe waits longer.
+                this.#probe_delay = Math.min(this.#probe_delay * 2, WEBSOCKET_PROBE_MAX_DELAY);
+                this.#returning_to_websocket = false;
+            }
         } else if (api.connection.isType('bosh') && api.settings.get('websocket_url')) {
             from = 'bosh';
             to = 'websocket';
@@ -364,6 +467,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this._proto._doDisconnect();
             this._proto = new Strophe.Websocket(this);
             this.service = api.settings.get('websocket_url');
+            this.#bosh_fallback = false;
         }
         this.#wrapTransport();
         if (to) emitDiagnostic('transport_switched', { from, to });
@@ -386,6 +490,13 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
         this.reconnecting = true;
         await tearDown(_converse);
         if (this.#finished) return;
+
+        // isaCloud: A fallback BOSH connection that drops is most likely a short outage, so the first attempt tries the
+        // WebSocket again instead of staying on BOSH. The drop itself can count as one failure (the server answers a
+        // stale BOSH session with a terminate), hence `<= 1`.
+        if (this.isType('bosh') && this.#bosh_fallback && this.#transport_failures <= 1) {
+            this.#switch_transport = true;
+        }
 
         const conn_status = _converse.state.connfeedback.get('connection_status');
         if (this.#switch_transport) {
@@ -499,6 +610,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
         });
         this.#finished = true;
         this.#cancelScheduledReconnect();
+        this.#cancelWebSocketProbe(); // isaCloud
         this.setConnectionStatus(Strophe.Status.DISCONNECTED, this.disconnection_reason);
         const { api } = _converse;
         // Properly tear down the session so that it's possible to manually connect again.
@@ -559,6 +671,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
     onDisconnected() {
         // Strophe can report a failed attempt as disconnected more than once.
         if (this.#finished) return;
+        this.#cancelWebSocketProbe(); // isaCloud
 
         const { api } = _converse;
         if (api.settings.get('auto_reconnect')) {
@@ -632,7 +745,16 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this.has_connected = true;
             this.#retries = 0;
             this.#transport_failures = 0;
+            this.#attempt_failed = false; // isaCloud: the attempt that came up is no longer failed.
             this.#cancelScheduledReconnect();
+            if (this.isType('websocket')) {
+                // isaCloud: A WebSocket that comes up ends any return and resets the probe delay.
+                this.#websocket_worked = true;
+                this.#returning_to_websocket = false;
+                this.#probe_delay = WEBSOCKET_PROBE_DELAY;
+            } else if (this.isType('bosh') && this.#bosh_fallback) {
+                this.#scheduleWebSocketProbe();
+            }
             emitDiagnostic('connected', { reconnected, 'resumed': this.hasResumed() });
             if (reconnected) {
                 log.debug(status === Strophe.Status.CONNECTED ? 'Reconnected' : 'Reattached');
@@ -649,6 +771,7 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
         } else if (status === Strophe.Status.ERROR) {
             this.setConnectionStatus(status, __('An error occurred while connecting to the chat server.'));
         } else if (status === Strophe.Status.CONNECTING) {
+            this.#attempt_failed = false; // isaCloud: a new attempt starts, so its failures count again.
             this.setConnectionStatus(status);
         } else if (status === Strophe.Status.AUTHENTICATING) {
             this.setConnectionStatus(status);
@@ -674,21 +797,26 @@ export class Connection extends /** @type {import('../types').StropheConnectionC
             this.setConnectionStatus(status, feedback);
             this.setDisconnectionCause(status, condition);
 
-            this.#transport_failures += 1;
-            if (!this.has_connected) {
-                // A transport that never worked may simply be the wrong one.
-                this.#switch_transport = true;
-            } else if (this.#transport_failures === 1) {
-                // A single failure after a working connection is often transient
-                // (e.g. the browser froze or the network changed), so the same
-                // transport is retried once before switching.
-                this.#switch_transport = false;
-                emitDiagnostic('transport_retry', {
-                    'attempt': this.#transport_failures,
-                    'transport': this.isType('bosh') ? 'bosh' : 'websocket',
-                });
-            } else {
-                this.#switch_transport = true;
+            // isaCloud: Strophe can report one failed attempt twice (error, then close 1006),
+            // so the failure is only counted once per attempt.
+            if (!this.#attempt_failed) {
+                this.#attempt_failed = true;
+                this.#transport_failures += 1;
+                if (!this.has_connected) {
+                    // A transport that never worked may simply be the wrong one.
+                    this.#switch_transport = true;
+                } else if (this.#transport_failures === 1) {
+                    // A single failure after a working connection is often transient
+                    // (e.g. the browser froze or the network changed), so the same
+                    // transport is retried once before switching.
+                    this.#switch_transport = false;
+                    emitDiagnostic('transport_retry', {
+                        'attempt': this.#transport_failures,
+                        'transport': this.isType('bosh') ? 'bosh' : 'websocket',
+                    });
+                } else {
+                    this.#switch_transport = true;
+                }
             }
         } else if (status === Strophe.Status.DISCONNECTING) {
             this.setConnectionStatus(status);

@@ -66,6 +66,7 @@ describe('Connection diagnostics', function () {
 
             // A second failure switches to the other transport, which is not
             // reported as a retry of the same one.
+            connection.onConnectStatusChanged(Strophe.Status.CONNECTING);
             connection.onConnectStatusChanged(Strophe.Status.CONNFAIL, 'connection failed');
             expect(ofType(events, 'transport_retry')).toHaveLength(1);
 

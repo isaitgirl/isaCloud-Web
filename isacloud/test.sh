@@ -64,6 +64,8 @@ HEADLESS_SPECS=(
     src/headless/shared/connection/tests/resource.js # isaCloud: resource isaCloudWeb-
     src/headless/plugins/chat/tests/mam-dedupe.js # isaCloud: dedupe de replay de MAM
     src/headless/plugins/muc/tests/mam-dedupe.js # isaCloud: dedupe de replay de MAM em sala
+    src/headless/tests/reconnection.js # isaCloud: troca de transporte e volta ao WebSocket
+    src/headless/tests/diagnostics.js # isaCloud: eventos de diagnóstico da conexão
 )
 
 npx vitest run --project main "${MAIN_SPECS[@]}"
