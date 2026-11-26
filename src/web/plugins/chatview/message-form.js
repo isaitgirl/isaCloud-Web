@@ -84,6 +84,12 @@ export default class MessageForm extends CustomElement {
         };
         document.addEventListener('emojiSelected', this.handleEmojiSelection);
         this.requestUpdate();
+
+        // isaCloud: fetch the Lexical chunk once the browser is idle, so it's usually ready by the time
+        // the composer is focused. The dynamic import is cached, so ensureEditor() reuses it.
+        const prefetch = () => import('./lexical-editor.js').catch(() => {});
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(prefetch, { timeout: 3000 });
+        else setTimeout(prefetch, 1000);
     }
 
     render() {
@@ -137,16 +143,38 @@ export default class MessageForm extends CustomElement {
             // nothing destroys, sharing its host with the one the next call attaches.
             if (this._init !== init) return this.ensureEditor();
 
+            // isaCloud: text typed while the contenteditable was still plain (before the chunk
+            // arrived) would be wiped by createChatEditor, so read it first and put it back.
+            const typed = host.textContent ?? '';
+
             const handle = m.createChatEditor(host, { onChange: () => this.onChange() });
             this._handle = handle;
             const draft = this.model?.get('draft');
             if (draft) handle.setMarkdown(draft);
+            // isaCloud: restore the text typed before the editor attached.
+            if (typed.trim()) {
+                handle.insertText(typed);
+                if (host.contains(document.activeElement)) handle.focus();
+            }
 
             this.onChange();
             return handle;
         });
         this._init = init;
         return init;
+    }
+
+    /**
+     * Native input on the host before the editor is attached. This covers the window while
+     * the Lexical chunk is still loading, when the host is a plain contenteditable.
+     */
+    onNativeInput() {
+        if (this._handle) return;
+        // isaCloud: track emptiness on the plain host too, so the placeholder hides as soon as
+        // the user types.
+        const host = this.querySelector('.chat-rich__editable');
+        const empty = !(host?.textContent ?? '').trim();
+        if (empty !== this.is_empty) this.is_empty = empty;
     }
 
     /** Reflect emptiness so the placeholder shows only when there is nothing to send. */

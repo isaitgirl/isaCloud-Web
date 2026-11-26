@@ -146,6 +146,24 @@ describe('The rich chat composer', function () {
     );
 
     it(
+        'keeps what was typed before the editor attached',
+        mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
+            const view = await openChat(_converse);
+            const form = view.querySelector('converse-message-form');
+            const editable = await u.waitUntil(() => view.querySelector('.chat-rich__editable'));
+            expect(form._handle).toBe(null);
+
+            // Type the way the browser does while the Lexical chunk is still loading.
+            editable.textContent = 'abc';
+            editable.dispatchEvent(new InputEvent('input', { bubbles: true, data: 'abc' }));
+            expect(form.is_empty).toBe(false);
+
+            await form.ensureEditor();
+            expect(form.getInputText()).toBe('abc');
+        }),
+    );
+
+    it(
         'sends the body as XEP-0393 styling markers',
         mock.initConverse(converse, ['chatBoxesFetched'], {}, async function (_converse) {
             const view = await openChat(_converse);

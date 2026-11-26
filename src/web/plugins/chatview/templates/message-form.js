@@ -68,6 +68,7 @@ export default (el) => {
                 aria-label="${label_message}"
                 data-placeholder="${label_message}"
                 @focusin=${() => el.ensureEditor()}
+                @input=${() => el.onNativeInput()}
                 @focusout=${/** @param {FocusEvent} ev */ (ev) => el.onEditorFocusOut(ev)}
                 @drop="${/** @param {DragEvent} ev */ (ev) => el.onDrop(ev)}"
                 @keydown="${/** @param {KeyboardEvent} ev */ (ev) => el.onKeyDown(ev)}"
