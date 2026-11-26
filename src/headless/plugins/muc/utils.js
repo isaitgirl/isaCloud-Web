@@ -6,13 +6,37 @@ import { MUC_ROLE_WEIGHTS } from './constants.js';
 import { safeSave } from '../../utils/init.js';
 import { CHATROOMS_TYPE } from '../../shared/constants.js';
 import { addUnloadListener, isAppHidden } from '../../utils/environment.js';
+import { getInitSettings } from '../../shared/settings/utils.js';
 
 const { Strophe, sizzle, u } = converse.env;
 
 /**
+ * Returns the MUC service to use for new groupchats.
+ *
+ * A `muc_domain` set in the page configuration takes priority. The value that
+ * service discovery writes into the setting later does not: plugins may map
+ * the account's domain to a service through the `getDefaultMUCService` hook,
+ * and that result is not cached, since the mapping is deterministic. Without
+ * one, the discovered `muc_domain`, the cached `default_muc_service` and,
+ * finally, the first MUC service discovered on the user's domain are used.
  * @returns {Promise<string|undefined>}
  */
 export async function getDefaultMUCService() {
+    const configured = getInitSettings()?.muc_domain;
+    if (configured) return configured;
+
+    /**
+     * *Hook* which allows plugins to provide a MUC service for the account's
+     * domain, before the discovered and cached services are considered.
+     *
+     * Listeners receive an object with a `jid` property and may return it with
+     * `jid` set to the service they want used.
+     *
+     * @event _converse#getDefaultMUCService
+     */
+    const data = await api.hook('getDefaultMUCService', _converse.session, { jid: undefined });
+    if (data?.jid) return data.jid;
+
     let muc_service = api.settings.get('muc_domain') || _converse.session.get('default_muc_service');
     if (!muc_service) {
         const domain = _converse.session.get('domain');
