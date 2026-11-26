@@ -262,14 +262,11 @@
             }
         }
         // The details shown by the info button, under the row.
-        .room-info__spinner {
-            padding: 8px 0 2px;
-
-            .spinner-grow {
-                width: 1.25rem;
-                height: 1.25rem;
-                color: var(--pink);
-            }
+        .room-item > .d-flex > .spinner-grow {
+            margin-top: 8px;
+            width: 1.25rem;
+            height: 1.25rem;
+            color: var(--pink);
         }
         div.room-info {
             margin-top: 8px;

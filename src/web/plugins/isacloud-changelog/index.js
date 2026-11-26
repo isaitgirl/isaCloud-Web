@@ -75,6 +75,9 @@ converse.plugins.add('converse-isacloud-changelog', {
         api.elements.define('converse-isacloud-changelog', ChangelogView);
 
         api.listen.on('connected', () => startChangelog(_converse.session.get('bare_jid')));
+        // isaCloud: a session restored from the cache shows the UI before it
+        // connects; start then too, so the row is there while offline.
+        api.listen.on('loadSessionCache', () => startChangelog(_converse.session?.get('bare_jid')));
         api.listen.on('clearSession', stopChangelog);
         // Opening a real conversation means leaving the news view.
         api.listen.on('openConversation', closeChangelog);

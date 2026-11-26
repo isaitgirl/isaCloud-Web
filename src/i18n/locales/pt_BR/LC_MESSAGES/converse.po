@@ -3708,6 +3708,40 @@ msgstr "Compartilhar sua localização"
 msgid "Record a voice message"
 msgstr "Gravar mensagem de voz"
 
+msgid "As last seen. You are not in this groupchat while offline."
+msgstr "Como visto por último. Você não está neste grupo enquanto estiver offline."
+
+msgid "Connecting…"
+msgstr "Conectando…"
+
+#, javascript-format
+msgid "Error recording audio: %1$s"
+msgstr "Erro ao gravar o áudio: %1$s"
+
+msgid "Not sent yet"
+msgstr "Ainda não enviada"
+
+msgid "Send unencrypted"
+msgstr "Enviar sem criptografia"
+
+msgid "There is no connection. New messages will arrive once you are connected again."
+msgstr "Sem conexão. As mensagens novas chegam quando você se conectar de novo."
+
+msgid "This message will be sent once you are connected again"
+msgstr "Esta mensagem será enviada quando você se conectar de novo"
+
+msgid "Trying to connect"
+msgstr "Tentando conectar"
+
+msgid "Trying to connect again"
+msgstr "Tentando conectar de novo"
+
+msgid "Your session has ended, please log in again."
+msgstr "Sua sessão terminou. Entre de novo, por favor."
+
+msgid "Your session has ended, because your saved login is no longer accepted. Please log in again."
+msgstr "Sua sessão terminou porque o login salvo não é mais aceito. Entre de novo, por favor."
+
 #~ msgid "This device's OMEMO fingerprint"
 #~ msgstr "Assinatura OMEMO deste dispositivo"
 

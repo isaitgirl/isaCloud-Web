@@ -426,23 +426,7 @@
         }
     }
 
-    // Reconnecting: a thin bar above the profile instead of the spinner that
-    // used to replace the whole panel. The profile, logout and the list stay
-    // where they were, and the bar only appears while the session comes back.
-    // The flyout becomes a column only with the bar present, so the pane keeps
-    // the rest of the height instead of overflowing under it.
-    #controlbox .reconnecting-notice {
-        display: flex;
-        flex: 0 0 auto;
-        align-items: center;
-        column-gap: 8px;
-        padding: 6px 14px;
-        border-bottom: 1px solid var(--isa-border);
-        background-color: var(--isa-inset-bg);
-        color: var(--foreground-color);
-        font-size: 12px;
-        line-height: 1.2;
-    }
+    // Spinner of the "Reconnecting…" notice in the conversation (bottom panel).
     .reconnecting-notice__spinner {
         flex: 0 0 auto;
         width: 12px;
@@ -458,16 +442,6 @@
             animation: none;
         }
     }
-    #controlbox .flyout:has(.reconnecting-notice) {
-        display: flex;
-        flex-direction: column;
-    }
-    #controlbox .flyout:has(.reconnecting-notice) .controlbox-pane {
-        flex: 1 1 auto;
-        height: auto;
-        min-height: 0;
-    }
-
     @keyframes isa-reconnecting-spin {
         to {
             transform: rotate(360deg);
@@ -522,6 +496,22 @@
             // out of the way instead of covering the list.
             .chat-placeholder {
                 display: none;
+            }
+        }
+    }
+
+    // The "Not sent yet" and failed-send markers don't shrink (nowrap), so on a
+    // narrow screen they squeezed the text into a thin column. There they go on
+    // the line below the text instead.
+    @media screen and (max-width: 575.98px) {
+        .chat-msg__body:has(> .chat-msg__send-pending, > .chat-msg__send-failed) {
+            flex-wrap: wrap;
+
+            > .chat-msg__send-pending,
+            > .chat-msg__send-failed {
+                flex-basis: 100%;
+                max-width: none;
+                margin-inline-start: 0;
             }
         }
     }
