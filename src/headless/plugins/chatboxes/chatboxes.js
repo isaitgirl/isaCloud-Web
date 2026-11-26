@@ -3,8 +3,11 @@
  */
 import _converse from '../../shared/_converse.js';
 import api from '../../shared/api/index.js';
+import log from '@converse/log';
 import { Collection } from '@converse/skeletor';
+import { ANONYMOUS_RESET } from '../../shared/constants.js';
 import { initStorage } from '../../utils/storage.js';
+import { isResumed } from '../../utils/session.js';
 
 /**
  * @extends {Collection<ChatBoxBase>}
@@ -32,6 +35,26 @@ class ChatBoxes extends Collection {
         });
     }
 
+    // Whether the chats in memory were kept through an anonymous reconnection
+    // that's underway. They aren't read from the cache again then, since that
+    // would replace them with what's stored for the new account: nothing.
+    #kept = false;
+
+    /**
+     * Called when the session is cleared. The chats that survive it (see
+     * `survivesReset` on {@link ChatBoxBase}) are kept in memory through an
+     * anonymous reconnection, provided that the chats were read to begin
+     * with: a first connection that's retried has none yet.
+     * @param {import('../../shared/types').ClearSessionReason} [reason]
+     * @returns {boolean} Whether those chats are kept.
+     */
+    keepThrough(reason) {
+        this.#kept = reason === ANONYMOUS_RESET && this.#read;
+        if (!this.#kept) this.#read = false;
+
+        return this.#kept;
+    }
+
     /**
      * @param {Collection} collection
      */
@@ -49,13 +72,38 @@ class ChatBoxes extends Collection {
      * @param {boolean} reconnecting
      */
     onConnected(reconnecting) {
-        if (reconnecting) return;
+        const kept = this.#kept;
+        this.#kept = false;
+        // A resumed session read its chats before connecting, unless that failed.
+        if (reconnecting || kept || (isResumed(_converse) && this.#read)) return;
 
+        this.fetchCached();
+    }
+
+    // Whether the last read of the chats from the cache succeeded.
+    #read = false;
+
+    /**
+     * Loads the chats from the cache.
+     * @returns {Promise<boolean>} Whether the cache could be read.
+     */
+    fetchCached() {
         const bare_jid = _converse.session.get('bare_jid');
         initStorage(this, `converse.chatboxes-${bare_jid}`);
-        this.fetch({
-            add: true,
-            success: (c) => this.onChatBoxesFetched(c),
+        this.#read = false;
+        return new Promise((resolve) => {
+            this.fetch({
+                add: true,
+                success: (c) => {
+                    this.#read = true;
+                    this.onChatBoxesFetched(c);
+                    resolve(true);
+                },
+                error: (_c, e) => {
+                    log.error(e);
+                    resolve(false);
+                },
+            });
         });
     }
 

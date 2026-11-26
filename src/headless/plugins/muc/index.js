@@ -7,7 +7,8 @@ import MUCOccupants from './occupants.js';
 import './plugin.js';
 
 import { getDefaultMUCService, getMUCServices, isChatRoom } from './utils.js';
+import { parseRoomInfo } from './parsers.js';
 import { setAffiliation } from './affiliations/utils.js';
-Object.assign(u, { muc: { isChatRoom, setAffiliation, getDefaultMUCService, getMUCServices } });
+Object.assign(u, { muc: { isChatRoom, setAffiliation, getDefaultMUCService, getMUCServices, parseRoomInfo } });
 
 export { MUCMessage, MUCMessages, MUC, MUCOccupant, MUCOccupants };

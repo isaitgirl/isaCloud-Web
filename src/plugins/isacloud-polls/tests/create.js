@@ -1,7 +1,7 @@
 import mock from '../../../shared/tests/mock.js';
 import converse from '../../../../dist/converse.js';
 
-const { stx, u } = converse.env;
+const { u } = converse.env;
 
 const MUC_JID = 'lounge@montague.lit';
 const CONTACT_JID = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';

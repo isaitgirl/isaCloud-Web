@@ -19,7 +19,7 @@ converse.plugins.add('converse-chatboxes', {
     initialize() {
         api.promises.add(['chatBoxesFetched', 'chatBoxesInitialized', 'privateChatsAutoJoined']);
 
-        api.settings.extend({ open_last_conversation: true, send_queue_timeout: 10000 });
+        api.settings.extend({ open_last_conversation: true });
 
         Object.assign(api, { chatboxes: chatboxes_api });
 
@@ -49,8 +49,10 @@ converse.plugins.add('converse-chatboxes', {
         });
 
         api.listen.on('presencesInitialized', (reconnecting) => chatboxes.onConnected(reconnecting));
+        api.listen.on('loadSessionCache', () => chatboxes.fetchCached());
         api.listen.on('reconnected', () => chatboxes.forEach((m) => m.onReconnection()));
-        api.listen.on('chatReconnected', (chatbox) => chatbox.resumeSendsAfterReconnection?.());
+        // Chats loaded from the cache before a session that's now connected.
+        api.listen.on('connected', () => chatboxes.forEach((m) => m.sendPendingMessages?.()));
         api.listen.on('clearSession', onClearSession);
 
         // XXX: Would be nice to keep track of the last open chat and to show that again.

@@ -36,6 +36,10 @@ export default class AddMUCModal extends BaseModal {
         this.kind = options?.kind;
     }
 
+    get requires_connection() {
+        return true;
+    }
+
     initialize() {
         super.initialize();
         this.requestUpdate();

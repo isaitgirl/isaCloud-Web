@@ -2,17 +2,35 @@
 
 ## 15.0.0 (Unreleased)
 
+- The `converse-push` plugin (XEP-0357) is now part of `@converse/headless`.
+- fix: No password reset tab for logins without a password (e.g. anonymous).
 - feat(chatview): The panels above the message form are consolidated into one component. Plugins can add a panel through the new `getComposerPanels` hook.
 - feat(chatview): The toolbar's file upload and location buttons are replaced by one paperclip, the
   attachment button, which opens an attachment menu listing what can be attached in that chat.
   Plugins add an entry through the new `getAttachmentMenuItems` hook.
 - feat: A failed encrypted send stays in the conversation as a failed message, with the option to retry or discard it, instead of an alert.
-- fix: A message sent without a connection was silently lost while looking sent. It now stays in the conversation as a failed message.
+- feat: `api.promises.renew()` makes a new promise unless one is pending.
+- feat: `api.user.login()` takes `{ automatic: true }` instead of a boolean.
+- fix: Credentials that a plugin supplies log in to the account they name.
+- **Breaking:** `credentials_url` and `beforeFetchLoginCredentials` are removed.
+- feat: Plugins can vouch for resuming a session through `unattendedLogin`.
+- fix: `api.send` and `api.sendIQ` refuse to send before login has finished.
+- feat: Messages, edits and retractions made while offline are sent once online.
+- feat: `api.send` returns whether a message or presence was sent.
 - fix: Reconnecting no longer stops for good when a retry fails before login has finished.
 - Reconnection attempts back off, waiting 3 seconds at first and twice as long each time up to a minute. Sending a message cuts a longer wait short.
 - fix: With both BOSH and websocket configured, a failed connection attempt is now retried with the other transport.
 - fix: The `connected` event fires when the first connection only succeeds on a retry. It used to be `reconnected`, which left plugins uninitialized.
 - feat: The `retry_initial_connection` setting keeps retrying when the server can't be reached at startup. The daemon uses it, and no longer exits in that case.
+- feat: A remembered session's cached data can be accessed while offline.
+- feat: On trusted devices, a dropped session stays shown and keeps retrying.
+- feat: While offline, the UI shows it and marks messages as not sent yet.
+- feat: New API: `api.connection.remembered()` and `api.connection.retry()`.
+- fix: An open dialog no longer stays on screen after logging out.
+- fix: The info button in the "Query for Groupchats" modal works again.
+- fix: With IndexedDB, leaving the page or logging out writes every pending change, not only the latest ones.
+- fix(daemon): A daemon that lost a simultaneous start no longer takes over when the other one stops.
+- docs: `auto_reconnect` defaults to `true`, not `false`.
 - The unused `errors.UserFacingError` class is removed.
 - `@converse/log` is bumped to 0.1.0, because its API changed to variadic `log(level, ...args)` and `debug(...args)` without a version bump.
 - `strophe.js` is bumped to 6.0.0, whose types resolve under `"moduleResolution": "nodenext"`.
@@ -28,6 +46,8 @@
       exports remain.
     - The utility functions `getAutoCompleteListItem`, `showOccupantModal`,
       `fetchMessagesOnScrollUp`, `resetElementHeight`, `getHeaders` and `getDeviceForContact`.
+- fix(roster): Clearing the cache could empty the roster on the next login.
+- fix(chatboxes): Logging out on a trusted device kept the chats open.
 - Projects can bundle `dist/converse.js` themselves: it no longer pulls all of `dist/` into a
   webpack build. Serve `dist/chunkjs/` and `dist/libomemo.esm.min.js` next to your bundle.
 - The source is exported as `converse.js/src/*`, with its dependencies (including
@@ -138,6 +158,8 @@
 ### Breaking changes:
 
 `chat.sendMessage()` now rejects with an error whose `code` gives the failure reason.
+
+`api.modal.remove()` no longer takes a modal instance, only the modal's name.
 
 The `converse-location-button` element and the toolbar's `show_fileupload_button` and `show_location_button` properties are removed. See the `getAttachmentMenuItems` hook.
  

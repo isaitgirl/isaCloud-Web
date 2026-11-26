@@ -8,9 +8,10 @@
  * @module @converse/daemon/files
  */
 import { getUploadService, uploadFile } from '@converse/headless';
-import { sendMessage } from './send.js';
+import { outcomeOf, sendMessage } from './send.js';
 import { ERRORS, MAX_UPLOAD_SIZE, RPCError } from './protocol.js';
 import { resolveJID } from './resolve.js';
+import { requireConnected } from './session.js';
 
 const CONTENT_TYPE = 'application/octet-stream';
 const BASE64 = /^[A-Za-z0-9+/]*={0,2}$/;
@@ -36,15 +37,16 @@ export function fileMethods({ routeSend, audit, queueDraft }) {
                 direct: async (routing) => {
                     const uploaded = await uploadContents(upload);
                     const message = await sendMessage(jid, uploaded.url, {}, { oob_url: uploaded.url });
+                    const outcome = outcomeOf(message);
                     audit.record({
                         consumer: client.consumer,
                         to: jid,
-                        outcome: 'sent',
+                        outcome,
                         id: message.id,
                         action: 'upload',
                         ...routing,
                     });
-                    return { outcome: 'sent', message };
+                    return { outcome, message };
                 },
                 draft: async (routing) => {
                     const uploaded = await uploadContents(upload);
@@ -91,6 +93,8 @@ function checkUpload(params) {
  * @returns {ReturnType<typeof uploadFile>}
  */
 async function uploadContents({ name, content, size }) {
+    requireConnected('nothing was uploaded');
+
     const service = await getUploadService();
     if (!service) {
         throw new RPCError(

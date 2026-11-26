@@ -74,6 +74,10 @@ class Placeholder extends ObservableElement {
      */
     async fetchMissingMessages(ev) {
         ev?.preventDefault?.();
+        // The session may have ended, and its messages been cleared, while
+        // this is still on screen.
+        if (!this.model.collection) return;
+
         const chat = this.getChat();
         if (ev) chat?.ui.set('mam_empty_fills', MAX_EMPTY_AUTO_FILLS - 1);
         const before = chat ? countDrawn(chat) : 0;

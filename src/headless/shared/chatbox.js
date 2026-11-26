@@ -98,6 +98,35 @@ export default class ChatBoxBase extends ModelWithMessages(Model) {
     }
 
     /**
+     * Whether the chat is kept through an anonymous reconnection, for which
+     * the server gives out a new account. A chat that was had as the old
+     * account isn't, since it's no longer ours to carry on.
+     * @returns {boolean}
+     */
+    survivesReset() {
+        return false;
+    }
+
+    /**
+     * Removes what's stored of the chat, other than the chat itself, when the
+     * session ends on a device that doesn't keep its cache.
+     */
+    async clearCache() {
+        await this.messages?.clearStore({ silent: true });
+    }
+
+    /**
+     * Lets go of the chat in memory without closing it: nothing is sent, and
+     * what's stored of it is kept, for the next time its account logs in on
+     * a device that keeps its cache.
+     */
+    unload() {
+        clearTimeout(this.chat_state_timeout);
+        delete this.chat_state_timeout;
+        super.unload();
+    }
+
+    /**
      * @param {Object} [_ev]
      */
     async close(_ev) {
@@ -117,7 +146,7 @@ export default class ChatBoxBase extends ModelWithMessages(Model) {
         }
 
         if (api.settings.get('clear_messages_on_reconnection')) {
-            await this.clearMessages();
+            await this.clearMessages({ keep_pending: true });
         }
         /**
          * Triggered once a chatbox has been closed.
@@ -140,8 +169,9 @@ export default class ChatBoxBase extends ModelWithMessages(Model) {
 
     async onReconnection() {
         if (api.settings.get('clear_messages_on_reconnection')) {
-            await this.clearMessages();
+            await this.clearMessages({ keep_pending: true });
         }
+        this.sendPendingMessages();
         this.announceReconnection();
     }
 }

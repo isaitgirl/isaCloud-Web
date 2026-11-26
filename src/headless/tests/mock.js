@@ -566,6 +566,8 @@ function clearStores() {
     [localStorage, sessionStorage].forEach((s) =>
         Object.keys(s).forEach((k) => k.match(/^converse-test-/) && s.removeItem(k)),
     );
+    // A test mustn't resume the session that an earlier one left behind.
+    localStorage.removeItem('conversejs-session-jid');
     const cache_key = `converse.room-bookmarksromeo@montague.lit`;
     window.sessionStorage.removeItem(cache_key + 'fetched');
 }
@@ -583,6 +585,9 @@ export function createRequest(_converse, stanza) {
 }
 
 async function _initConverse(converse, settings) {
+    // Writes to IndexedDB are batched, and land up to 50ms later. What the
+    // previous test left in a batch mustn't land in the stores cleared here.
+    await _converse?.storage.persistent?.debouncedSetItems?.flush();
     clearStores();
     await clearIndexedDB();
 

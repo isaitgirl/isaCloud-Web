@@ -168,13 +168,15 @@ export async function fetchArchivedMessages(model, options = {}, should_page = f
     const is_muc = model.get('type') === CHATROOMS_TYPE;
     const bare_jid = _converse.session.get('bare_jid');
     const mam_jid = is_muc ? model.get('jid') : bare_jid;
+    // The session ended, for example before a cached session could connect.
+    if (!mam_jid) return;
 
     const supported = await api.disco.supports(NS.MAM, mam_jid);
     if (!supported) return;
 
     // The session may have been torn down while we were awaiting above. If so,
     // there's no point querying the archive (and `api.archive.query` would throw).
-    if (!api.connection.connected()) return;
+    if (!api.connection.authenticated()) return;
 
     const max = api.settings.get('archived_messages_page_size');
     const query = /** @type {import('./types').ArchiveQueryOptions} */ {
@@ -410,7 +412,7 @@ export async function searchArchive(
     text,
     { with: jid, max = api.settings.get('archived_messages_page_size'), create = false } = {},
 ) {
-    if (!api.connection.connected()) return null;
+    if (!api.connection.authenticated()) return null;
 
     const bare_jid = _converse.session.get('bare_jid');
     const room = jid ? await api.rooms.get(jid) : undefined;

@@ -3,17 +3,18 @@
  * @module @converse/daemon/messages
  */
 import { api, converse } from '@converse/headless';
-import { getID, isFailedSend, toConversationDTO, toMessageDTO, toRoomDTO } from './dto.js';
+import { getID, isFailedSend, isUnsent, toConversationDTO, toMessageDTO, toRoomDTO } from './dto.js';
 import { findMessage, findOwn, findTarget, notRetracted, ownedBy } from './find.js';
 import { hasArchivedMessages, isMessage } from './history.js';
 import { ERRORS, RPCError } from './protocol.js';
 import { resolveJID } from './resolve.js';
 import { searchMessages } from './search.js';
-import { requireConnected, rosterLoaded } from './session.js';
+import { getChats, getRooms, requireConnected, rosterLoaded } from './session.js';
 import {
     attempt,
     checkMessage,
     ownMessagesOnly,
+    outcomeOf,
     resendUnencrypted,
     retractMessage,
     sendMessage,
@@ -61,7 +62,7 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
                 throw new RPCError(ERRORS.INVALID_PARAMS, '"since" must be an ISO 8601 time.');
             }
 
-            const room = await api.rooms.get(jid);
+            const room = await getRooms(jid);
             if (room) {
                 const messages = await readPage(room, { limit, before, since: since_ms });
                 return {
@@ -70,13 +71,13 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
                 };
             }
 
-            let chat = await api.chats.get(jid);
+            let chat = await getChats(jid);
             // Without the roster, which only a first connection loads, nobody is known to be a contact.
             const contact = rosterLoaded() ? await api.contacts.get(jid) : null;
             if (!chat) {
                 // Opening a conversation just to look would leave it behind,
                 // so for a stranger check the archive has something first.
-                if (!contact && !api.connection.connected()) {
+                if (!contact && !api.connection.authenticated()) {
                     // Without the server there's no archive to look in, so "no messages" would be false.
                     throw new RPCError(
                         ERRORS.NOT_CONNECTED,
@@ -92,7 +93,7 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
                             'has no messages with them. Check the JID, or send them a message to start a conversation.',
                     );
                 }
-                chat = await api.chats.get(jid, {}, true);
+                chat = await getChats(jid, {}, true);
                 await chat.initialized;
             }
 
@@ -160,15 +161,16 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
                 /** @type {{ action?: 'reply'|'correct', target?: string }} */
                 const action = target ? { action: replying_to ? 'reply' : 'correct', target: getID(target) } : {};
                 const dto = await sendMessage(jid, body, { replying_to, correcting });
+                const outcome = outcomeOf(dto);
                 audit.record({
                     consumer: client.consumer,
                     to: jid,
-                    outcome: 'sent',
+                    outcome,
                     id: dto.id,
                     ...action,
                     ...routing,
                 });
-                return { outcome: 'sent', message: dto };
+                return { outcome, message: dto };
             };
             const draft = async (routing) => {
                 const correcting = correct === undefined ? undefined : await findOwn(correct, jid, 'correct');
@@ -305,20 +307,21 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
                 unencrypted ? resendUnencrypted(chatbox, message) : chatbox.resendFailedMessage(message),
             );
             const dto = toMessageDTO(message);
+            const outcome = outcomeOf(dto);
             audit.record({
                 consumer: client.consumer,
                 to,
-                outcome: 'sent',
+                outcome,
                 id: dto.id,
                 action: 'resend',
                 ...(unencrypted ? { unencrypted: true } : {}),
             });
-            return { outcome: 'sent', message: dto };
+            return { outcome, message: dto };
         },
 
         /**
-         * Removes a failed send from the history. Only the owner's full access
-         * connection may do it.
+         * Removes a failed or pending send from the history. Only the owner's
+         * full access connection may do it.
          * @param {Object} params
          * @param {string} params.id - The id of the failed send, as `messages.list` shows it
          * @param {string} [params.conversation] - A JID, or a contact's name. Without it, the
@@ -327,7 +330,7 @@ export function messageMethods({ routeSend, audit, queueDraft, mode, allow_unenc
          */
         async 'messages.discard'({ id, conversation }) {
             const jid = conversation === undefined ? undefined : await resolveJID(conversation, 'conversation');
-            const message = failedSendOf(await findTarget(id, jid), id, 'discarded');
+            const message = failedSendOf(await findTarget(id, jid), id, 'discarded', isUnsent);
             const chatbox = message.collection.chatbox;
             const dto = toMessageDTO(message);
             chatbox.discardFailedMessage(message);
@@ -376,9 +379,10 @@ async function toEmoji(emoji) {
  * @param {import('@converse/headless').BaseMessage} message - Found by the id given
  * @param {string} id
  * @param {string} verb - What's to be done to it, for the error message
+ * @param {(message: import('@converse/headless').BaseMessage) => boolean} [qualifies]
  */
-function failedSendOf(message, id, verb) {
-    if (!isFailedSend(message)) {
+function failedSendOf(message, id, verb, qualifies = isFailedSend) {
+    if (!qualifies(message)) {
         throw new RPCError(
             ERRORS.NOT_FOUND,
             `Message "${id}" isn't a failed send, so it can't be ${verb}. "messages.list" gives a failed ` +

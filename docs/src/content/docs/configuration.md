@@ -291,7 +291,7 @@ If the [muc_domain](#muc_domain) is locked with the [locked_muc_domain](#locked_
 
 This option can be used to let Converse automatically log the user in as soon as the page loads.
 
-If [authentication](#authentication) is set to `login`, then you will also need to provide a valid `jid` and `password` values, either manually by passing them in, or by the [credentials_url](#credentials_url) setting. Setting a `credentials_url` is preferable to manually passing in `jid` and `password` values, because it allows better reconnection with [auto_reconnect](#auto_reconnect). When the connection drops, Converse will automatically fetch new login credentials from the `credentials_url` and reconnect.
+If [authentication](#authentication) is set to `login`, then you will also need to provide valid `jid` and `password` values, either by passing them in, or from a plugin (see [credential sources](/docs/development/plugin-development/#credential-sources)). A plugin can fetch new credentials, such as a fresh token, each time Converse reconnects with [auto_reconnect](#auto_reconnect).
 
 If [authentication](#authentication) is set to `anonymous`, then you will also need to provide the server's domain via the [jid](#jid) setting.
 
@@ -328,13 +328,29 @@ If the value is negative or `0`, the function is disabled.
 
 ### auto_reconnect
 
-- Default: `false`
+- Default: `true`
 
 Automatically reconnect to the XMPP server if the connection drops unexpectedly.
 
 This option works best when you have [authentication](#authentication) set to `prebind` and have also specified a `prebind_url` URL, from where Converse can fetch the BOSH tokens. In this case, Converse will automatically reconnect when the connection drops but also reestablish earlier lost connections (due to network outages, closing your laptop etc.).
 
 When [authentication](#authentication) is set to <span class="title-ref">login</span>, then this option will only work when the page hasn't been reloaded yet, because then the user's password has been wiped from memory. This configuration can however still be useful when using Converse in desktop apps, for example those based on [CEF](https://bitbucket.org/chromiumembedded/cef) or [electron](http://electron.atom.io/).
+
+#### Resuming a session without a connection
+
+With this setting on, a session is also resumed when Converse starts without a connection, for example when a laptop is opened on a train or a mobile app is restarted in a tunnel. Its contacts, chats, rooms and profile are loaded from the cache straight away, so that they can be read, and Converse connects in the background, retrying for as long as it takes. Presences aren't cached, so contacts show as offline until the connection is up. Rooms are joined once connected.
+
+While there's no connection, the web UI stays as it is and shows next to the user's status that it's offline or reconnecting. Messages can still be sent: they are shown as not sent yet, and go out once connected again. Converse retries at once when the browser reports that the network is back, or when the page is brought to the foreground.
+
+Converse remembers a session on this device once it has logged in, until the user logs out, so the next start after a logout shows the login form instead. A session is only resumed when all of these hold:
+
+- [authentication](#authentication) is set to `login`,
+- the device is trusted and [clear_cache_on_logout](#clear_cache_on_logout) is off,
+- Converse can log in again without asking the user: with stored SCRAM keys (see [reuse_scram_keys](#reuse_scram_keys)), with credentials from a plugin, with a password passed in, or with a password for the account that the browser's credential store hands over without asking the user (only browsers that store passwords for sites, through `PasswordCredential`, do).
+
+If the server rejects the stored credentials once the connection is up, for example because the password was changed elsewhere, or if no credentials are left to log in with, the session ends as if the user had logged out, and the login form shows why. A network failure, a timeout or an unavailable server never ends it. If the credentials log in to another account than the one that was resumed, what was loaded is dropped and that account's session starts afresh.
+
+A front end can retry the connection straight away with `api.connection.retry()`, for example when the browser fires its `online` event.
 
 ### auto_register_muc_nickname
 
@@ -411,6 +427,7 @@ Headless core plugins:
     converse-omemo
     converse-ping
     converse-pubsub
+    converse-push
     converse-reactions
     converse-roster
     converse-smacks
@@ -437,7 +454,6 @@ View plugins (standard browser build):
     converse-notification
     converse-omemo-views
     converse-profile
-    converse-push
     converse-reaction-views
     converse-register
     converse-roomslist
@@ -582,26 +598,6 @@ converse.initialize({
     connection_options: { worker: '/dist/shared-connection-worker.js' },
 });
 ```
-
-### credentials_url
-
-- Default: `null`
-- Type: URL
-
-This setting should be used in conjunction with [authentication](#authentication) set to `login`.
-
-It allows you to specify a URL which Converse will call when it needs to get the username and password (or authentication token) which Converse will use to automatically log the user in.
-
-If [auto_reconnect](#auto_reconnect) is also set to `true`, then Converse will automatically fetch new credentials from the `credentials_url` whenever the connection or session drops, and then attempt to reconnect and establish a new session.
-
-If the request to the `credentials_url` URL fails for whatever reason, Converse will continuously retry to fetch the credentials every 2 seconds.
-
-The server behind `credentials_url` should return a JSON encoded object:
-
-    {
-        "jid": "me@example.com/resource",
-        "password": "Ilikecats!"
-    }
 
 ### csi_waiting_time
 
@@ -874,7 +870,7 @@ For example, to render Imgur images inline, you can use the following regex: `/^
 
 The Jabber ID or "JID" of the current user. The JID uniquely identifies a user on the XMPP network. It looks like an email address, but it's used for instant messaging instead.
 
-This value may be provided together with a `password` instead of supplying a [credentials_url](#credentials_url) when setting `auto_login` to `true`.
+This value may be provided together with a `password` when setting `auto_login` to `true`.
 
 ### keepalive
 
@@ -1571,6 +1567,8 @@ Keep trying to connect when the XMPP server can't be reached at startup, for as 
 By default, a connection that was never established is given up on after one retry, so that for example a mistyped address is reported to the user. Set this to `true` for a client that runs unattended. It only has an effect when [auto_reconnect](#auto_reconnect) is on.
 
 Errors that retrying can't fix still stop it: wrong credentials, a domain the server doesn't host (`host-unknown`), malformed XML from the server (`not-well-formed`), and a server that offers no supported authentication mechanism.
+
+A session that is resumed from the cache keeps retrying regardless of this setting (see [auto_reconnect](#auto_reconnect)).
 
 ### reuse_scram_keys
 

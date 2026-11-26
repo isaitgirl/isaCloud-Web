@@ -13,7 +13,7 @@ import { api, constants, converse, log } from '@converse/headless';
 import { toRoomDTO } from './dto.js';
 import { ERRORS, RPCError } from './protocol.js';
 import { parseJID, resolveRoomJID } from './resolve.js';
-import { requireConnected } from './session.js';
+import { getRooms, requireConnected } from './session.js';
 import { readStateFile, writeStateFile } from './state-file.js';
 
 const { ROOMSTATUS } = converse;
@@ -155,7 +155,13 @@ export function createJoins() {
  */
 export async function enter(room, nick) {
     if (room.isEntered()) return;
-    await room.join(nick);
+    if (room.session.get('connection_status') === ROOMSTATUS.OFFLINE) {
+        // Loaded before connecting, for example by a resumed session, so
+        // headless enters it once connected, however long that takes.
+        await leftOffline(room);
+    } else {
+        await room.join(nick);
+    }
     const status = await settledStatus(room);
     if (status === ROOMSTATUS.ENTERED) return;
 
@@ -172,6 +178,40 @@ export async function enter(room, nick) {
             'leave it. Check "daemon.status", then try again.',
         { see: ['daemon.status'] },
     );
+}
+
+/**
+ * Waits for headless to start entering a room that was loaded before
+ * connecting, or to let go of it, as it does when the session ends first.
+ * @param {import('@converse/headless').MUC} room
+ * @returns {Promise<void>}
+ */
+function leftOffline(room) {
+    return new Promise((resolve, reject) => {
+        const check = () => {
+            if (room.session.get('connection_status') === ROOMSTATUS.OFFLINE) return;
+
+            stop();
+            resolve();
+        };
+        const onGone = () => {
+            stop();
+            reject(
+                new RPCError(
+                    ERRORS.NOT_CONNECTED,
+                    `The session ended before we could join ${room.get('jid')}. Check "daemon.status", then try again.`,
+                    { see: ['daemon.status'] },
+                ),
+            );
+        };
+        const stop = () => {
+            room.session.off('change:connection_status', check);
+            room.off('destroy remove', onGone);
+        };
+        room.session.on('change:connection_status', check);
+        // Destroyed when the cache is cleared, and otherwise removed from the chats.
+        room.on('destroy remove', onGone);
+    });
 }
 
 /**
@@ -241,7 +281,7 @@ const forgetting = new Map();
  */
 async function getRoom(jid, attrs, create) {
     await forgetting.get(jid)?.catch(() => {});
-    return api.rooms.get(jid, attrs, create);
+    return getRooms(jid, attrs, create);
 }
 
 /**
@@ -289,6 +329,9 @@ function roomAttrs(passwords, jid, nick) {
  * @param {ReturnType<typeof createJoins>} joining
  */
 export async function rejoinRooms(store, passwords, joining) {
+    // On a first start, the login hasn't connected yet, and looking a room up
+    // before the conversations are loaded is refused rather than waited for.
+    await api.waitUntil('chatBoxesFetched');
     await Promise.all(
         store.list().map(async ({ jid, nick }) => {
             try {
@@ -420,7 +463,7 @@ export function roomMethods({ config, policy, store, passwords, joining }) {
          */
         async 'rooms.occupants'({ room }) {
             const jid = await resolveRoomJID(room, 'room');
-            const model = await api.rooms.get(jid);
+            const model = await getRooms(jid);
             if (!model?.isEntered()) {
                 throw new RPCError(ERRORS.NOT_FOUND, `We aren't in ${jid}, so we can't see who is in it.`);
             }

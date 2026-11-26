@@ -117,7 +117,6 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
 
         this.initOccupants();
         this.initDiscoModels(); // sendChatState depends on this.features
-        this.registerHandlers();
 
         this.on('change:chat_state', this.sendChatState, this);
         this.on('change:hidden', this.onHiddenChange, this);
@@ -132,9 +131,13 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
         this.listenTo(this.occupants, 'change:affiliation', this.createAffiliationChangeMessage);
         this.listenTo(this.occupants, 'change:role', this.createRoleChangeMessage);
 
-        const restored = await this.restoreFromCache();
-        if (!restored) {
-            await this.join();
+        if (api.connection.authenticated()) {
+            await this.enter();
+        } else {
+            await this.loadOffline();
+            // The connection may have come up while loading, before this MUC
+            // was in the chatboxes for enterOfflineRooms() to find.
+            if (api.connection.authenticated()) await this.#enterIfOffline();
         }
 
         /**
@@ -151,6 +154,22 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     }
 
     /**
+     * Whether the MUC was loaded from the cache while offline, after we had
+     * been in it. It can then be used as it was, until it's entered again.
+     * @returns {boolean}
+     */
+    isEnteredOffline() {
+        return this.session?.get('connection_status') === ROOMSTATUS.OFFLINE && !!this.session.get('was_entered');
+    }
+
+    /**
+     * A MUC only takes messages from its occupants, so it has to be entered again first.
+     */
+    canSendPendingMessages() {
+        return super.canSendPendingMessages() && this.isEntered();
+    }
+
+    /**
      * Checks whether this MUC qualifies for subscribing to XEP-0437 Room Activity Indicators (RAI)
      * @returns {Boolean}
      */
@@ -159,21 +178,77 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     }
 
     /**
+     * Restores the MUC from the cache if we're still in it, subscribes to
+     * Room Activity Indicators if it's hidden, and otherwise joins it.
+     * @param {boolean} [was_entered] - Whether we were in the MUC.
+     * @returns {Promise<void>}
+     */
+    async enter(was_entered = this.isEntered()) {
+        // Registered now, on the connection that's used, since a reset of
+        // the connection while offline drops them.
+        this.registerHandlers();
+        const restored = await this.restoreFromCache(was_entered);
+        if (!restored) await this.join();
+    }
+
+    /**
+     * Loads the MUC's cached messages and occupants while there's no
+     * connection. It's entered once the connection comes up.
+     * @returns {Promise<void>}
+     */
+    async loadOffline() {
+        const status = this.session.get('connection_status');
+        // Whether we were in the MUC, so that it's restored rather than joined
+        // if the server still has us in it, for example after stream resumption.
+        const was_entered =
+            status === ROOMSTATUS.ENTERED || (status === ROOMSTATUS.OFFLINE && !!this.session.get('was_entered'));
+        this.session.save({ connection_status: ROOMSTATUS.OFFLINE, was_entered });
+        await this.fetchOccupants().catch(/** @param {Error} e */ (e) => log.error(e));
+        await this.fetchMessages().catch(/** @param {Error} e */ (e) => log.error(e));
+    }
+
+    /**
+     * Enters the MUC now that the connection has come up, if it was loaded
+     * while there was none.
+     * @returns {Promise<void>}
+     */
+    async enterIfOffline() {
+        await this.initialized;
+        return this.#enterIfOffline();
+    }
+
+    async #enterIfOffline() {
+        // A closed MUC has no session.
+        if (this.session?.get('connection_status') !== ROOMSTATUS.OFFLINE) return;
+        // Our presence in the MUC is built from our status.
+        await api.waitUntil('statusInitialized');
+        if (this.session.get('connection_status') !== ROOMSTATUS.OFFLINE) return;
+
+        const was_entered = !!this.session.get('was_entered');
+        this.session.save('was_entered', false);
+        await this.enter(was_entered);
+    }
+
+    /**
      * Checks whether we're still joined and if so, restores the MUC state from cache.
+     * @param {boolean} [was_entered] - Whether we were in the MUC, and might still be.
      * @returns {Promise<boolean>} Returns `true` if we're still joined, otherwise returns `false`.
      */
-    async restoreFromCache() {
-        if (this.isEntered()) {
+    async restoreFromCache(was_entered = this.isEntered()) {
+        if (was_entered) {
             await this.fetchOccupants().catch(/** @param {Error} e */ (e) => log.error(e));
 
             if (this.isRAICandidate()) {
                 this.session.save('connection_status', ROOMSTATUS.DISCONNECTED);
                 this.enableRAI();
                 return true;
-            } else if (await this.isJoined()) {
+            } else if (await this.isJoined(was_entered)) {
                 await new Promise((r) => this.config.fetch({ 'success': r, 'error': r }));
                 await new Promise((r) => this.features.fetch({ 'success': r, 'error': r }));
                 await this.fetchMessages().catch(/** @param {Error} e */ (e) => log.error(e));
+                // Only now that the server has confirmed it, so that a MUC
+                // loaded while offline is shown as entered.
+                this.session.save('connection_status', ROOMSTATUS.ENTERED);
                 return true;
             }
         }
@@ -195,6 +270,11 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
             // We have restored a groupchat from session storage,
             // so we don't send out a presence stanza again.
             log.info(`MUC ${this.get('jid')} join() early return: isEntered=true`);
+            return;
+        }
+        if (!api.connection.authenticated()) {
+            // The stream may be open, but nothing's sent before logging in.
+            log.info(`MUC ${this.get('jid')} join() early return: not logged in`);
             return;
         }
         log.info(`MUC ${this.get('jid')} join() called, setting status to CONNECTING`);
@@ -224,7 +304,12 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
      * Clear stale cache and re-join a MUC we've been in before.
      */
     rejoin() {
-        log.info(`MUC ${this.get('jid')} rejoin() called, current status: ${this.session.get('connection_status')}`);
+        const status = this.session.get('connection_status');
+        log.info(`MUC ${this.get('jid')} rejoin() called, current status: ${status}`);
+        // Loaded while offline, so it's entered once we've logged in. Marking
+        // it disconnected now, when it can't be joined yet, would prevent that.
+        if (status === ROOMSTATUS.OFFLINE && !api.connection.authenticated()) return;
+
         this.session.save('connection_status', ROOMSTATUS.DISCONNECTED);
         this.registerHandlers();
         this.clearOccupantsCache();
@@ -391,10 +476,11 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     async onRoomEntered() {
         await this.occupants.fetchMembers();
         if (api.settings.get('clear_messages_on_reconnection')) {
-            await this.clearMessages();
+            await this.clearMessages({ keep_pending: true });
         } else {
             await this.fetchMessages();
         }
+        this.sendPendingMessages();
         /**
          * Triggered when the user has entered a new MUC
          * @event _converse#enteredNewRoom
@@ -412,6 +498,13 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
 
     async onConnectionStatusChanged() {
         if (this.isEntered()) {
+            // A MUC loaded while offline, which was restored from the cache,
+            // fetching what entering it would.
+            if (this.session.previous('connection_status') === ROOMSTATUS.OFFLINE) {
+                this.sendPendingMessages();
+                return;
+            }
+
             if (this.isRAICandidate()) {
                 try {
                     await this.leave();
@@ -857,33 +950,60 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     }
 
     /**
-     * Retract one of your messages in this groupchat
+     * Retract one of your messages in this groupchat. Without a session the
+     * message is shown as retracted, with `retraction_pending` set, and the
+     * retraction is sent once the groupchat is entered again. A message that's
+     * itself still pending is removed instead.
      * @param {BaseMessage} message - The message which we're retracting.
      */
     async retractOwnMessage(message) {
+        if (this.discardIfUnsent(message)) return;
+
+        const retracted = {
+            retracted: new Date().toISOString(),
+            retracted_id: message.get('id'),
+            retraction_id: getUniqueId(),
+        };
+        if (!api.connection.authenticated()) {
+            message.save({ ...retracted, retraction_pending: true });
+            return;
+        }
+        // Optimistic, and not saved: the groupchat reflects the retraction.
+        message.set(retracted);
+        await this.#sendRetraction(message);
+    }
+
+    /**
+     * Sends the retraction of a message that was retracted without a session.
+     * @param {BaseMessage} message
+     */
+    async sendPendingRetraction(message) {
+        await message.save({ retraction_pending: undefined }, { promise: true });
+        // Not awaited: the groupchat's confirmation mustn't hold up the pending messages.
+        this.#sendRetraction(message).catch((e) => log.error(e));
+    }
+
+    /**
+     * Sends the retraction that a message is marked with, and undoes the mark
+     * if the groupchat doesn't confirm it in time.
+     * @param {BaseMessage} message
+     */
+    async #sendRetraction(message) {
         const __ = _converse.__;
         const editable = message.get('editable');
-        const retraction_id = getUniqueId();
-        const id = message.get('id');
 
         const stanza = stx`
-            <message id="${retraction_id}"
+            <message id="${message.get('retraction_id')}"
                      to="${this.get('jid')}"
                      type="groupchat"
                      xmlns="jabber:client">
-                <retract id="${id}" xmlns="${Strophe.NS.RETRACT}"/>
+                <retract id="${message.get('retracted_id')}" xmlns="${Strophe.NS.RETRACT}"/>
                 <body>/me retracted a message</body>
                 <store xmlns="${Strophe.NS.HINTS}"/>
                 <fallback xmlns="${Strophe.NS.FALLBACK}" for="${Strophe.NS.RETRACT}" />
             </message>`;
 
-        // Optimistic save
-        message.set({
-            retracted: new Date().toISOString(),
-            retracted_id: id,
-            retraction_id: retraction_id,
-            editable: false,
-        });
+        message.set({ editable: false });
         const result = await this.sendTimedMessage(stanza);
 
         if (u.isErrorStanza(result)) {
@@ -1033,11 +1153,50 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     }
 
     /**
-     * @typedef {Object} CloseEvent
-     * @property {string} name
-     * @param {CloseEvent} [ev]
+     * A room is kept through an anonymous reconnection, since the new account
+     * can rejoin it.
      */
-    async close(ev) {
+    survivesReset() {
+        return true;
+    }
+
+    /**
+     * Also removes what's stored of the room's occupants, including the
+     * private messages exchanged with them, and of the room itself.
+     */
+    async clearCache() {
+        const occupants = this.occupants?.models ?? [];
+        await Promise.all([super.clearCache(), ...occupants.map((o) => o.messages?.clearStore({ silent: true }))]);
+        // They're removed below, out of reach of `unload()`.
+        occupants.forEach((o) => o.unload());
+        await this.occupants?.clearStore({ silent: true });
+        await Promise.all(
+            [this.session, this.features, this.config].map(
+                (m) =>
+                    m &&
+                    new Promise((resolve) =>
+                        m.destroy({
+                            success: resolve,
+                            error: (_, e) => {
+                                log.error(e);
+                                resolve();
+                            },
+                        }),
+                    ),
+            ),
+        );
+    }
+
+    unload() {
+        this.removeHandlers();
+        this.debouncedRejoin?.cancel();
+        this.session?.off();
+        this.occupants?.forEach((o) => o.unload());
+        [this.features, this.config, this.occupants].forEach((m) => m?.stopListening());
+        super.unload();
+    }
+
+    async close() {
         const { ENTERED, CLOSING } = ROOMSTATUS;
         const was_entered = this.session.get('connection_status') === ENTERED;
 
@@ -1047,20 +1206,17 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
 
         this.occupants.clearStore();
 
-        const is_closed_by_user = ev?.name !== 'closeAllChatBoxes';
-        if (is_closed_by_user) {
-            await this.unregisterNickname();
-            if (api.settings.get('muc_clear_messages_on_leave')) {
-                this.clearMessages();
-            }
-            /**
-             * Triggered when the user leaves a MUC
-             * @event _converse#leaveRoom
-             * @type {MUC}
-             * @example _converse.api.listen.on('leaveRoom', model => { ... });
-             */
-            api.trigger('leaveRoom', this);
+        await this.unregisterNickname();
+        if (api.settings.get('muc_clear_messages_on_leave')) {
+            this.clearMessages();
         }
+        /**
+         * Triggered when the user leaves a MUC
+         * @event _converse#leaveRoom
+         * @type {MUC}
+         * @example _converse.api.listen.on('leaveRoom', model => { ... });
+         */
+        api.trigger('leaveRoom', this);
 
         // Delete the session model
         await new Promise((success) =>
@@ -1090,7 +1246,9 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     }
 
     canPostMessages() {
-        return this.isEntered() && !(this.features.get('moderated') && this.getOwnRole() === 'visitor');
+        // What's written offline is sent once the MUC is entered again.
+        const entered = this.isEntered() || this.isEnteredOffline();
+        return entered && !(this.features.get('moderated') && this.getOwnRole() === 'visitor');
     }
 
     /**
@@ -2152,14 +2310,15 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
     /**
      * Send a MUC-0410 MUC Self-Ping stanza to room to determine
      * whether we're still joined.
+     * @param {boolean} [was_entered] - Whether we were in the MUC. If not, there's no need to ask.
      * @returns {Promise<boolean>}
      */
-    async isJoined() {
-        if (!this.isEntered()) {
+    async isJoined(was_entered = this.isEntered()) {
+        if (!was_entered) {
             log.info(`isJoined: not pinging MUC ${this.get('jid')} since we're not entered`);
             return false;
         }
-        if (!api.connection.connected()) {
+        if (!api.connection.authenticated()) {
             await new Promise((resolve) => api.listen.once('reconnected', resolve));
         }
         return api.ping(`${this.get('jid')}/${this.get('nick')}`);

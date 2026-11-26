@@ -18,6 +18,7 @@ import { parseMessageForCommands } from './utils.js';
 import { TypeaheadController } from 'shared/rich-composer/typeahead.js';
 import { EMOJI_SOURCE } from 'shared/rich-composer/emoji-source.js';
 import { alertSendError } from 'shared/chat/send-errors.js';
+import { isComposing } from 'utils/keyboard.js';
 
 import './styles/message-form.scss';
 import 'shared/rich-composer/styles/typeahead.scss';
@@ -251,6 +252,8 @@ export default class MessageForm extends CustomElement {
         // The menu owns arrows / Enter / Tab / Escape while it is open, so they reach
         // neither Lexical nor the send-and-correct handling below.
         if (this.typeahead.onKeyDown(ev)) return;
+        // Keys pressed during an IME composition belong to the editor.
+        if (isComposing(ev)) return;
 
         const { keycodes } = converse;
         if (ev.key === keycodes.SHIFT) this.shiftDown = true;
@@ -356,7 +359,7 @@ export default class MessageForm extends CustomElement {
 
         if (!api.connection.authenticated()) {
             api.connection.reconnect();
-            // A message goes on to be kept as a failed one, which a command can't be.
+            // A message goes on to be kept as a pending one, which a command can't be.
             if (message_text.trimStart().startsWith('/')) {
                 const err_msg = __('Sorry, the connection has been lost, and your message could not be sent');
                 api.alert('error', __('Error'), err_msg);

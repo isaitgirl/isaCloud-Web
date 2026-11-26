@@ -38,6 +38,7 @@ export { MUCMessage, MUCMessages, MUC, MUCOccupant, MUCOccupants } from './plugi
 
 import './plugins/ping/index.js'; // XEP-0199 XMPP Ping
 import './plugins/pubsub/index.js'; // XEP-0060 Pubsub
+import './plugins/push/index.js'; // XEP-0357 Push Notifications
 import './plugins/time/index.js'; // XEP-0202 Entity Time
 export {
     MicroblogProfile,
@@ -78,10 +79,13 @@ export { api, converse, _converse, i18n, log, u, constants, parsers, errors };
  * @typedef {import('./shared/_converse.js').ConversePrivateGlobal} ConversePrivateGlobal
  * @typedef {import('./shared/chatbox.js').default} ChatBoxBase
  * @typedef {import('./shared/types').ChatBoxOrMUC} ChatBoxOrMUC
+ * @typedef {import('./shared/types').ClearSessionReason} ClearSessionReason
  * @typedef {import('./shared/types').MessageAttributes} MessageAttributes
  * @typedef {import('./shared/types').MessageEventData} MessageEventData
  * @typedef {import('./shared/types').XFormField} XFormField
+ * @typedef {import('./utils/types').CredentialsHookPayload} CredentialsHookPayload
  * @typedef {import('./utils/types').MediaURLMetadata} MediaURLMetadata
+ * @typedef {import('./utils/types').UnattendedLoginPayload} UnattendedLoginPayload
  * @typedef {import('./plugins/adhoc/types').AdHocCommand} AdHocCommand
  * @typedef {import('./plugins/adhoc/types').AdHocCommandAction} AdHocCommandAction
  * @typedef {import('./plugins/adhoc/types').AdHocCommandNoteType} AdHocCommandNoteType
@@ -92,6 +96,7 @@ export { api, converse, _converse, i18n, log, u, constants, parsers, errors };
  * @typedef {import('./plugins/muc/types').MEPMessageAttributes} MEPMessageAttributes
  * @typedef {import('./plugins/muc/types').MUCMessageAttributes} MUCMessageAttributes
  * @typedef {import('./plugins/muc/types').MUCMessageEventData} MUCMessageEventData
+ * @typedef {import('./plugins/muc/types').MUCRoomInfo} MUCRoomInfo
  * @typedef {import('./plugins/omemo/types').OMEMOVersion} OMEMOVersion
  * @typedef {import('./plugins/time/types').ContactTime} ContactTime
  * @typedef {import('./plugins/vcard/types').VCardData} VCardData

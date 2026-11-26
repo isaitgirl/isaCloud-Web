@@ -1,7 +1,7 @@
 import mock from '../tests/mock.js';
 import converse from '../dist/converse-headless.js';
 
-const { Strophe, stx, u } = converse.env;
+const { Strophe, stx } = converse.env;
 
 /**
  * Collects the structured diagnostic events emitted by the core.
@@ -117,6 +117,8 @@ describe('Connection diagnostics', function () {
             const events = recordDiagnostics(_converse);
             const connection = _converse.api.connection.get();
             const finish = vi.spyOn(connection, 'finishDisconnection').mockResolvedValue(undefined);
+            // A remembered session (a trusted device) keeps retrying instead.
+            connection.remembered = false;
 
             // A failed authentication that can't be retried.
             connection.setDisconnectionCause(Strophe.Status.AUTHFAIL, 'not-authorized', true);
@@ -311,24 +313,8 @@ describe('Send diagnostics', function () {
             const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
             await mock.openChatBoxFor(_converse, contact_jid);
             const chat = _converse.chatboxes.get(contact_jid);
-            const { api } = _converse;
-            const connection = api.connection.get();
-
-            connection.authenticated = false;
-            connection.connected = false;
-            await expect(chat.sendMessage({ body: 'very secret text' })).rejects.toMatchObject({
-                code: 'not-connected',
-            });
-            expect(lastOfType(events, 'send_failed')).toEqual({
-                event: 'send_failed',
-                code: 'not-connected',
-                chat_type: 'chatbox',
-            });
-            expect(JSON.stringify(events)).not.toContain('very secret text');
 
             // An error without a code falls back to 'send-failed'.
-            connection.authenticated = true;
-            connection.connected = true;
             vi.spyOn(chat, 'createMessageStanza').mockRejectedValue(new Error('refused'));
             await expect(chat.sendMessage({ body: 'another secret' })).rejects.toBeDefined();
 
@@ -342,41 +328,27 @@ describe('Send diagnostics', function () {
     );
 
     it(
-        'reports a message that waits for the connection and the timeout of that wait',
-        mock.initConverse(
-            converse,
-            ['rosterInitialized', 'chatBoxesInitialized'],
-            { send_queue_timeout: 20 },
-            async (_converse) => {
-                const events = recordDiagnostics(_converse);
-                await mock.waitForRoster(_converse, 'current', 1);
-                const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
-                await mock.openChatBoxFor(_converse, contact_jid);
-                const chat = _converse.chatboxes.get(contact_jid);
-                const connection = _converse.api.connection.get();
+        'reports a message that waits for the connection',
+        mock.initConverse(converse, ['rosterInitialized', 'chatBoxesInitialized'], {}, async (_converse) => {
+            const events = recordDiagnostics(_converse);
+            await mock.waitForRoster(_converse, 'current', 1);
+            const contact_jid = mock.cur_names[0].replace(/ /g, '.').toLowerCase() + '@montague.lit';
+            await mock.openChatBoxFor(_converse, contact_jid);
+            const chat = _converse.chatboxes.get(contact_jid);
+            const connection = _converse.api.connection.get();
 
-                connection.authenticated = false;
-                connection.connected = false;
-                connection.status = Strophe.Status.RECONNECTING;
-
-                const message = await chat.sendMessage({ body: 'waiting too long' });
+            connection.authenticated = false;
+            try {
+                const message = await chat.sendMessage({ body: 'waiting for the connection' });
+                expect(message.get('send_status')).toBe('pending');
                 expect(lastOfType(events, 'send_queued')).toEqual({
                     event: 'send_queued',
                     chat_type: 'chatbox',
-                    timeout_ms: 20,
                 });
-
-                await u.waitUntil(() => message.get('send_status') === 'failed');
-                expect(lastOfType(events, 'send_queue_timeout')).toEqual({
-                    event: 'send_queue_timeout',
-                    chat_type: 'chatbox',
-                });
-                expect(JSON.stringify(events)).not.toContain('waiting too long');
-
+                expect(JSON.stringify(events)).not.toContain('waiting for the connection');
+            } finally {
                 connection.authenticated = true;
-                connection.connected = true;
-                connection.status = Strophe.Status.CONNECTED;
-            },
-        ),
+            }
+        }),
     );
 });

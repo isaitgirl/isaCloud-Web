@@ -1,0 +1,15 @@
+converse-connection-indicator {
+    display: flex;
+    flex-shrink: 0;
+
+    .connection-indicator {
+        display: flex;
+        align-items: center;
+        color: var(--subdued-color);
+        white-space: nowrap;
+
+        converse-icon {
+            padding-inline-end: 0.5em;
+        }
+    }
+}

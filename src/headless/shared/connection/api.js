@@ -74,21 +74,54 @@ export default {
     },
 
     /**
+     * Whether the login has completed (SASL and resource binding, stream
+     * resumption, or attaching to an existing session), which is when
+     * stanzas may be sent. Code that decides whether it can send checks this,
+     * not {@link api.connection.connected}.
+     *
      * @method api.connection.authenticated
      * @memberOf api.connection
-     * @returns {boolean} Whether we're authenticated to the XMPP server or not
+     * @returns {boolean}
      */
     authenticated() {
         return connection?.authenticated && true;
     },
 
     /**
+     * Whether the stream to the XMPP server is open. That's already the case
+     * while still logging in, when nothing may be sent yet, see
+     * {@link api.connection.authenticated}.
+     *
      * @method api.connection.connected
      * @memberOf api.connection
-     * @returns {boolean} Whether there is an established connection or not.
+     * @returns {boolean}
      */
     connected() {
         return connection?.connected && true;
+    },
+
+    /**
+     * @method api.connection.remembered
+     * @memberOf api.connection
+     * @returns {boolean} Whether this device remembers the session, so that
+     *  it's kept through dropped connections and retried for as long as it's
+     *  remembered, rather than given up on.
+     */
+    remembered() {
+        return !!connection?.remembered;
+    },
+
+    /**
+     * Whether a session is open: one that has logged in, or that was resumed
+     * from the cache, and that hasn't ended. It stays open through dropped
+     * connections, so a front end keeps showing it while offline.
+     *
+     * @method api.connection.hasSession
+     * @memberOf api.connection
+     * @returns {boolean}
+     */
+    hasSession() {
+        return !!(connection?.authenticated || connection?.has_connected || connection?.resumed_jid);
     },
 
     /**
@@ -113,6 +146,26 @@ export default {
      */
     reconnect() {
         return connection.requestReconnect({ explicit: true });
+    },
+
+    /**
+     * Retries the connection now, because whatever kept it from connecting
+     * has gone away, and starts the waits between retries from 3 seconds
+     * again. A front end calls it when the network comes back, for example on
+     * the browser's `online` event, or when an app is brought back to the
+     * foreground.
+     *
+     * Unlike {@link api.connection.reconnect}, this restarts the backoff.
+     * A working connection is checked rather than replaced, with a ping if the
+     * `converse-ping` plugin is loaded. An attempt that's underway is started
+     * anew, since it most likely started while the network was down, unless
+     * an earlier call started it. One that has just failed is retried within
+     * 3 seconds.
+     * @method retry
+     * @memberOf api.connection
+     */
+    retry() {
+        return connection?.retry();
     },
 
     /**

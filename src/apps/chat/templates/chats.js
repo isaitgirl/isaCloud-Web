@@ -3,8 +3,9 @@ import { repeat } from 'lit/directives/repeat.js';
 import { _converse, api, constants, converse } from '@converse/headless';
 import { __ } from 'i18n';
 import { isMobileViewport } from 'shared/chat/utils.js';
+import { isLoggingIn } from 'shared/connection-state.js';
 
-const { CONTROLBOX_TYPE, CHATROOMS_TYPE, HEADLINES_TYPE, CONNECTION_STATUS } = constants;
+const { CONTROLBOX_TYPE, CHATROOMS_TYPE, HEADLINES_TYPE } = constants;
 
 /**
  * @param {import('@converse/headless').ChatBoxBase} c
@@ -15,16 +16,13 @@ function shouldShowChat(c) {
 }
 
 export default () => {
-    const { chatboxes, connfeedback } = _converse.state;
+    const { chatboxes } = _converse.state;
     const view_mode = api.settings.get('view_mode');
     const is_overlayed = view_mode === 'overlayed';
     const is_mobile = isMobileViewport();
-    const connection = api.connection.get();
-    const logged_out = !connection?.connected || !connection?.authenticated || connection?.disconnecting;
-    const connection_status = connfeedback.get('connection_status');
-    const connecting = ['CONNECTED', 'CONNECTING', 'AUTHENTICATING', 'RECONNECTING'].includes(
-        CONNECTION_STATUS[connection_status],
-    );
+    // An open session stays on screen while its connection is down.
+    const logged_out = !api.connection.hasSession();
+    const connecting = isLoggingIn();
     // `filter` hands the models over; Skeletor's `some` would hand their attributes.
     const has_visible_conversation =
         chatboxes.filter((c) => c.get('type') !== CONTROLBOX_TYPE && !c.get('hidden') && !c.get('closed')).length > 0;

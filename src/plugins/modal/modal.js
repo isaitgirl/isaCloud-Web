@@ -1,7 +1,9 @@
 import { html } from 'lit';
 import Modal from 'bootstrap/js/src/modal.js';
 import { CustomElement } from 'shared/components/element.js';
+import { ConnectionStateController } from 'shared/connection-state.js';
 import { api, u, Model, log } from '@converse/headless';
+import { isComposing } from 'utils/keyboard.js';
 import { modal_close_button } from './templates/buttons.js';
 import tplModal from './templates/modal.js';
 
@@ -20,6 +22,8 @@ class BaseModal extends CustomElement {
 
     /** @type {Modal} */
     #modal;
+    /** @type {ConnectionStateController|null} */
+    #connection_state = null;
 
     /**
      * @param {Object} options
@@ -39,6 +43,12 @@ class BaseModal extends CustomElement {
                 this.close();
             }
         };
+
+        // Registered before Bootstrap's own listener, so that the Escape which cancels
+        // an IME conversion doesn't close the modal.
+        this.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && isComposing(ev)) ev.stopImmediatePropagation();
+        });
 
         this.initialized = u.getOpenPromise();
 
@@ -61,7 +71,7 @@ class BaseModal extends CustomElement {
     }
 
     disconnectedCallback() {
-        window.removeEventListener('resize', this.onKeyDown);
+        window.removeEventListener('keydown', this.onKeyDown);
         super.disconnectedCallback();
     }
 
@@ -78,6 +88,46 @@ class BaseModal extends CustomElement {
     initialize() {
         this.requestUpdate();
         this.initialized.resolve();
+    }
+
+    /**
+     * Whether what the modal does, in its current state, needs a connection
+     * to the server. A modal that says so shows that it's waiting for one
+     * while there's none, and its forms can't be submitted until then.
+     * @returns {boolean}
+     */
+    get requires_connection() {
+        return false;
+    }
+
+    /**
+     * @returns {boolean} Whether the modal is waiting for a connection.
+     */
+    needsConnection() {
+        if (!this.requires_connection) return false;
+
+        this.#followConnection();
+        return !this.#connection_state.is_online;
+    }
+
+    /**
+     * Only a modal that has needed a connection follows it.
+     */
+    #followConnection() {
+        if (this.#connection_state) return;
+
+        this.#connection_state = new ConnectionStateController(this);
+        // Before a form's own handler gets it, so that nothing is sent into the void.
+        this.addEventListener(
+            'submit',
+            (ev) => {
+                if (!this.needsConnection()) return;
+
+                ev.preventDefault();
+                ev.stopPropagation();
+            },
+            { capture: true },
+        );
     }
 
     /**

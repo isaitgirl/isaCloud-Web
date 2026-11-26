@@ -4,6 +4,24 @@ import converse from '../../../../dist/converse.js';
 
 const u = converse.env.utils;
 
+/** What the controlbox shows while the start-up login waits for credentials. */
+let shown_while_starting;
+
+// A credential source of the integrator's own, only used where whitelisted.
+// It checks the controlbox before handing over the credentials.
+converse.plugins.add('test-waiting-credentials', {
+    initialize() {
+        this._converse.api.listen.on('beforeAttemptNonPreboundSession', async (_context, payload) => {
+            const pane = await u.waitUntil(() => document.querySelector('converse-controlbox .controlbox-pane'));
+            shown_while_starting = {
+                spinner: !!pane.querySelector('converse-spinner'),
+                login_form: !!pane.querySelector('converse-login-form'),
+            };
+            return { ...payload, credentials: { jid: 'romeo@montague.lit/orchard', password: 'secret' } };
+        });
+    },
+});
+
 describe('The Login Form', function () {
     it(
         'shows the deployment brand logo and link when configured',
@@ -92,6 +110,8 @@ describe('The Login Form', function () {
             ['chatBoxesInitialized'],
             { auto_login: false, allow_user_trust_override: 'off', allow_registration: false },
             async function (_converse) {
+                const connected = vi.fn();
+                _converse.api.listen.on('connected', connected);
                 mock.toggleControlBox(_converse);
                 const cbview = await u.waitUntil(() => _converse.chatboxviews.get('controlbox'));
                 await u.waitUntil(() => cbview.querySelectorAll('input[type="checkbox"]').length);
@@ -115,6 +135,9 @@ describe('The Login Form', function () {
                 cbview.querySelector('button[type="submit"]').click();
                 expect(_converse.config.get('trusted')).toBe(true);
                 expect(u.getDefaultStorageType()).toBe('persistent');
+
+                // Otherwise the logins carry on into the next test.
+                await u.waitUntil(() => connected.mock.calls.length === 2);
             },
         ),
     );
@@ -172,6 +195,22 @@ describe('The Login Form', function () {
                 expect(push).not.toHaveBeenCalled();
                 expect(location.search).toBe(search);
                 push.mockRestore();
+            },
+        ),
+    );
+});
+
+describe('The Controlbox, while Converse starts up', function () {
+    beforeEach(() => (shown_while_starting = null));
+
+    it(
+        'shows a spinner rather than the login form',
+        mock.initConverse(
+            converse,
+            [],
+            { auto_login: false, view_mode: 'fullscreen', whitelisted_plugins: ['test-waiting-credentials'] },
+            async function () {
+                expect(shown_while_starting).toEqual({ spinner: true, login_form: false });
             },
         ),
     );

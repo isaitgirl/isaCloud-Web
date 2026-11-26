@@ -2,11 +2,8 @@ import './alert.js';
 import Confirm from './confirm.js';
 import { api, Model } from '@converse/headless';
 
-/** @type {import('./modal').default[]} */
-let modals = [];
-
 /** @type {Record<string, import('./modal').default>} */
-let modals_map = {};
+const modals_map = {};
 
 /** @type {Record<string, import('./types').ToastProperties>} */
 const toasts_map = {};
@@ -33,12 +30,12 @@ const modal_api = {
         },
 
         /**
-         * Return a modal with the passed-in identifier, if it exists.
-         * @param {String} id
+         * Return the modal with the passed-in name, if it exists.
+         * @param {String} name
          * @return {import('./modal').default}
          */
-        get(id) {
-            return modals_map[id] ?? modals.filter((m) => m.id == id).pop();
+        get(name) {
+            return modals_map[name];
         },
 
         /**
@@ -59,15 +56,8 @@ const modal_api = {
          * @param {String} name
          */
         remove(name) {
-            let modal;
-            if (typeof name === 'string') {
-                modal = modals_map[name];
-                delete modals_map[name];
-            } else {
-                // Legacy...
-                modal = name;
-                modals = modals.filter((m) => m !== modal);
-            }
+            const modal = modals_map[name];
+            delete modals_map[name];
             modal?.remove();
         },
 
@@ -75,9 +65,15 @@ const modal_api = {
          * Remove all modals
          */
         removeAll() {
-            modals.forEach((m) => m.remove());
-            modals = [];
-            modals_map = {};
+            Object.entries(modals_map).forEach(([name, modal]) => {
+                if (modal.classList.contains('show')) {
+                    // Once hidden, it removes itself. Removing it now would
+                    // leave Bootstrap's backdrop and scroll lock behind.
+                    modal.close();
+                } else {
+                    this.remove(name);
+                }
+            });
         },
     },
 

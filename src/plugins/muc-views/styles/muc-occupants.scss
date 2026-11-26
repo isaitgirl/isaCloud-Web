@@ -23,6 +23,18 @@
                 }
             }
 
+            // The participants of when we were last in the MUC
+            &.occupants--stale .occupant-list {
+                opacity: 0.5;
+            }
+
+            .occupants-stale-note {
+                margin: 0;
+                padding: 0 0.5em 0.5em;
+                color: var(--subdued-color);
+                font-size: var(--font-size-small);
+            }
+
             .suggestion-box {
                 ul {
                     padding: 0;
@@ -80,8 +92,12 @@
 
                             .occupant-nick {
                                 flex-grow: 2;
+                                // A nickname that doesn't fit is cut off with
+                                // an ellipsis, not wrapped in the middle.
+                                min-width: 0;
                                 overflow-x: hidden;
                                 text-overflow: ellipsis;
+                                white-space: nowrap;
                             }
 
                             .occupant-badges {

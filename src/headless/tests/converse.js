@@ -69,6 +69,73 @@ describe('Converse', function () {
         });
     });
 
+    describe('The "user.login" method', function () {
+        it(
+            'logs in to the account that credentials supplied by a plugin name',
+            mock.initConverse(converse, [], { auto_login: false, keepalive: false }, async (_converse) => {
+                const { api } = _converse;
+                api.listen.on('beforeAttemptNonPreboundSession', (_context, payload) => ({
+                    ...payload,
+                    credentials: { jid: 'juliet@montague.lit', password: 'sso' },
+                }));
+                const connects = [];
+                const init = api.connection.init;
+                vi.spyOn(api.connection, 'init').mockImplementation(function (...args) {
+                    const connection = init.apply(this, args);
+                    vi.spyOn(connection, 'connect').mockImplementation((jid, password) =>
+                        connects.push({ jid, password }),
+                    );
+                    return connection;
+                });
+
+                await api.user.login();
+                expect(_converse.session.get('bare_jid')).toBe('juliet@montague.lit');
+                expect(connects).toEqual([{ jid: _converse.session.get('jid'), password: 'sso' }]);
+            }),
+        );
+
+        it(
+            'logs in again if the server rejects credentials that a plugin can renew',
+            mock.initConverse(converse, [], { auto_login: false, keepalive: false }, async (_converse) => {
+                const { api } = _converse;
+                const { Strophe, stx } = converse.env;
+                api.listen.on('beforeAttemptNonPreboundSession', (_context, payload) => ({
+                    ...payload,
+                    credentials: { jid: 'romeo@montague.lit', password: 'expired-token', renewable: true },
+                }));
+
+                await api.user.login();
+                const connection = api.connection.get();
+                const reconnect = vi.spyOn(connection, 'requestReconnect').mockImplementation(() => {});
+                const failure = stx`<failure xmlns="${Strophe.NS.SASL}"><not-authorized/></failure>`;
+                connection.onConnectStatusChanged(Strophe.Status.AUTHFAIL, undefined, failure);
+
+                expect(reconnect).toHaveBeenCalledOnce();
+            }),
+        );
+
+        it(
+            'ends a session rather than switch it to the account of other credentials',
+            mock.initConverse(converse, [], {}, async (_converse) => {
+                const { api } = _converse;
+                const connection = api.connection.get();
+                const finish = vi.spyOn(connection, 'finishDisconnection').mockResolvedValue(undefined);
+                const connect = vi.spyOn(connection, 'connect');
+                // For example, another user logged into the hosting site while it was offline.
+                api.listen.on('beforeAttemptNonPreboundSession', (_context, payload) => ({
+                    ...payload,
+                    credentials: { jid: 'juliet@montague.lit', password: 'token' },
+                }));
+
+                await connection.reconnect();
+
+                expect(_converse.session.get('bare_jid')).toBe('romeo@montague.lit');
+                expect(connect).not.toHaveBeenCalled();
+                expect(finish).toHaveBeenCalledOnce();
+            }),
+        );
+    });
+
     describe('The "user.logout" method', function () {
         it(
             'sends unavailable presence before closing the stream',
@@ -107,6 +174,46 @@ describe('Converse', function () {
                 expect(api.tokens.get('sid')).toBe('1234');
                 connection._proto.sid = '1235';
                 expect(api.tokens.get('sid')).toBe('1235');
+            }),
+        );
+    });
+
+    describe('The "send" API', function () {
+        it(
+            'only sends a stanza once the session is authenticated',
+            mock.initConverse(converse, [], {}, ({ api }) => {
+                const { stx } = converse.env;
+                const connection = api.connection.get();
+                const wasSent = (id) => connection.sent_stanzas.some((s) => s.getAttribute('id') === id);
+
+                // The stream is open, but the login hasn't completed.
+                connection.authenticated = false;
+                const early = stx`<message id="early" to="juliet@capulet.lit" type="chat" xmlns="jabber:client"/>`;
+                expect(api.send(early)).toBe(false);
+                expect(wasSent('early')).toBe(false);
+
+                connection.authenticated = true;
+                const on_time = stx`<message id="on-time" to="juliet@capulet.lit" type="chat" xmlns="jabber:client"/>`;
+                expect(api.send(on_time)).toBe(true);
+                expect(wasSent('on-time')).toBe(true);
+            }),
+        );
+
+        it(
+            'only sends an IQ once the session is authenticated',
+            mock.initConverse(converse, [], {}, ({ api }) => {
+                const { stx } = converse.env;
+                const connection = api.connection.get();
+                const wasSent = (id) => connection.IQ_stanzas.some((s) => s.getAttribute('id') === id);
+                const iq = (id) => stx`<iq id="${id}" type="result" xmlns="jabber:client"/>`;
+
+                connection.authenticated = false;
+                expect(() => api.sendIQ(iq('early'))).toThrow(expect.objectContaining({ code: 'not-connected' }));
+                expect(wasSent('early')).toBe(false);
+
+                connection.authenticated = true;
+                api.sendIQ(iq('on-time'));
+                expect(wasSent('on-time')).toBe(true);
             }),
         );
     });

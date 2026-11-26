@@ -1,5 +1,6 @@
 import { html } from 'lit';
 import 'shared/avatar/avatar.js';
+import '../connection-indicator.js';
 import { __ } from 'i18n';
 import { getPrettyStatus } from '../utils.js';
 
@@ -58,15 +59,23 @@ export default (el) => {
                 data-target="#changeStatusModal"
                 @click="${(ev) => el.showProfileModal(ev)}"
             >
-                <span class="${chat_status} w-100" data-value="${chat_status}">
-                    <converse-icon
-                        color="var(--${color})"
-                        css="margin-top: -0.1em"
-                        size="0.82em"
-                        class="${classes}"
-                    ></converse-icon>
-                    <span class="xmpp-status__msg">${status_message}</span>
-                </span>
+                ${
+                    // Nobody sees our status while we're not connected, so the
+                    // connection's state takes its place. The indicator stays
+                    // mounted, so that it can announce when we're connected again.
+                    el.connection_state.is_online
+                        ? html`<span class="${chat_status}" data-value="${chat_status}">
+                              <converse-icon
+                                  color="var(--${color})"
+                                  css="margin-top: -0.1em"
+                                  size="0.82em"
+                                  class="${classes}"
+                              ></converse-icon>
+                              <span class="xmpp-status__msg">${status_message}</span>
+                          </span>`
+                        : ''
+                }
+                <converse-connection-indicator></converse-connection-indicator>
             </a>
         </div>
     </div>`;

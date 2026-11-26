@@ -1,7 +1,8 @@
-import { _converse, api, converse } from '@converse/headless';
+import { _converse, api, constants, converse } from '@converse/headless';
 import { __ } from 'i18n/index.js';
 
 const { Strophe, u } = converse.env;
+const { LOGOUT } = constants;
 
 export function addControlBox() {
     const m = _converse.state.chatboxes.add(new _converse.exports.ControlBox({ 'id': 'controlbox' }));
@@ -27,34 +28,36 @@ export function navigateToControlBox(jid) {
     u.safeSave(model, { 'hidden': true });
 }
 
-export function disconnect() {
-    // Upon disconnection, set connected to `false`, so that if
-    // we reconnect, "onConnected" will be called,
-    // to fetch the roster again and to send out a presence stanza.
-    const model = _converse.state.chatboxes?.get('controlbox');
-    if (model) {
-        // Only a session that was already connected keeps its panel while the
-        // connection comes back. A retry on the first connection must still
-        // show the login form, not an empty chat panel.
-        u.safeSave(model, { 'connected': false, 'reconnecting': model.get('connected') });
-    }
-}
-
 export function clearSession() {
-    const { chatboxviews } = _converse.state;
+    const { chatboxes, chatboxviews } = _converse.state;
+    const model = chatboxes?.get('controlbox');
+    if (model) u.safeSave(model, { connected: false });
+
     const view = chatboxviews?.get('controlbox');
     if (view) {
-        u.safeSave(view.model, { connected: false, reconnecting: false });
         if (view?.controlbox_pane) {
             view.controlbox_pane.remove();
             delete view.controlbox_pane;
         }
+        // Logging out closes the control box, unless it's shown by default.
+        const logged_out = api.connection.get()?.disconnection_cause === LOGOUT;
+        if (logged_out && !api.settings.get('show_controlbox_by_default')) view.close();
     }
+}
+
+/**
+ * The login form says why the session ended, when the user didn't end it,
+ * until the next login, and is brought up to do so.
+ * @param {{ reason?: string }} [data]
+ */
+export function onLogout({ reason } = {}) {
+    const model = _converse.state.chatboxes?.get('controlbox');
+    if (reason && model) u.safeSave(model, { session_end_reason: reason, closed: false });
 }
 
 export function onChatBoxesFetched() {
     const controlbox = _converse.state.chatboxes.get('controlbox') || addControlBox();
-    controlbox.save({ 'connected': true, 'reconnecting': false });
+    controlbox.save({ connected: true, session_end_reason: null });
 }
 
 /**

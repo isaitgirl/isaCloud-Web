@@ -11,7 +11,10 @@ import vcard_api from './api.js';
 import VCards from './vcards.js';
 import {
     clearVCardsSession,
+    initVCards,
+    onConnected,
     onOccupantAvatarChanged,
+    onReconnected,
     publishOwnNickname,
     registerNickHandler,
     registerPresenceHandler,
@@ -57,6 +60,8 @@ converse.plugins.add('converse-vcard', {
             // Ask XEP-0163 PEP services to push XEP-0172 nickname changes to us.
             api.disco.own.features.add(Strophe.NS.NICK + '+notify');
         });
+        // Also on an anonymous reset: the new account publishes its own nickname,
+        // and the vCards are loaded anew once it has reconnected.
         api.listen.on('clearSession', () => {
             clearVCardsSession();
             resetNickState();
@@ -73,11 +78,9 @@ converse.plugins.add('converse-vcard', {
             if (model?.vcard) model.vcard.trigger('visibilityChanged');
         });
 
-        api.listen.on('connected', () => {
-            const vcards = new _converse.exports.VCards();
-            _converse.state.vcards = vcards;
-            Object.assign(_converse, { vcards }); // XXX DEPRECATED
-        });
+        api.listen.on('loadSessionCache', initVCards);
+        api.listen.on('connected', onConnected);
+        api.listen.on('reconnected', onReconnected);
 
         api.listen.on('presencesInitialized', () => {
             registerPresenceHandler();
