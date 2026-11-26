@@ -6,6 +6,16 @@ O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
+## 🛠️ Preparação da próxima release
+
+- 🗂️ **Cada grupo no seu espaço:** ao criar um grupo ou canal, ele vai automaticamente para
+  o espaço certo da sua conta, sem precisar escolher servidor.
+- 🔐 **OMEMO já ligado:** grupos privados recém-criados abrem com a criptografia ativa por
+  padrão.
+- 💬 **Grupo novo nas Conversas:** mesmo sem nenhuma mensagem, o grupo que você acabou de
+  criar fica na lista de conversas recentes.
+- 🇧🇷 **Convidar alguém:** o menu dos participantes agora fala “Convidar alguém” em português.
+
 ## 📅 Todas as releases
 
 ### v15-44 — 26/11/2026

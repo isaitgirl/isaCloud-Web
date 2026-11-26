@@ -7,6 +7,26 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## Preparação da próxima release (branch `feat/grupos-por-dominio`)
+
+- `feat(isacloud)`: grupos e canais criados pelo modal vão para o serviço MUC do domínio da
+  conta (`isacloud.im` → `conference.isacloud.cc`, `voz.social.br` →
+  `canais.voz.social.br`, `xmpp.social.br` → `canais.xmpp.social.br`); os demais domínios
+  mantêm o primeiro serviço descoberto. O `getDefaultMUCService` ganhou o gancho
+  `getDefaultMUCService` e só trata como configurado o `muc_domain` vindo do
+  `converse.initialize`: o valor que a descoberta grava em `api.settings.muc_domain` não
+  atropela mais o mapa. Plugin `converse-isacloud-muc-service` com o mapa
+  `isacloud_muc_service_by_domain` (`deep_merge`). Specs de unidade e do modal de canal.
+- `fix(omemo)`: grupo privado recém-criado abre com OMEMO ativo mesmo quando o disco#info
+  chega depois da sala; o padrão só é aplicado se o usuário ainda não escolheu.
+- `feat(recent-list)`: sala criada por este cliente fica na lista de conversas mesmo sem
+  mensagem. O status 201 da presença grava `is_new_room`, que dispensa a regra de esconder
+  sala com MAM vazio só nesse caso; bookmark/autojoin continuam iguais.
+- `fix(i18n)`: “Invite someone” estava `#, fuzzy` no `.po` e caía no inglês; agora é
+  “Convidar alguém”.
+- `test`: o spec do modal de canal, o de i18n, o de OMEMO e o do recente entraram na suíte
+  reduzida.
+
 ## v15-44 — 2026-11-26 (`3b7502b0c`)
 
 - `chore(upstream)`: merge do `upstream/master` até `718feadc1e`. A UI foi reestruturada em
