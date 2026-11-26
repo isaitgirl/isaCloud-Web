@@ -2127,13 +2127,12 @@ msgid "Hide filter"
 msgstr "Ocultar filtro"
 
 #: dist/converse-no-dependencies.js:129103
-#, fuzzy
 msgid "Invite someone"
-msgstr "convite"
+msgstr "Convidar alguém"
 
 #: dist/converse-no-dependencies.js:129104
 msgid "Invite someone to join this groupchat"
-msgstr "Convide alguém para se unir a este grupo"
+msgstr "Convide alguém para entrar neste grupo"
 
 #: dist/converse-no-dependencies.js:129304
 msgid "No participant data found"
