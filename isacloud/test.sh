@@ -40,6 +40,7 @@ MAIN_SPECS=(
     src/web/plugins/isacloud-changelog/tests/ # isaCloud: novidades na lista
     src/web/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
     src/web/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
+    src/web/plugins/isacloud-muc-service/tests/ # isaCloud: grupo/canal no serviço do domínio da conta
     src/web/plugins/isacloud-polls/tests/ # isaCloud: enquetes (Fluux)
     src/web/plugins/isacloud-replies/tests/ # isaCloud: respostas (XEP-0461)
     src/web/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
@@ -47,6 +48,7 @@ MAIN_SPECS=(
     src/web/plugins/muc-views/tests/replies.js # isaCloud: respostas em grupo
     src/web/plugins/muc-views/tests/muc-messages.js
     src/web/plugins/muc-views/tests/nickname.js
+    src/web/i18n/tests/i18n.js # isaCloud: traduções pt_BR (entradas fuzzy)
     src/web/plugins/muc-views/tests/add-private-group.js # isaCloud: criar grupo privado
     src/web/plugins/muc-views/tests/muc-add-modal.js
     src/web/plugins/muc-views/tests/occupant-sidebar.js # isaCloud: painel do participante

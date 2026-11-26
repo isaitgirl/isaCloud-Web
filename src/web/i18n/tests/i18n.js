@@ -28,6 +28,8 @@ describe('i18n', () => {
                 expect(__('Your personal messages are end-to-end encrypted')).toBe(
                     'Suas mensagens pessoais são criptografadas ponta a ponta',
                 );
+                expect(__('Invite someone')).toBe('Convidar alguém');
+                expect(__('Invite someone to join this groupchat')).toBe('Convide alguém para entrar neste grupo');
             }),
         );
     });

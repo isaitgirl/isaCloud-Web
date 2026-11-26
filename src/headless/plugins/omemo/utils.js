@@ -1148,6 +1148,8 @@ export async function contactHasOMEMOSupport(jid) {
 /**
  * @param {import('../../shared/chatbox.js').default} chatbox
  * @param {boolean} [restore=false] Whether to restore remembered OMEMO active state.
+ *  Without it, `omemo_default` still applies when a room becomes eligible after
+ *  opening and the user hasn't chosen an encryption state yet.
  */
 async function checkOMEMOSupported(chatbox, restore = false) {
     // OMEMO is never initialized on an untrusted device (see `initOMEMO`), so
@@ -1175,6 +1177,16 @@ async function checkOMEMOSupported(chatbox, restore = false) {
         } else if (api.settings.get('omemo_default')) {
             chatbox.set('omemo_active', true);
         }
+    } else if (
+        // A new room often opens before its disco#info arrives, so the first
+        // check sees no features. When it becomes eligible, apply the default
+        // if the user hasn't chosen yet (and hasn't turned it off since).
+        supported &&
+        chatbox.get('omemo_active') === undefined &&
+        getOMEMOActiveState(chatbox.get('jid')) === undefined &&
+        api.settings.get('omemo_default')
+    ) {
+        chatbox.set('omemo_active', true);
     }
 }
 

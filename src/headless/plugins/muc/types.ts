@@ -36,6 +36,7 @@ export type DefaultMUCAttributes = {
     has_activity: boolean; // XEP-437
     hidden: boolean;
     hidden_occupants: boolean;
+    is_new_room?: boolean;
     message_type: 'groupchat';
     name: string;
     num_unread: number;
