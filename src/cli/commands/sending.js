@@ -6,11 +6,19 @@ import fsSync from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { MAX_UPLOAD_SIZE } from '@converse/daemon/protocol';
-import { reportSend, request, takeOne, UsageError } from '../context.js';
+import { reportSend, request, takeOne, UsageError, warnIfUnconfirmed } from '../context.js';
 import { EXIT } from '../exit-codes.js';
 import { formatJSON, quote } from '../format.js';
 import { flag, option } from '../options.js';
-import { IN_CONVERSATION, LOOKUP_EXITS, MESSAGE_ID, SEND_EXITS, TARGET } from './shared.js';
+import {
+    IN_CONVERSATION,
+    LOOKUP_EXITS,
+    MESSAGE_ID,
+    SEND_EXITS,
+    SEND_TYPE_OPTIONS,
+    sendType,
+    TARGET,
+} from './shared.js';
 
 /** @type {Record<string, import('../types').Command>} */
 export const SENDING_COMMANDS = {
@@ -28,7 +36,13 @@ export const SENDING_COMMANDS = {
             'contact in "policy.allow" or a room in "policy.rooms" gets a draft, which waits in the ' +
             'daemon until the user sends it with drafts send. Anything else is refused. The exit ' +
             'code says which happened: 0 sent, 6 drafted, 5 refused. A draft or a refusal means ' +
-            "nothing reached the recipient: don't send it again another way.",
+            "nothing reached the recipient: don't send it again another way.\n\n" +
+            'Pass --muc for a send to a MUC. A send to a MUC waits a few seconds for the MUC to ' +
+            'echo it back, which is how a MUC confirms it passed the message on. If the daemon ' +
+            "isn't in the MUC, or the MUC says so, the exit code is 9, and a message that went out " +
+            'is kept as a failed send, for resend once the MUC is joined again. If the MUC turns it ' +
+            "down, the exit code is 1. If no echo comes in time, it's reported as sent, with a " +
+            'warning on stderr: it may still arrive, so check read before sending it again.',
         args: [TARGET, ['[text]', 'The message. Without it, the text is read from stdin']],
         options: [
             option(
@@ -46,23 +60,27 @@ export const SENDING_COMMANDS = {
                 '<time>',
                 'Schedule it for this future ISO 8601 time. Policy is checked now and again when it becomes due, even after a restart',
             ),
+            ...SEND_TYPE_OPTIONS,
         ],
         exits: SEND_EXITS,
         examples: [
-            'converse-cli send juliet@capulet.lit "On my way"',
-            'converse-cli send "Juliet Capulet" --reply-to 01a183d1-2cc2-74f2-8de3-fd8a38834143 "Yes, at nine"',
-            'converse-cli send juliet@capulet.lit -- -1 for yes',
-            "printf 'Line one\\nLine two\\n' | converse-cli send juliet@capulet.lit",
+            'converse send juliet@capulet.lit "On my way"',
+            'converse send --muc garden@conference.capulet.lit "Morning, all"',
+            'converse send "Juliet Capulet" --reply-to 01a183d1-2cc2-74f2-8de3-fd8a38834143 "Yes, at nine"',
+            'converse send juliet@capulet.lit -- -1 for yes',
+            "printf 'Line one\\nLine two\\n' | converse send juliet@capulet.lit",
         ],
         async run(ctx) {
             const { args, options } = ctx;
             if (args.length === 0) throw new UsageError('Expected a JID to send to.');
             const [to, ...words] = args;
             const body = words.length ? words.join(' ') : await readStdin(ctx);
+            const type = sendType(ctx);
+            if (type && options.at !== undefined) throw new UsageError('--at takes no --muc or --chat yet.');
             /** @type {{ to: string, body: string, reply_to?: string, correct?: string }} */
             const params = { to, body, reply_to: options['reply-to'], correct: options.correct };
             const result = await (options.at === undefined
-                ? request(ctx, 'messages.send', params)
+                ? request(ctx, 'messages.send', { ...params, ...(type ? { type } : {}) })
                 : request(ctx, 'schedules.create', { ...params, at: options.at }));
             return reportSend(result, ctx);
         },
@@ -76,22 +94,25 @@ export const SENDING_COMMANDS = {
             'contact or room; a draft route sends the URL to the owner, who may share it, or in ' +
             'as_user holds it until the user sends it with drafts send.',
         args: [TARGET, ['<path>', 'The local file']],
+        options: SEND_TYPE_OPTIONS,
         exits: SEND_EXITS,
-        examples: ['converse-cli upload juliet@capulet.lit ./report.pdf'],
+        examples: ['converse upload juliet@capulet.lit ./report.pdf'],
         async run(ctx) {
             const { args, options, out } = ctx;
             if (args.length !== 2) throw new UsageError('Expected a recipient and a local file path.');
             const [to, file_path] = args;
+            const type = sendType(ctx);
             const name = path.basename(file_path);
             const content = await readUpload(file_path);
             /** @type {import('@converse/daemon/types').SendResult} */
-            const result = await request(ctx, 'files.upload', { to, name, content });
+            const result = await request(ctx, 'files.upload', { to, name, content, ...(type ? { type } : {}) });
             if (result.outcome !== 'sent' || options.json) return reportSend(result, ctx);
 
             out(
                 `Uploaded ${quote(path.basename(file_path))} to ${result.message.conversation} ` +
                     `as ${result.message.id}\n`,
             );
+            warnIfUnconfirmed(result.message, ctx);
             return EXIT.OK;
         },
     },
@@ -104,7 +125,7 @@ export const SENDING_COMMANDS = {
         args: [MESSAGE_ID],
         options: [IN_CONVERSATION],
         exits: SEND_EXITS,
-        examples: ['converse-cli retract 01a183d1-2cc2-74f2-8de3-fd8a38834143'],
+        examples: ['converse retract 01a183d1-2cc2-74f2-8de3-fd8a38834143'],
         async run(ctx) {
             const { options, out } = ctx;
             const id = takeOne(ctx, 'message id');
@@ -136,10 +157,10 @@ export const SENDING_COMMANDS = {
                 'Send it in the clear, if it failed because it could not be encrypted. The daemon refuses this unless the config\'s "allow_unencrypted_resend" is true',
             ),
         ],
-        exits: [...LOOKUP_EXITS, EXIT.PENDING],
+        exits: [...LOOKUP_EXITS, EXIT.PENDING, EXIT.NOT_JOINED],
         examples: [
-            'converse-cli resend 01a183d1-2cc2-74f2-8de3-fd8a38834143',
-            'converse-cli resend 01a183d1-2cc2-74f2-8de3-fd8a38834143 --unencrypted',
+            'converse resend 01a183d1-2cc2-74f2-8de3-fd8a38834143',
+            'converse resend 01a183d1-2cc2-74f2-8de3-fd8a38834143 --unencrypted',
         ],
         // Failed sends are the user's to deal with, so these always ask for full access.
         async run(ctx) {
@@ -163,7 +184,7 @@ export const SENDING_COMMANDS = {
         args: [['<id>', 'The id of the failed send, as read printed it']],
         options: [IN_CONVERSATION],
         exits: LOOKUP_EXITS,
-        examples: ['converse-cli discard 01a183d1-2cc2-74f2-8de3-fd8a38834143'],
+        examples: ['converse discard 01a183d1-2cc2-74f2-8de3-fd8a38834143'],
         async run(ctx) {
             const { options, out } = ctx;
             const id = takeOne(ctx, 'message id');
@@ -197,7 +218,7 @@ export const SENDING_COMMANDS = {
             ),
         ],
         exits: SEND_EXITS,
-        examples: ['converse-cli react 01a183d1-2cc2-74f2-8de3-fd8a38834143 :thumbsup:'],
+        examples: ['converse react 01a183d1-2cc2-74f2-8de3-fd8a38834143 :thumbsup:'],
         async run(ctx) {
             const { args, options, out } = ctx;
             if (args.length !== 2) throw new UsageError('Expected a message id and an emoji.');
@@ -278,9 +299,9 @@ async function readUpload(file_path) {
 
         return Buffer.concat(chunks, length).toString('base64');
     } catch (e) {
-        if (!e.code) throw e;
+        if (!(/** @type {NodeJS.ErrnoException} */ (e).code)) throw e;
         throw new Error(
-            `The file at ${quote(file_path)} could not be read (${e.code}). ` +
+            `The file at ${quote(file_path)} could not be read (${/** @type {NodeJS.ErrnoException} */ (e).code}). ` +
                 'Check that the path names a readable file, then try again.',
             { cause: e },
         );

@@ -71,7 +71,7 @@ export function shouldCreateGroupchatMessage(attrs) {
  *
  * @param {import('../../shared/types').ChatBoxOrMUC} _
  * @param {object[]} queries
- * @param {object} attrs
+ * @param {Record<string, any>} attrs
  * @returns {object[]}
  */
 export function getMUCDuplicateMessageQueries(_, queries, attrs) {
@@ -131,7 +131,7 @@ export async function onWindowStateChanged() {
  * are correct, for example that the "type" is set to
  * "chatroom".
  * @param {string} jid
- * @param {Object} settings
+ * @param {Record<string, any>} settings
  */
 export async function openChatRoom(jid, settings) {
     settings.type = CHATROOMS_TYPE;

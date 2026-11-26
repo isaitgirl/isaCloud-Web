@@ -19,6 +19,10 @@
 
     "strict": false,
     "noImplicitAny": false,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true,
     "skipLibCheck": true,
     "resolveJsonModule": true
   }

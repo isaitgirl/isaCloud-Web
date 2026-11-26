@@ -19,42 +19,42 @@ fi
 node scripts/generate-changelog-json.mjs --check
 
 MAIN_SPECS=(
-    src/plugins/omemo-views/tests/
-    src/plugins/reactions-views/tests/
-    src/plugins/recent-list/tests/recent-list.js
-    src/plugins/rosterview/tests/
-    src/plugins/chatview/tests/composer-panels.js
-    src/plugins/chatview/tests/dropdown-position.js # isaCloud: menu da mensagem fora do composer
-    src/plugins/chatview/tests/attachment-menu.js # isaCloud: anexos em pt_BR
-    src/plugins/chatview/tests/markers.js
-    src/plugins/chatview/tests/messages.js
-    src/plugins/chatview/tests/message-form.js # isaCloud: Shift+Enter quebra linha no compositor
-    src/plugins/chatview/tests/message-window.js # isaCloud: janela da lista de mensagens
-    src/plugins/chatview/tests/retractions.js
-    src/plugins/muc-views/tests/composer-panels.js
-    src/plugins/muc-views/tests/muc.js
-    src/plugins/muc-views/tests/muc-list-modal.js
-    src/plugins/modal/tests/toast-action.js # isaCloud: ação no toast
-    src/plugins/profile/tests/
-    src/plugins/roomslist/tests/
-    src/plugins/isacloud-changelog/tests/ # isaCloud: novidades na lista
-    src/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
-    src/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
-    src/plugins/isacloud-polls/tests/ # isaCloud: enquetes (Fluux)
-    src/plugins/isacloud-replies/tests/ # isaCloud: respostas (XEP-0461)
-    src/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
-    src/plugins/chatview/tests/replies.js # isaCloud: núcleo das respostas
-    src/plugins/muc-views/tests/replies.js # isaCloud: respostas em grupo
-    src/plugins/muc-views/tests/muc-messages.js
-    src/plugins/muc-views/tests/nickname.js
-    src/plugins/muc-views/tests/add-private-group.js # isaCloud: criar grupo privado
-    src/plugins/muc-views/tests/muc-add-modal.js
-    src/plugins/muc-views/tests/occupant-sidebar.js # isaCloud: painel do participante
-    src/plugins/muc-views/tests/muc-private-messages.js
-    src/plugins/muc-views/tests/retractions.js
-    src/plugins/time-views/tests/entity-time-alert.js
-    src/shared/modals/tests/image-modal.js # isaCloud: visualizador de imagem com zoom e arrasto
-    src/apps/social/tests/compose-rich.js # isaCloud: mesmo editor Lexical do compositor
+    src/web/plugins/omemo-views/tests/
+    src/web/plugins/reactions-views/tests/
+    src/web/plugins/recent-list/tests/recent-list.js
+    src/web/plugins/rosterview/tests/
+    src/web/plugins/chatview/tests/composer-panels.js
+    src/web/plugins/chatview/tests/dropdown-position.js # isaCloud: menu da mensagem fora do composer
+    src/web/plugins/chatview/tests/attachment-menu.js # isaCloud: anexos em pt_BR
+    src/web/plugins/chatview/tests/markers.js
+    src/web/plugins/chatview/tests/messages.js
+    src/web/plugins/chatview/tests/message-form.js # isaCloud: Shift+Enter quebra linha no compositor
+    src/web/plugins/chatview/tests/message-window.js # isaCloud: janela da lista de mensagens
+    src/web/plugins/chatview/tests/retractions.js
+    src/web/plugins/muc-views/tests/composer-panels.js
+    src/web/plugins/muc-views/tests/muc.js
+    src/web/plugins/muc-views/tests/muc-list-modal.js
+    src/web/plugins/modal/tests/toast-action.js # isaCloud: ação no toast
+    src/web/plugins/profile/tests/
+    src/web/plugins/roomslist/tests/
+    src/web/plugins/isacloud-changelog/tests/ # isaCloud: novidades na lista
+    src/web/plugins/isacloud-stickers/tests/ # isaCloud: figurinhas
+    src/web/plugins/isacloud-conference/tests/ # isaCloud: vídeo conferência
+    src/web/plugins/isacloud-polls/tests/ # isaCloud: enquetes (Fluux)
+    src/web/plugins/isacloud-replies/tests/ # isaCloud: respostas (XEP-0461)
+    src/web/plugins/isacloud-update/tests/ # isaCloud: aviso de nova versão
+    src/web/plugins/chatview/tests/replies.js # isaCloud: núcleo das respostas
+    src/web/plugins/muc-views/tests/replies.js # isaCloud: respostas em grupo
+    src/web/plugins/muc-views/tests/muc-messages.js
+    src/web/plugins/muc-views/tests/nickname.js
+    src/web/plugins/muc-views/tests/add-private-group.js # isaCloud: criar grupo privado
+    src/web/plugins/muc-views/tests/muc-add-modal.js
+    src/web/plugins/muc-views/tests/occupant-sidebar.js # isaCloud: painel do participante
+    src/web/plugins/muc-views/tests/muc-private-messages.js
+    src/web/plugins/muc-views/tests/retractions.js
+    src/web/plugins/time-views/tests/entity-time-alert.js
+    src/web/shared/modals/tests/image-modal.js # isaCloud: visualizador de imagem com zoom e arrasto
+    src/web/apps/social/tests/compose-rich.js # isaCloud: mesmo editor Lexical do compositor
 )
 
 HEADLESS_SPECS=(

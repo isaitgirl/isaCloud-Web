@@ -39,14 +39,18 @@ export const accessFor = (env) => (getSocketFromEnv(env) ? 'restricted' : loadCo
  * which can differ for a daemon on another host.
  * @param {import('./types').Context} ctx
  * @param {string} method
- * @param {Object} params
+ * @param {Record<string, any>} params
  */
 export async function requestDrafts(ctx, method, params) {
     try {
         return await request(ctx, method, params);
     } catch (e) {
         // Given only a socket, there's no other level to try.
-        if (e.code !== ERRORS.ACCESS_DENIED || getSocketFromEnv(ctx.env)) throw e;
+        if (
+            /** @type {import('@converse/daemon/protocol').RPCError} */ (e).code !== ERRORS.ACCESS_DENIED ||
+            getSocketFromEnv(ctx.env)
+        )
+            throw e;
 
         return request(ctx, method, params, { access: 'full' });
     }
@@ -58,10 +62,9 @@ export async function requestDrafts(ctx, method, params) {
  * what the output depends on.
  * @param {import('./types').Context} ctx
  * @param {string} method
- * @param {Object} [params]
- * @param {Object} [options]
- * @param {boolean} [options.spawn]
- * @param {import('@converse/daemon/types').Access} [options.access] - Defaults to the configured level
+ * @param {Record<string, any>} [params]
+ * @param {Pick<import('@converse/daemon/types').ConnectOptions, 'spawn'|'access'>} [options] - `access`
+ *  defaults to the configured level
  */
 export async function request(ctx, method, params, { spawn = true, access = accessFor(ctx.env) } = {}) {
     const client = await connect({ spawn, env: ctx.env, access });
@@ -85,6 +88,7 @@ export function reportSend(result, { options, out, err, hello }) {
         out(formatJSON(result));
     } else if (result.outcome === 'sent') {
         out(`Sent to ${result.message.conversation} as ${result.message.id}\n`);
+        warnIfUnconfirmed(result.message, { err });
     } else if (result.outcome === 'pending') {
         out(
             `Not sent yet to ${result.message.conversation}: the connection dropped. ${result.message.id} ` +
@@ -100,9 +104,27 @@ export function reportSend(result, { options, out, err, hello }) {
         const { schedule } = result;
         out(`Scheduled ${schedule.id} to ${schedule.to} for ${schedule.send_at}.\n`);
     } else {
-        err(`converse-cli: ${result.message}\n`);
+        err(`converse: ${result.message}\n`);
     }
     return EXIT_FOR_OUTCOME[result.outcome];
+}
+
+/**
+ * Says on stderr that a room didn't echo a message we just sent it, so that
+ * "sent" isn't read as "the room has it". A chat's message is confirmed only
+ * by a receipt, which many clients never send, so it isn't warned about.
+ * @param {import('@converse/daemon/types').MessageDTO} message
+ * @param {Pick<import('./types').Context, 'err'>} ctx
+ */
+export function warnIfUnconfirmed(message, { err }) {
+    // Only a room's messages have a nickname. A reaction returns the message it
+    // was sent to, which can be someone else's.
+    if (message.status !== 'sent' || message.nick === null || message.delivered) return;
+
+    err(
+        `converse: warning: ${message.conversation} hasn't confirmed ${message.id} yet, so it may not ` +
+            'have reached the room. Check with read before sending it again.\n',
+    );
 }
 
 /**

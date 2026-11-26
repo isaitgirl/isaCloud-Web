@@ -1,5 +1,5 @@
 /**
- * @typedef {module:shared.api.user} LoginHookPayload
+ * @typedef {import('../../shared/api/types').LoginHookPayload} LoginHookPayload
  */
 import log from '@converse/log';
 import api from '../../shared/api/index.js';
@@ -114,7 +114,9 @@ export async function restoreBOSHSession() {
             return true;
         } catch (e) {
             if (!isTestEnv()) {
-                log.warn('Could not restore session for jid: ' + jid + ' Error message: ' + e.message);
+                log.warn(
+                    'Could not restore session for jid: ' + jid + ' Error message: ' + /** @type {Error} */ (e).message,
+                );
             }
             return false;
         }

@@ -72,7 +72,10 @@ class DeviceList extends OMEMOVersionAwareModel {
                 if (e === null) {
                     this.#last_fetch_failed = true;
                     log.error(`Timeout error while fetching OMEMO devices for ${this.get('jid')}`);
-                } else if (u.isElement(e) && (await parsers.parseErrorStanza(e)) instanceof errors.ItemNotFoundError) {
+                } else if (
+                    u.isElement(e) &&
+                    (await parsers.parseErrorStanza(/** @type {Element} */ (e))) instanceof errors.ItemNotFoundError
+                ) {
                     // An authoritative "no such node" — the contact simply has
                     // no device list for this OMEMO version. Not a failure, so
                     // we don't keep retrying on every send.
@@ -104,15 +107,17 @@ class DeviceList extends OMEMOVersionAwareModel {
             this._devices_promise = undefined;
         }
         if (this._devices_promise === undefined) {
-            this._devices_promise = new Promise((resolve) => {
-                this.devices.fetch({
-                    success: (c) => resolve(this.onDevicesFound(c)),
-                    error: (_, e) => {
-                        log.error(e);
-                        resolve();
-                    },
-                });
-            });
+            this._devices_promise = /** @type {Promise<void>} */ (
+                new Promise((resolve) => {
+                    this.devices.fetch({
+                        success: (c) => resolve(this.onDevicesFound(c)),
+                        error: (_, e) => {
+                            log.error(e);
+                            resolve();
+                        },
+                    });
+                })
+            );
         }
         return this._devices_promise;
     }
@@ -227,14 +232,16 @@ class DeviceList extends OMEMOVersionAwareModel {
                 .map((id) => this.devices.get(id))
                 .map(
                     (d) =>
-                        new Promise((resolve) =>
-                            d.destroy({
-                                success: resolve,
-                                error: (_, e) => {
-                                    log.error(e);
-                                    resolve();
-                                },
-                            }),
+                        /** @type {Promise<void>} */ (
+                            new Promise((resolve) =>
+                                d.destroy({
+                                    success: resolve,
+                                    error: (_, e) => {
+                                        log.error(e);
+                                        resolve();
+                                    },
+                                }),
+                            )
                         ),
                 ),
         );

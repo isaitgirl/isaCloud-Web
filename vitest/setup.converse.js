@@ -17,6 +17,13 @@ function addStylesheet(href) {
 }
 
 addStylesheet('/dist/converse.css');
-addStylesheet('/base/src/shared/tests/tests.css');
+addStylesheet('/base/src/web/shared/tests/tests.css');
 
 document.title = 'Converse Tests';
+
+// The browser's credential store would otherwise be asked for a password,
+// with a prompt, whenever a test logs in without one. Specs that need it to
+// hand one over stub it themselves.
+beforeEach(() => {
+    if (navigator.credentials) vi.spyOn(navigator.credentials, 'get').mockResolvedValue(null);
+});

@@ -94,7 +94,7 @@ export async function parseErrorStanza(stanza) {
  * @param {Element} stanza - The message stanza
  * @param {Element} original_stanza - The encapsulating stanza which contains
  *      the message stanza.
- * @returns {Object}
+ * @returns {Record<string, any>}
  */
 export function getStanzaIDs(stanza, original_stanza) {
     // Generic stanza ids
@@ -127,7 +127,7 @@ export function getStanzaIDs(stanza, original_stanza) {
 /**
  * Returns the XEP-0359 stanza-ids in the passed in message attributes, as set
  * by {@link getStanzaIDs}, keyed by the JID of the entity which assigned them.
- * @param {object} attrs - Message attributes
+ * @param {Record<string, any>} attrs - Message attributes
  * @returns {Record<string, string>}
  */
 export function getStanzaIDsByJID(attrs) {
@@ -322,7 +322,7 @@ export function getErrorAttributes(stanza) {
 /**
  * Given a message stanza, extract XEP-0461 reply attributes
  * @param {Element} stanza - The message stanza
- * @returns {Object} An object containing reply_to_id and reply_to if present
+ * @returns {Record<string, any>} An object containing reply_to_id and reply_to if present
  */
 export function getReplyAttributes(stanza) {
     const reply = sizzle(`reply[xmlns="${Strophe.NS.REPLY}"]`, stanza).pop();
@@ -431,7 +431,7 @@ export function getChatState(stanza) {
 
 /**
  * @param {Element} stanza
- * @param {Object} attrs
+ * @param {Record<string, any>} attrs
  */
 export function isValidReceiptRequest(stanza, attrs) {
     return (
@@ -554,18 +554,16 @@ function parseXFormField(field, readonly, stanza) {
 
     if (type === 'list-single' || type === 'list-multi') {
         const values = Array.from(field.querySelectorAll(':scope > value')).map((el) => el?.textContent);
-        const options = Array.from(field.querySelectorAll(':scope > option')).map(
-            (/** @type {HTMLElement} */ option) => {
-                const value = option.querySelector('value')?.textContent;
-                return {
-                    value,
-                    label: option.getAttribute('label'),
-                    selected: values.includes(value),
-                    required: !!field.querySelector('required'),
-                    ...result,
-                };
-            },
-        );
+        const options = Array.from(field.querySelectorAll(':scope > option')).map((option) => {
+            const value = option.querySelector('value')?.textContent;
+            return {
+                value,
+                label: option.getAttribute('label'),
+                selected: values.includes(value),
+                required: !!field.querySelector('required'),
+                ...result,
+            };
+        });
         return {
             type,
             options,

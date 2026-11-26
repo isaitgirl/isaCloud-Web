@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const SOURCE = join(ROOT, 'CHANGELOG-USERS.md');
-const OUTPUT = join(ROOT, 'src/plugins/isacloud-changelog/changelog.json');
+const OUTPUT = join(ROOT, 'src/web/plugins/isacloud-changelog/changelog.json');
 const CONSTANTS = join(ROOT, 'src/headless/shared/constants.js');
 
 // "### v15-38 — 23/11/2026", with an em dash, an en dash or a hyphen.

@@ -7,8 +7,8 @@ import { createStore, initStorage } from './storage.js';
 import { local_driver, sync_driver } from './extension-storage.js';
 import { getNodeStore } from './node-store.js';
 import { generateResource, getConnectionServiceURL } from '../shared/connection/utils.js';
-import { isSameBareJID, isValidJID } from './jid.js';
-import { addUnloadListener, hasCredentialsAPI, IS_BROWSER } from './environment.js';
+import { isSameBareJID } from './jid.js';
+import { addUnloadListener, IS_BROWSER } from './environment.js';
 import { getRememberedSession } from './remembered-session.js';
 import { isResumable, isTestEnv } from './session.js';
 import { isPersistableModel } from './object.js';
@@ -225,7 +225,15 @@ export async function setUserJID(jid) {
  * @param {string} jid
  */
 export async function initSession(_converse, jid) {
-    const is_shared_session = _converse.api.settings.get('connection_options').worker;
+    /**
+     * *Hook* through which a plugin says that the user's session is shared by
+     * all tabs (as one held by a shared worker is), so that its data is kept
+     * where every tab can read it, rather than in this tab only.
+     * @event _converse#shouldShareSession
+     * @param {null} context
+     * @param {boolean} shared
+     */
+    const is_shared_session = await _converse.api.hook('shouldShareSession', null, false);
 
     const bare_jid = Strophe.getBareJidFromJid(jid).toLowerCase();
     const id = `converse.session-${bare_jid}`;
@@ -297,25 +305,6 @@ export async function cleanup(_converse) {
     }
 }
 
-async function getLoginCredentialsFromBrowser() {
-    const jid = await getRememberedSession();
-    if (!jid) return null;
-
-    try {
-        const creds = await navigator.credentials.get({ password: true });
-        if (creds && creds.type == 'password' && isValidJID(creds.id)) {
-            // XXX: We don't actually compare `creds.id` with `jid` because
-            // the user might have been presented a list of credentials with
-            // which to log in, and we want to respect their wish.
-            await setUserJID(creds.id);
-            return { 'jid': creds.id, 'password': creds.password };
-        }
-    } catch (e) {
-        log.error(e);
-        return null;
-    }
-}
-
 async function getLoginCredentialsFromSCRAMKeys() {
     const jid = await getRememberedSession();
     if (!jid) return null;
@@ -341,27 +330,34 @@ async function canLogInWithOwnCredentials(jid, password) {
 }
 
 /**
- * Gets the password the browser's credential store holds for the JID, if it
- * hands it over without asking the user, which only browsers that store
- * passwords for sites (`PasswordCredential`) do.
- * @param {string} jid - A bare JID
+ * Asks the credential sources of last resort for credentials to log in with.
+ * @param {Omit<import('./types').FallbackCredentialsHookPayload, 'credentials'>} payload
  * @returns {Promise<import('./types').Credentials|null>}
  */
-async function getUnattendedBrowserCredentials(jid) {
-    if (!IS_BROWSER || !('PasswordCredential' in window)) return null;
+async function getFallbackCredentials(payload) {
+    const { api } = _converse;
+    /**
+     * *Hook* through which credential sources of last resort, such as the
+     * browser's credential store, supply the credentials to log in with, once
+     * Converse has none of its own and no other source has any. A source that
+     * supplies credentials returns them in `credentials`.
+     *
+     * It's asked when logging in, and before that when deciding whether a
+     * remembered session can be resumed. The payload then has `unattended`
+     * set and the remembered account's bare `jid`, and a source may only
+     * supply credentials for that account, without asking the user.
+     * @event _converse#fallbackLoginCredentials
+     * @param {null} context
+     * @param {import('./types').FallbackCredentialsHookPayload} payload
+     */
     try {
-        const creds = /** @type {Credential & { password?: string }} */ (
-            await navigator.credentials.get(
-                /** @type {CredentialRequestOptions} */ ({ password: true, mediation: 'silent' }),
-            )
-        );
-        if (creds?.type === 'password' && creds.password && Strophe.getBareJidFromJid(creds.id).toLowerCase() === jid) {
-            return { jid: creds.id, password: creds.password };
-        }
+        const { credentials } = await api.hook('fallbackLoginCredentials', null, { ...payload, credentials: null });
+        return credentials ?? null;
     } catch (e) {
+        log.error('getFallbackCredentials: a credential source failed');
         log.error(e);
+        return null;
     }
-    return null;
 }
 
 /**
@@ -374,8 +370,8 @@ async function getUnattendedBrowserCredentials(jid) {
  *  A session for another account isn't resumed.
  * @param {string} [password]
  * @returns {Promise<{ credentials: import('./types').Credentials|null }|null>} The
- *  resumed session, with the credentials to log in with if they came from the
- *  browser's credential store, or `null` if it wasn't resumed.
+ *  resumed session, with the credentials to log in with if a credential source
+ *  obtained them while answering, or `null` if it wasn't resumed.
  */
 export async function resumeSession(jid, password) {
     const { api } = _converse;
@@ -416,8 +412,10 @@ export async function resumeSession(jid, password) {
         credentials = null;
     }
     if (!own && !can_log_in) {
-        credentials = await getUnattendedBrowserCredentials(remembered);
-        if (!credentials) return null;
+        // Nobody vouches for the account, so sources of last resort are
+        // asked, which have to answer without the user.
+        credentials = await getFallbackCredentials({ automatic: true, unattended: true, jid: remembered });
+        if (!credentials || !isSameBareJID(credentials.jid, remembered)) return null;
     }
 
     await setUserJID(jid || credentials?.jid || remembered);
@@ -455,14 +453,14 @@ export async function attemptNonPreboundSession(credentials, automatic) {
      *
      * Plugins are asked in the order they registered their listeners. If no
      * listener supplies credentials, Converse uses the password of an earlier
-     * attempt, then stored SCRAM keys, then the browser's credential store.
+     * attempt, then stored SCRAM keys, then asks `fallbackLoginCredentials`.
      * @event _converse#beforeAttemptNonPreboundSession
      * @param {unknown} context
      * @param {import('./types').CredentialsHookPayload} payload
      */
     let new_creds = credentials;
     try {
-        ({ credentials: new_creds } = await api.hook('beforeAttemptNonPreboundSession', this, {
+        ({ credentials: new_creds } = await api.hook('beforeAttemptNonPreboundSession', undefined, {
             credentials,
             automatic,
         }));
@@ -491,10 +489,8 @@ export async function attemptNonPreboundSession(credentials, automatic) {
             if (credentials) return connect(credentials);
         }
 
-        if (!isTestEnv() && hasCredentialsAPI()) {
-            const credentials = await getLoginCredentialsFromBrowser();
-            if (credentials) return connect(credentials);
-        }
+        const fallback = await getFallbackCredentials({ automatic });
+        if (fallback) return connect(fallback);
 
         if (!isTestEnv()) log.debug("attemptNonPreboundSession: Couldn't find credentials to log in with");
 
@@ -551,9 +547,7 @@ export async function savedLoginInfo(jid) {
 /**
  * @param {Object} [credentials]
  * @param {string} [credentials.jid]
- * @param {string} credentials.password
- * @param {Object} credentials.password
- * @param {string} credentials.password.ck
+ * @param {string|{ ck: string }} credentials.password
  * @param {boolean} [credentials.renewable] - Whether the source of the
  *  credentials can renew them if the server rejects them.
  * @returns {Promise<void>}
@@ -654,8 +648,8 @@ async function connect(credentials) {
 
 /**
  * @param {Model} model
- * @param {Object} attributes
- * @param {Object} options
+ * @param {Record<string, any>} attributes
+ * @param {Record<string, any>} [options]
  */
 export function safeSave(model, attributes, options) {
     if (isPersistableModel(model)) {

@@ -32,6 +32,7 @@ class PopularEmojis extends Model {
 
     async fetchPopularEmojis() {
         if (_converse.state.session.get(this.fetched_flag)) {
+            /** @type {import('../../shared/types').OpenPromise} */
             const deferred = getOpenPromise();
             this.fetch({
                 success: () => deferred.resolve(),
@@ -61,7 +62,7 @@ class PopularEmojis extends Model {
             this.applyPopularEmojisFromStanza(iq);
         } catch (e) {
             // item-not-found is expected when the user has never saved a custom list
-            if (e?.querySelector?.('item-not-found')) return;
+            if (/** @type {Element} */ (e)?.querySelector?.('item-not-found')) return;
             log.warn('fetchPopularEmojisFromServer: could not fetch popular emojis from PubSub');
             log.error(e);
             return;

@@ -34,7 +34,7 @@ export const READING_COMMANDS = {
             'there is one (quoted, as someone else chose it), how many messages are unread for this ' +
             "consumer, and when the conversation was last active. Unread counts are this consumer's " +
             'own: reading them here changes nothing in your other clients.',
-        examples: ['converse-cli conversations'],
+        examples: ['converse conversations'],
         async run(ctx) {
             const { options, out, err } = ctx;
             /** @type {{ conversations: import('@converse/daemon/types').ConversationSummary[] }} */
@@ -62,7 +62,7 @@ export const READING_COMMANDS = {
             'command are history, which inbox and the unread counts leave out. On a first run, look ' +
             'at conversations and read the recent ones.',
         options: [FULL],
-        examples: ['converse-cli inbox'],
+        examples: ['converse inbox'],
         async run(ctx) {
             const { options, out, err } = ctx;
             /** @type {import('@converse/daemon/types').Inbox} */
@@ -103,8 +103,8 @@ export const READING_COMMANDS = {
         ],
         exits: LOOKUP_EXITS,
         examples: [
-            'converse-cli read "Juliet Capulet" --since 2h',
-            'converse-cli read juliet@capulet.lit --before 01a183d1-2cc2-74f2-8de3-fd8a38834143',
+            'converse read "Juliet Capulet" --since 2h',
+            'converse read juliet@capulet.lit --before 01a183d1-2cc2-74f2-8de3-fd8a38834143',
         ],
         async run(ctx) {
             const { options, out, err } = ctx;
@@ -114,7 +114,7 @@ export const READING_COMMANDS = {
             try {
                 since = options.since === undefined ? undefined : parseSince(options.since);
             } catch (e) {
-                throw new UsageError(e.message);
+                throw new UsageError(/** @type {Error} */ (e).message);
             }
             /** @type {import('@converse/daemon/types').MessageList} */
             const { messages } = await request(ctx, 'messages.list', {
@@ -150,7 +150,7 @@ export const READING_COMMANDS = {
             FULL,
         ],
         exits: LOOKUP_EXITS,
-        examples: ['converse-cli search balcony --conversation "Juliet Capulet"'],
+        examples: ['converse search balcony --conversation "Juliet Capulet"'],
         async run(ctx) {
             const { args, options, out, err } = ctx;
             if (args.length === 0) throw new UsageError('Expected what to search for.');
@@ -193,8 +193,8 @@ export const READING_COMMANDS = {
         ],
         exits: [EXIT.TIMEOUT, ...LOOKUP_EXITS],
         examples: [
-            'converse-cli wait --from juliet@capulet.lit --timeout 300',
-            'converse-cli wait --from juliet@capulet.lit > answer.txt & converse-cli send juliet@capulet.lit "Ready?"; wait $!',
+            'converse wait --from juliet@capulet.lit --timeout 300',
+            'converse wait --from juliet@capulet.lit > answer.txt & converse send juliet@capulet.lit "Ready?"; wait $!',
         ],
         async run(ctx) {
             const { options, out, err, env } = ctx;
@@ -267,9 +267,9 @@ export const READING_COMMANDS = {
         ],
         exits: LOOKUP_EXITS,
         examples: [
-            'converse-cli watch --inbox',
-            'converse-cli watch --conversation lobby@conference.example.org --mention --batch 10',
-            "converse-cli watch --json | jq -r '.message.body'",
+            'converse watch --inbox',
+            'converse watch --conversation lobby@conference.example.org --mention --batch 10',
+            "converse watch --json | jq -r '.message.body'",
         ],
         async run(ctx) {
             const { options, err, env } = ctx;
@@ -371,11 +371,11 @@ async function subscribeInbox(client, conversation) {
     try {
         return await client.request('inbox.subscribe', { conversation });
     } catch (e) {
-        if (e.code !== ERRORS.METHOD_NOT_FOUND) throw e;
+        if (/** @type {import('@converse/daemon/protocol').RPCError} */ (e).code !== ERRORS.METHOD_NOT_FOUND) throw e;
 
         throw new RPCError(
-            e.code,
-            "The daemon running is older than this converse-cli, and can't mark what watch prints seen, " +
+            /** @type {import('@converse/daemon/protocol').RPCError} */ (e).code,
+            "The daemon running is older than this CLI, and can't mark what watch prints seen, " +
                 'as --inbox needs. Restart it with "daemon.stop", and run watch again.',
             { see: ['daemon.stop'] },
         );
@@ -392,7 +392,7 @@ const SEARCHED = {
  * Subscribes for the first incoming message that matches, and resolves with
  * it, or with null once `seconds` have passed.
  * @param {import('@converse/daemon/client').Client} client
- * @param {Object} filter - The subscription's filter, as `events.subscribe` takes it
+ * @param {Record<string, any>} filter - The subscription's filter, as `events.subscribe` takes it
  * @param {number} seconds
  * @returns {Promise<import('@converse/daemon/types').MessageDTO|null>}
  */

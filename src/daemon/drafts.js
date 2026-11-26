@@ -10,10 +10,10 @@
  */
 import { api } from '@converse/headless';
 import { withdrawalNotice, draftNotice } from './notices.js';
-import { toMessageDTO } from './dto.js';
+import { getID, toMessageDTO } from './dto.js';
 import { findOwn, findTarget } from './find.js';
 import { ERRORS, RPCError } from './protocol.js';
-import { outcomeOf, retractMessage, sendMessage, sendReaction } from './send.js';
+import { confirmAndRecord, outcomeOf, retractMessage, sendMessage, sendReaction } from './send.js';
 import { readStateFile, writeStateFile } from './state-file.js';
 
 /**
@@ -67,7 +67,7 @@ export function createDraftStore(file) {
 export function createDrafter({ drafts, audit, events, owner, mode }) {
     /**
      * @param {import('./types').Client} client
-     * @param {{ to: string } & import('./types').DraftAction} attrs
+     * @param {{ to: string, type?: import('./types').SendType } & import('./types').DraftAction} attrs
      * @param {import('./types').Routing} routing
      * @param {import('./types').MessageDTO|null} [target] - The message the draft acts on, for the owner's notice
      * @returns {Promise<import('./types').SendResult>}
@@ -172,21 +172,26 @@ export function draftMethods({ drafts, audit, events, owner, mode }) {
             } finally {
                 sending.delete(id);
             }
+            // It went out: a message the room turns down is kept as a failed send, not as a draft.
             drafts.remove(id);
-            const outcome = outcomeOf(message);
-            audit.record({
+            events.publishDraft('sent', draft);
+            /** @type {Omit<import('./types').AuditEntry, 'outcome'|'id'>} */
+            const entry = {
                 consumer: client.consumer,
                 to: draft.to,
-                outcome,
-                id: message.id,
                 draft: id,
                 approved_by: client.access,
                 ...actionOf(draft),
                 route: 'draft',
                 mode,
-            });
-            events.publishDraft('sent', draft);
-            return { outcome, message };
+            };
+            // A retraction or a reaction is shown on the message it acts on, which went out before.
+            if (['send', 'reply', 'correct', 'upload'].includes(draft.action)) {
+                return { outcome: outcomeOf(message), message: await confirmAndRecord(message, audit, entry) };
+            }
+            // Its status is that of the message acted on. The retraction or reaction itself went out, or threw.
+            audit.record({ ...entry, outcome: 'sent', id: getID(message) });
+            return { outcome: 'sent', message: toMessageDTO(message) };
         },
 
         /**
@@ -223,27 +228,29 @@ export function draftMethods({ drafts, audit, events, owner, mode }) {
  * Does what a draft says, as the user: sends it, or applies it to the message
  * it acts on.
  * @param {import('./types').Draft} draft
- * @returns {Promise<import('./types').MessageDTO>}
+ * @returns {Promise<import('@converse/headless').BaseMessage>} The message sent, or the one acted on
  */
 async function deliver(draft) {
-    const { to } = draft;
+    const { to, type } = draft;
     switch (draft.action) {
-        case 'retract':
-            return retractMessage(await findOwn(draft.target, to, 'retract'), draft.target);
-        case 'react':
-            return sendReaction(await findTarget(draft.target, to), draft.body, draft.remove);
+        case 'retract': {
+            const message = await findOwn(draft.target, to, 'retract');
+            await retractMessage(message, draft.target);
+            return message;
+        }
+        case 'react': {
+            const message = await findTarget(draft.target, to);
+            await sendReaction(message, draft.body, draft.remove);
+            return message;
+        }
         case 'reply':
-            return sendMessage(to, draft.body, {
-                replying_to: await findTarget(draft.target, to),
-            });
+            return sendMessage(to, draft.body, { replying_to: await findTarget(draft.target, to) }, {}, type);
         case 'correct':
-            return sendMessage(to, draft.body, {
-                correcting: await findOwn(draft.target, to, 'correct'),
-            });
+            return sendMessage(to, draft.body, { correcting: await findOwn(draft.target, to, 'correct') }, {}, type);
         case 'upload':
-            return sendMessage(to, draft.body, {}, { oob_url: draft.body });
+            return sendMessage(to, draft.body, {}, { oob_url: draft.body }, type);
         default:
-            return sendMessage(to, draft.body);
+            return sendMessage(to, draft.body, {}, {}, type);
     }
 }
 

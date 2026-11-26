@@ -75,7 +75,7 @@ export function getAppSetting(key) {
 }
 
 /**
- * @param {Object} settings - New settings (or new defaults for existing settings).
+ * @param {Record<string, any>} settings - New settings (or new defaults for existing settings).
  * @param {Object} [options]
  * @param {string[]} [options.deep_merge] - Keys whose user-provided object value
  *  should be deep-merged onto the default instead of replacing it wholesale. The
@@ -127,7 +127,7 @@ export function unregisterListener(name, func) {
  * @param {string} [val] The value, if the previous parameter is a key
  */
 export function updateAppSettings(key, val) {
-    if (key == null) return this; // eslint-disable-line no-eq-null
+    if (key == null) return; // eslint-disable-line no-eq-null
 
     let attrs;
     if (key instanceof Object) {

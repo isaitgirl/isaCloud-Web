@@ -21,6 +21,7 @@ export { EmojiPicker } from './plugins/emoji/index.js';
 export { Bookmark, Bookmarks } from './plugins/bookmarks/index.js'; // XEP-0199 XMPP Ping
 import './plugins/blocklist/index.js';
 import './plugins/bosh/index.js'; // XEP-0206 BOSH
+import './plugins/browser-credentials/index.js'; // Credential Management API
 import './plugins/caps/index.js'; // XEP-0115 Entity Capabilities
 export { ChatBox, Message, Messages } from './plugins/chat/index.js'; // RFC-6121 Instant messaging
 import './plugins/chatboxes/index.js';
@@ -56,6 +57,7 @@ import './plugins/version/index.js'; // XEP-0092 Software Version
 // RFC-6121 Contacts Roster
 export { RosterContact, RosterContacts, RosterFilter, Presence, Presences } from './plugins/roster/index.js';
 
+import './plugins/shared-worker/index.js'; // Connection shared by tabs
 import './plugins/smacks/index.js'; // XEP-0198 Stream Management
 export { Profile } from './plugins/status/index.js';
 export { VCard, VCards } from './plugins/vcard/index.js'; // XEP-0054 VCard-temp
@@ -77,6 +79,7 @@ export { api, converse, _converse, i18n, log, u, constants, parsers, errors };
 // declaration file, so these have to be reachable from the entry point.
 /**
  * @typedef {import('./shared/_converse.js').ConversePrivateGlobal} ConversePrivateGlobal
+ * @typedef {import('./shared/api/types').AttachSessionPayload} AttachSessionPayload
  * @typedef {import('./shared/chatbox.js').default} ChatBoxBase
  * @typedef {import('./shared/types').ChatBoxOrMUC} ChatBoxOrMUC
  * @typedef {import('./shared/types').ClearSessionReason} ClearSessionReason
@@ -97,7 +100,10 @@ export { api, converse, _converse, i18n, log, u, constants, parsers, errors };
  * @typedef {import('./plugins/muc/types').MUCMessageAttributes} MUCMessageAttributes
  * @typedef {import('./plugins/muc/types').MUCMessageEventData} MUCMessageEventData
  * @typedef {import('./plugins/muc/types').MUCRoomInfo} MUCRoomInfo
+ * @typedef {import('./plugins/muc/types').MUCAffiliation} MUCAffiliation
+ * @typedef {import('./plugins/muc/types').NonOutcastAffiliation} NonOutcastAffiliation
  * @typedef {import('./plugins/omemo/types').OMEMOVersion} OMEMOVersion
+ * @typedef {import('./shared/types').OpenPromise} OpenPromise
  * @typedef {import('./plugins/time/types').ContactTime} ContactTime
  * @typedef {import('./plugins/vcard/types').VCardData} VCardData
  * @typedef {import('./plugins/version/types').SoftwareVersion} SoftwareVersion

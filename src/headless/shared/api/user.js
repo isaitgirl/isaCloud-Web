@@ -1,6 +1,3 @@
-/**
- * @module:shared.api.user
- */
 import _converse from '../_converse.js';
 import log from '@converse/log';
 import presence_api from './presence.js';
@@ -60,9 +57,18 @@ const api = {
 
             // `api.connection.retry()` leaves a login alone that's still getting ready.
             return connection.whilePreparing(async () => {
-                if (api.settings.get('connection_options')?.worker && (await connection.restoreWorkerSession())) {
-                    return;
-                }
+                /**
+                 * *Hook* through which a plugin attaches to a session that
+                 * already exists elsewhere, such as one held by a shared
+                 * worker, before anything else is done to log in. A plugin
+                 * that attached sets `attached` on the payload.
+                 * @event _converse#attachSession
+                 * @param {null} context
+                 * @param {import('./types').AttachSessionPayload} payload
+                 */
+                const { attached } = await api.hook('attachSession', null, { attached: false });
+                if (attached) return;
+
                 if (jid) {
                     jid = await setUserJID(jid);
                 }
@@ -85,20 +91,9 @@ const api = {
                  * Note: If the hook handler has logged the user in, it should set the
                  * `success` flag on the payload to `true`.
                  *
-                 * @typedef {Object} LoginHookPayload
-                 * @property {string} jid
-                 * @property {string} password
-                 * @property {boolean} [automatic] - An internally used flag that indicates whether
-                 *  this method was called automatically once the connection has been initialized.
-                 * @property {boolean} [success] - A flag which indicates whether
-                 * login has succeeded. If a hook handler receives a payload with
-                 * this flag, it should NOT attempt to log in.
-                 * If a handler has successfully logged in, it should return the
-                 * payload with this flag set to true.
-                 *
                  * @event _converse#login
                  * @param {typeof api.user} context
-                 * @param {LoginHookPayload} payload
+                 * @param {import('./types').LoginHookPayload} payload
                  */
                 const { success } = await _converse.api.hook('login', this, { jid, password, automatic });
                 if (success) return;
@@ -129,6 +124,7 @@ const api = {
              */
             await api.trigger('beforeLogout', { 'synchronous': true });
 
+            /** @type {import('../types').OpenPromise} */
             const promise = getOpenPromise();
             const complete = () =>
                 endSession(_converse, { remember })

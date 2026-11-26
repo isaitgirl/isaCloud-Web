@@ -1,5 +1,5 @@
 /**
- * converse-cli's text output, made for an LLM to read: one line per message,
+ * converse's text output, made for an LLM to read: one line per message,
  * cheap in tokens, and unambiguous about where untrusted content starts and
  * ends.
  */
@@ -81,6 +81,8 @@ export function formatMessage(message, { full = false, now = new Date(), convers
             `could not be decrypted: ${message.encryption.error ?? 'no reason given'}`,
         message.status === 'failed' && `send failed: ${message.error_code ?? 'no reason given'}`,
         message.status === 'pending' && 'not sent yet',
+        // Only a room's messages have a nickname, and a room echoes each one it passes on.
+        message.status === 'sent' && message.nick !== null && !message.delivered && 'not confirmed by the room',
         message.reply_to && `reply to ${token(message.reply_to)}`,
         message.edited && 'edited',
         message.retracted && 'retracted',

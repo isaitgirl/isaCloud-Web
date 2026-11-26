@@ -4,7 +4,6 @@
  * @typedef {import('../../plugins/status/profile').default} Profile
  * @typedef {import('../../plugins/vcard/vcards').default} VCards
  * @typedef {import('../../plugins/vcard/vcard').default} VCard
- * @typedef {import('../../shared/model-with-contact.js').default} ModelWithContact
  * @typedef {import('../muc/occupant.js').default} MUCOccupant
  * @typedef {import('@converse/skeletor').Model} Model
  */
@@ -240,7 +239,7 @@ export async function fetchVCard(jid) {
         iq = await api.sendIQ(createStanza('get', to));
     } catch (error) {
         const parsed_error = isElement(error) ? await parseErrorStanza(error) : error;
-        const error_msg = parsed_error?.message;
+        const error_msg = /** @type {Error} */ (parsed_error)?.message;
         return {
             jid,
             stanza: isElement(error) ? error : null, // TODO: remove?

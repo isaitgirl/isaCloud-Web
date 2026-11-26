@@ -27,6 +27,7 @@ class DiscoEntity extends Model {
     initialize(_, options) {
         super.initialize();
         this.waitUntilFeaturesDiscovered = getOpenPromise();
+        /** @type {import('../../shared/types').OpenPromise<Element|Error|void>} */
         this.waitUntilItemsFetched = getOpenPromise();
 
         // Keyed by our own bare JID too, so that another account using the
@@ -139,16 +140,18 @@ class DiscoEntity extends Model {
         } else {
             await new Promise((resolve) => this.fetch({ success: resolve, error: resolve }));
 
-            await new Promise((resolve) =>
-                this.features.fetch({
-                    add: true,
-                    success: () => {
-                        this.waitUntilFeaturesDiscovered.resolve(this);
-                        this.trigger('featuresDiscovered');
-                        resolve();
-                    },
-                    error: resolve,
-                }),
+            await /** @type {Promise<void>} */ (
+                new Promise((resolve) =>
+                    this.features.fetch({
+                        add: true,
+                        success: () => {
+                            this.waitUntilFeaturesDiscovered.resolve(this);
+                            this.trigger('featuresDiscovered');
+                            resolve();
+                        },
+                        error: resolve,
+                    }),
+                )
             );
 
             await new Promise((resolve) => this.identities.fetch({ add: true, success: resolve, error: resolve }));
@@ -211,7 +214,7 @@ class DiscoEntity extends Model {
             stanza = await api.disco.info(this.get('jid'), options?.node ?? null, options);
         } catch (iq) {
             if (u.isElement(iq)) {
-                const e = await parseErrorStanza(iq);
+                const e = await parseErrorStanza(/** @type {Element|Error} */ (iq));
                 if (e.message !== 'item-not-found') {
                     log.error(`Error querying disco#info for ${this.get('jid')}: ${e.message}`);
                 }
@@ -225,7 +228,7 @@ class DiscoEntity extends Model {
                     log.error(`Error querying disco#info for ${this.get('jid')}: ${iq}`);
                 }
                 this.waitUntilFeaturesDiscovered.resolve(iq);
-                this.waitUntilItemsFetched.resolve(iq);
+                this.waitUntilItemsFetched.resolve(/** @type {Element|Error} */ (iq));
             }
             return;
         }

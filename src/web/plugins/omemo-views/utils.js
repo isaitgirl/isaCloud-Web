@@ -1,0 +1,420 @@
+/**
+ * @typedef {import('@converse/headless').MessageAttributes} MessageAttributes
+ * @typedef {import('@converse/headless').MUCMessageAttributes} MUCMessageAttributes
+ * @typedef {import('@converse/headless').ChatBox} ChatBox
+ * @typedef {import('@converse/headless').BaseMessage} BaseMessage
+ */
+import { html } from 'lit';
+import { __ } from 'i18n';
+import { until } from 'lit/directives/until.js';
+import { _converse, api, converse, log, u, constants } from '@converse/headless';
+import tplAudio from 'shared/texture/templates/audio.js';
+import tplFile from 'templates/file.js';
+import tplImage from 'shared/texture/templates/image.js';
+import tplVideo from 'shared/texture/templates/video.js';
+import { MIMETYPES_MAP } from 'utils/file.js';
+import { getFileName } from 'utils/html.js';
+
+const { Strophe } = converse.env;
+const { CHATROOMS_TYPE, PRIVATE_CHAT_TYPE } = constants;
+const { hexToArrayBuffer, isAudioURL, isError, isImageURL, isVideoURL } = u;
+
+/**
+ * @param {string} fp
+ */
+export function formatFingerprint(fp) {
+    fp = fp.replace(/^05/, '');
+    for (let i = 1; i < 8; i++) {
+        const idx = i * 8 + i - 1;
+        fp = fp.slice(0, idx) + ' ' + fp.slice(idx);
+    }
+    return fp;
+}
+
+/**
+ * @param {string} fp
+ */
+export function formatFingerprintForQRCode(fp) {
+    const sid = _converse.state.omemo_store.get('device_id');
+    const jid = _converse.session.get('bare_jid');
+    fp = fp.replace(/^05/, '');
+    return `xmpp:${jid}?omemo-sid-${sid}=${fp}`;
+}
+
+/**
+ * @param {string} iv
+ * @param {string} key
+ * @param {ArrayBuffer} cipher
+ */
+async function decryptFile(iv, key, cipher) {
+    const key_obj = await crypto.subtle.importKey('raw', hexToArrayBuffer(key), 'AES-GCM', false, ['decrypt']);
+    const algo = /** @type {AesGcmParams} */ {
+        name: 'AES-GCM',
+        iv: hexToArrayBuffer(iv),
+    };
+    return crypto.subtle.decrypt(algo, key_obj, cipher);
+}
+
+/**
+ * @param {string} url
+ * @returns {Promise<ArrayBuffer|null>}
+ */
+async function downloadFile(url) {
+    let response;
+    try {
+        response = await fetch(url);
+    } catch (e) {
+        log.error(`${/** @type {Error} */ (e).name}: Failed to download encrypted media: ${url}`);
+        log.error(e);
+        return null;
+    }
+
+    if (response.status >= 200 && response.status < 400) {
+        return response.arrayBuffer();
+    }
+}
+
+/**
+ * @param {string} url_text
+ * @returns {Promise<string|Error|null>}
+ */
+async function getAndDecryptFile(url_text) {
+    const url = new URL(url_text);
+    const protocol = window.location.hostname === 'localhost' && url.hostname === 'localhost' ? 'http' : 'https';
+    const http_url = url.toString().replace(/^aesgcm/, protocol);
+    const cipher = await downloadFile(http_url);
+    if (cipher === null) {
+        log.error(`Could not decrypt a received encrypted file ${url.toString()} since it could not be downloaded`);
+        return new Error(__('Error: could not decrypt a received encrypted file, because it could not be downloaded'));
+    }
+
+    const hash = url.hash.slice(1);
+    const key = hash.substring(hash.length - 64);
+    const iv = hash.replace(key, '');
+    let content;
+    try {
+        content = await decryptFile(iv, key, cipher);
+    } catch (e) {
+        log.error(`Could not decrypt file ${url.toString()}`);
+        log.error(e);
+        return null;
+    }
+    const filename = url.pathname.split('/').pop();
+    const extension = filename.split('.').pop();
+    const mimetype = MIMETYPES_MAP[extension];
+    try {
+        const file = new File([content], filename, { 'type': mimetype });
+        return URL.createObjectURL(file);
+    } catch (e) {
+        log.error(`Could not decrypt file ${url.toString()}`);
+        log.error(e);
+        return null;
+    }
+}
+
+/**
+ * @param {string} file_url
+ * @param {string|Error} obj_url
+ * @param {import('shared/texture/texture.js').Texture} richtext
+ * @returns {import("lit").TemplateResult}
+ */
+function getTemplateForObjectURL(file_url, obj_url, richtext) {
+    if (isError(obj_url)) {
+        return html`<p class="error">${/** @type {Error} */ (obj_url).message}</p>`;
+    }
+
+    // isaCloud: figurinhas - a sticker is an image even when the decrypted URL
+    // keeps no image extension, so the show/hide-media check still applies to it.
+    if (isImageURL(file_url) || richtext.options?.isacloud_sticker) {
+        // The decrypted image is served from an opaque `blob:` URL which has lost
+        // the original filename, so the browser would otherwise save it as
+        // `index.png` or the blob uuid. Pass the original filename (recovered from
+        // the `aesgcm://` URL) so it's used as the `download` name. See #2632.
+        const filename = getFileName(file_url);
+        return tplImage({
+            src: obj_url,
+            href: obj_url,
+            filename,
+            onClick: richtext.onImgClick,
+            onLoad: richtext.onImgLoad,
+        });
+    } else if (isAudioURL(file_url)) {
+        return tplAudio(/** @type {string} */ (obj_url));
+    } else if (isVideoURL(file_url)) {
+        return tplVideo(/** @type {string} */ (obj_url));
+    } else {
+        return tplFile(/** @type {string} */ (obj_url), getFileName(file_url));
+    }
+}
+
+/**
+ * @param {string} text
+ * @param {number} offset
+ * @param {import('shared/texture/texture.js').Texture} richtext
+ */
+function addEncryptedFiles(text, offset, richtext) {
+    const objs = [];
+    try {
+        const parse_options = { start: /\b(aesgcm:\/\/)/gi };
+        u.withinString(
+            text,
+            /**
+             * @param {string} url
+             * @param {number} start
+             * @param {number} end
+             */
+            (url, start, end) => {
+                objs.push({ url, start, end });
+                return url;
+            },
+            parse_options,
+        );
+    } catch (error) {
+        log.debug(error);
+        return;
+    }
+    objs.forEach((o) => {
+        // isaCloud: figurinhas - treat a sticker as an image even when its URL
+        // has no image extension, so hiding media still collapses it.
+        const type = richtext.options?.isacloud_sticker
+            ? 'image'
+            : isImageURL(o.url)
+              ? 'image'
+              : isAudioURL(o.url)
+                ? 'audio'
+                : isVideoURL(o.url)
+                  ? 'video'
+                  : null;
+        // Generic files are rendered as download links rather than inline media
+        // previews, so they're not subject to the show/hide-media toggle. For
+        // actual media, honour the same render decision used for unencrypted
+        // media, so that hiding media also hides decrypted OMEMO media instead
+        // of always re-rendering it. When hidden, we leave the `aesgcm://` URL
+        // as plain text so the message collapses to its URL. See #2606.
+        if (type && !richtext.shouldRenderMedia(o.url, type)) {
+            return;
+        }
+        const promise = getAndDecryptFile(o.url).then((obj_url) => getTemplateForObjectURL(o.url, obj_url, richtext));
+
+        const template = html`${until(promise, '')}`;
+        richtext.addTemplateResult(o.start + offset, o.end + offset, template);
+    });
+}
+
+/**
+ * @param {import('shared/texture/texture.js').Texture} richtext
+ */
+export function handleEncryptedFiles(richtext) {
+    if (!_converse.state.config.get('trusted')) {
+        return;
+    }
+    richtext.addAnnotations(
+        /**
+         * @param {string} text
+         * @param {number} offset
+         */
+        (text, offset) => addEncryptedFiles(text, offset, richtext),
+    );
+}
+
+/**
+ * @param {import('shared/components/element').CustomElement} el
+ */
+export function onChatComponentInitialized(el) {
+    el.listenTo(el.model.messages, 'add', (message) => {
+        if (message.get('is_encrypted') && !message.get('is_error')) {
+            el.model.save('omemo_supported', true);
+        }
+    });
+    el.listenTo(el.model, 'change:omemo_supported', () => {
+        if (!el.model.get('omemo_supported') && el.model.get('omemo_active')) {
+            el.model.set('omemo_active', false);
+        } else {
+            // Manually trigger an update, setting omemo_active to
+            // false above will automatically trigger one.
+            //
+            /*** @type {import('shared/components/element').CustomElement} */
+            (el.querySelector('converse-chat-toolbar'))?.requestUpdate();
+        }
+    });
+    el.listenTo(el.model, 'change:omemo_active', () => {
+        // The toolbar may not be rendered yet (e.g. when the remembered OMEMO
+        // state is restored during chat initialization), so guard the lookup.
+        //
+        /*** @type {import('shared/components/element').CustomElement} */
+        (el.querySelector('converse-chat-toolbar'))?.requestUpdate();
+    });
+}
+
+/**
+ * Generate the displayable fingerprints for a contact's devices for a single
+ * OMEMO version.
+ * @param {string} jid
+ * @param {import('@converse/headless').OMEMOVersion} [version]
+ */
+async function generateFingerprintsForVersion(jid, version) {
+    const devices = await u.omemo.getDevicesForContact(jid, version);
+    return Promise.all(
+        devices.map(
+            /** @param {import('@converse/headless').Device} d */
+            (d) => u.omemo.generateFingerprint(d),
+        ),
+    );
+}
+
+/**
+ * Generate the displayable fingerprints for a contact's devices across both
+ * OMEMO versions.
+ * @param {string} jid
+ */
+export async function generateFingerprints(jid) {
+    await Promise.all([
+        generateFingerprintsForVersion(jid, Strophe.NS.OMEMO).catch((e) => log.error(e)),
+        generateFingerprintsForVersion(jid, Strophe.NS.OMEMO2).catch((e) => log.error(e)),
+    ]);
+}
+
+/**
+ * @param {MouseEvent} ev
+ */
+function toggleOMEMO(ev) {
+    ev.stopPropagation();
+    ev.preventDefault();
+    const toolbar_el = u.ancestor(ev.target, 'converse-chat-toolbar');
+    if (!toolbar_el.model.get('omemo_supported')) {
+        let messages;
+        if (toolbar_el.model.get('type') === CHATROOMS_TYPE) {
+            messages = [
+                __(
+                    'Cannot use end-to-end encryption in this groupchat, ' +
+                        'either the groupchat has some anonymity or not all participants support OMEMO.',
+                ),
+            ];
+        } else if (toolbar_el.model.get('type') !== PRIVATE_CHAT_TYPE) {
+            // A private message to a groupchat participant: OMEMO only
+            // covers 1:1 chats and eligible groupchats.
+            messages = [__('Private messages to groupchat participants are not end-to-end encrypted.')];
+        } else {
+            messages = [
+                __(
+                    "Cannot use end-to-end encryption because %1$s uses a client that doesn't support OMEMO.",
+                    toolbar_el.model.contact.getDisplayName(),
+                ),
+            ];
+        }
+        return api.alert('error', __('Error'), messages);
+    }
+    const active = !toolbar_el.model.get('omemo_active');
+    toolbar_el.model.save({ 'omemo_active': active });
+
+    // Remember this choice so it's restored the next time the chat is opened,
+    // even after it's been closed or after re-login.
+    u.omemo.setOMEMOActiveState(toolbar_el.model.get('jid'), active);
+}
+
+/**
+ * @param {import('shared/chat/toolbar').ChatToolbar} toolbar_el
+ * @param {Array<import('lit').TemplateResult>} buttons
+ */
+export function getOMEMOToolbarButton(toolbar_el, buttons) {
+    // OMEMO requires persistent storage of the key material, which is
+    // unavailable on an untrusted device. Don't show the lock at all in that
+    // case, since it can never be activated. See #2336.
+    if (!_converse.state.config.get('trusted')) {
+        return buttons;
+    }
+
+    const model = toolbar_el.model;
+    const is_muc = model.get('type') === CHATROOMS_TYPE;
+    let title;
+    if (model.get('omemo_supported')) {
+        const i18n_plaintext = __('Messages are being sent in plaintext');
+        const i18n_encrypted = __('Messages are sent encrypted');
+        title = model.get('omemo_active') ? i18n_encrypted : i18n_plaintext;
+    } else if (is_muc) {
+        title = __(
+            'This groupchat needs to be members-only and non-anonymous in ' +
+                'order to support OMEMO encrypted messages',
+        );
+    } else {
+        title = __('OMEMO encryption is not supported');
+    }
+
+    let color;
+    if (model.get('omemo_supported')) {
+        if (model.get('omemo_active')) {
+            color = is_muc ? `var(--muc-color)` : `var(--chat-color)`;
+        } else {
+            color = `var(--error-color)`;
+        }
+    } else {
+        color = `var(--disabled-color)`;
+    }
+    buttons.push(html`
+        <button
+            type="button"
+            class="btn toggle-omemo"
+            title="${title}"
+            data-disabled=${!model.get('omemo_supported')}
+            @click=${toggleOMEMO}
+        >
+            <converse-icon
+                class="fa ${model.get('omemo_active') ? `fa-lock` : `fa-unlock`}"
+                path-prefix="${api.settings.get('assets_path')}"
+                size="1em"
+                color="${color}"
+            ></converse-icon>
+        </button>
+    `);
+    return buttons;
+}
+
+Object.assign(u, {
+    omemo: {
+        ...u.omemo,
+        formatFingerprint,
+    },
+});
+
+/**
+ * Returns the text that explains a failed encrypted send, for the codes that
+ * OMEMO fails with. Headless gives each failure a stable code and keeps its prose
+ * out, so the wording lives here. Any other code returns undefined.
+ * @param {string} [code] - The `code` of the error that failed the send.
+ * @param {Object} [details]
+ * @param {string} [details.from] - The JID that the reason names, when the failure came from the server.
+ * @param {Element} [details.iq] - The IQ that failed, when the failure came from the server.
+ * @returns {string[]|undefined}
+ */
+export function getOMEMOSendErrorMessages(code, { from, iq } = {}) {
+    switch (code) {
+        case constants.SEND_ERROR.SUBSCRIPTION_REQUIRED:
+            return [
+                __(
+                    "Sorry, we're unable to send an encrypted message because %1$s " +
+                        'requires you to be subscribed to their presence in order to see their OMEMO information',
+                    from,
+                ),
+            ];
+        case constants.SEND_ERROR.REMOTE_SERVER_NOT_FOUND:
+            return [
+                __(
+                    "Sorry, we're unable to send an encrypted message because the remote server for %1$s could not be found",
+                    from,
+                ),
+            ];
+        case constants.SEND_ERROR.KEY_FETCH_FAILED:
+            return [
+                __('Unable to send an encrypted message due to an unexpected error.'),
+                ...(iq ? [iq.outerHTML] : []),
+            ];
+        case constants.SEND_ERROR.ENCRYPT_FAILED:
+            return [__('Unable to send an encrypted message due to an unexpected error.')];
+        case constants.SEND_ERROR.NO_DEVICES:
+            return [__('Sorry, no devices found to which we can send an OMEMO encrypted message.')];
+        case constants.SEND_ERROR.GROUPCHAT_NOT_ELIGIBLE:
+            return [__('Cannot use OMEMO in this groupchat — it must be non-anonymous and members-only.')];
+        default:
+            return undefined;
+    }
+}

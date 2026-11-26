@@ -57,7 +57,7 @@ export function createEvents({ mode }) {
             try {
                 sub.listener(chatbox, message, dto);
             } catch (e) {
-                log.error(`A message listener failed: ${e.message}`);
+                log.error(`A message listener failed: ${/** @type {Error} */ (e).message}`);
             }
         }
     }
@@ -207,7 +207,7 @@ export function createEvents({ mode }) {
 }
 
 /**
- * @param {Object} params
+ * @param {Record<string, any>} params
  * @returns {Promise<{ type: import('./types').EventType, filter: import('./types').EventFilter, once: boolean }>}
  */
 async function parseSubscription({ type = 'message', conversation, from, direction, mention = false, once = false }) {

@@ -19,7 +19,7 @@ import ConnectionFeedback from './../connection/feedback.js';
 import u, { setLogLevelFromRoute } from '../../utils/index.js';
 import { ANONYMOUS, CHAT_STATES, KEYCODES, VERSION_NAME } from '../constants.js';
 import { isTestEnv } from '../../utils/session.js';
-import { addRouteListener } from '../../utils/environment.js';
+import { IS_BROWSER, addRouteListener } from '../../utils/environment.js';
 import { TimeoutError } from '../errors.js';
 import { initAppSettings } from '../settings/utils.js';
 import * as errors from '../errors.js';
@@ -88,7 +88,7 @@ const converse = Object.assign(/** @type {any} */ (globalThis).converse || {}, {
      * @async
      * @memberOf converse
      * @method initialize
-     * @param { object } settings A map of [configuration-settings](https://conversejs.org/docs/configuration/#configuration-settings).
+     * @param {Record<string, any>} settings A map of [configuration-settings](https://conversejs.org/docs/configuration/#configuration-settings).
      * @example
      * converse.initialize({
      *     auto_list_rooms: false,
@@ -140,8 +140,11 @@ const converse = Object.assign(/** @type {any} */ (globalThis).converse || {}, {
 
         registerGlobalEventHandlers(_converse);
 
-        const plugins = _converse.pluggable.plugins;
-        if (api.settings.get('auto_login') || (api.settings.get('keepalive') && plugins['converse-bosh']?.enabled())) {
+        // With `keepalive`, a page that is reloaded restores the session it
+        // had (a BOSH session, a remembered session or stored SCRAM keys).
+        // Off a browser there are no page reloads, and the application logs
+        // in itself, as the daemon does.
+        if (api.settings.get('auto_login') || (api.settings.get('keepalive') && IS_BROWSER)) {
             await api.user.login(null, null, { automatic: true });
         }
 
@@ -170,7 +173,7 @@ const converse = Object.assign(/** @type {any} */ (globalThis).converse || {}, {
          * Registers a new plugin.
          * @method converse.plugins.add
          * @param { string } name The name of the plugin
-         * @param { object } plugin The plugin object
+         * @param {Record<string, any>} plugin The plugin object
          * @example
          *  const plugin = {
          *      initialize: function () {
