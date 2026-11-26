@@ -674,4 +674,29 @@ describe('The OMEMO module', function () {
             );
         }),
     );
+
+    it(
+        'activates OMEMO by default when a group becomes eligible after opening',
+        mock.initConverse(converse, ['chatBoxesFetched'], { omemo_default: true }, async function (_converse) {
+            await mock.waitUntilDiscoConfirmed(
+                _converse,
+                _converse.bare_jid,
+                [{ 'category': 'pubsub', 'type': 'pep' }],
+                ['http://jabber.org/protocol/pubsub#publish-options'],
+            );
+
+            const features = [
+                'http://jabber.org/protocol/muc',
+                'jabber:iq:register',
+                'muc_membersonly',
+                'muc_unmoderated',
+                'muc_nonanonymous',
+            ];
+            // The room opens before its disco#info arrives, so the first
+            // eligibility check sees no features.
+            const model = await mock.openAndEnterMUC(_converse, 'private@montague.lit', 'romeo', features);
+            await u.waitUntil(() => mock.initializedOMEMO(_converse));
+            await u.waitUntil(() => model.get('omemo_active') === true);
+        }),
+    );
 });
