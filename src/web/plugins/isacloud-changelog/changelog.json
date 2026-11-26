@@ -1,6 +1,24 @@
 {
   "releases": [
     {
+      "version": "v15-44",
+      "date": "26/11/2026",
+      "items": [
+        {
+          "title": "📶 Conversa que não para sem internet",
+          "text": "com a conexão caída, o chat continua aberto e utilizável, e o que você escrever nesse meio-tempo é enviado sozinho quando ela volta."
+        },
+        {
+          "title": "✍️ O que você digita não se perde",
+          "text": "o texto digitado logo ao abrir a conversa não some mais enquanto o editor termina de carregar."
+        },
+        {
+          "title": "🚪 A sala que você abriu continua à vista",
+          "text": "abrir uma sala pelos favoritos não a esconde mais logo depois de ela aparecer."
+        }
+      ]
+    },
+    {
       "version": "v15-43",
       "date": "25/11/2026",
       "items": [

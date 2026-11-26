@@ -7,6 +7,25 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-44 — 2026-11-26 (`3b7502b0c`)
+
+- `chore(upstream)`: merge do `upstream/master` até `718feadc1e`. A UI foi reestruturada em
+  `src/web/` (plugins, apps, shared e templates saíram de `src/`), entrou o modo offline do
+  Converse 15 (UI utilizável sem conexão, sessão lembrada e mensagens escritas offline
+  enviadas ao reconectar) e os tipos passaram a ser um `.d.ts` por pacote. O detalhe do
+  upstream está em `CHANGES.md`.
+- `fix(isacloud)`: adaptação do fork ao modo offline — strings pt-BR novas, marcador de
+  mensagem não enviada em linha própria no celular, linha do changelog quando a sessão vem do
+  cache e o spinner da lista de canais.
+- `fix(composer)`: o texto digitado antes de o editor Lexical terminar de carregar não é mais
+  apagado no `attach`, e o placeholder some assim que há texto; o chunk do editor passa a ser
+  baixado quando o navegador fica ocioso.
+- `fix(bookmarks)`: a sala aberta pelo bookmark não é mais criada com `hidden`. O bookmark
+  criado em `enteredNewRoom` chega depois de a sala aparecer, e o `hidden` escondia a sala que
+  o usuário acabou de abrir.
+- `test`: spec novo em `bookmarks.js` (sala vinda do bookmark continua visível) e em
+  `message-form.js` (texto preservado antes do `attach`); os dois entraram na suíte reduzida.
+
 ## v15-43 — 2026-11-25 (`a3113d27a`)
 
 - `fix(connection)`: uma queda curta do servidor (o restart do Prosody para a 13.0.8, de
