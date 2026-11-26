@@ -139,13 +139,16 @@ export function isDisplayableMessage(message) {
  * are always listed, except "Notes to self", which only appears once it has a
  * displayable message. A groupchat is listed while its initial history fetch is
  * still in flight, and afterwards only if it has a displayable message, so a
- * room whose archive is empty doesn't clutter the list.
+ * room whose archive is empty doesn't clutter the list. A room this client has
+ * just created is kept even when its archive is empty, so it doesn't vanish
+ * before the user can use it.
  * @param {Model} model
  * @returns {boolean}
  */
 export function hasConversationContent(model) {
     if (isNotesToSelf(model)) return !!getLastDisplayableMessage(model);
     if (model.get('type') !== CHATROOMS_TYPE) return true;
+    if (model.get('is_new_room')) return true;
     if (!model.session?.get('mam_initialized')) return true;
     return !!getLastDisplayableMessage(model);
 }

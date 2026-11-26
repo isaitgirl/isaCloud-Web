@@ -218,6 +218,33 @@ describe('The conversation list', function () {
     );
 
     it(
+        'keeps a room this client just created, even when its archive is empty',
+        mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
+            const room = await mock.openAndEnterMUC(_converse, LOUNGE, 'romeo');
+            const list = await getRecentList(_converse);
+            await u.waitUntil(() => rowJIDs(list).includes(LOUNGE));
+
+            // Status 201 tells the client that it just created (and locked) the room.
+            const presence = stx`
+                <presence xmlns="jabber:client" to="${_converse.jid}" from="${LOUNGE}/romeo">
+                    <x xmlns="http://jabber.org/protocol/muc#user">
+                        <status code="201"/>
+                        <item role="moderator" affiliation="owner" jid="${_converse.jid}"/>
+                        <status code="110"/>
+                    </x>
+                </presence>`;
+            _converse.api.connection.get()._dataRecv(mock.createRequest(_converse, presence));
+            await u.waitUntil(() => room.get('is_new_room') === true);
+
+            // The archive settles empty; an ordinary room would disappear, as in
+            // the previous test, but a room created here stays.
+            room.session.save({ mam_initialized: true });
+            await sleep(150);
+            expect(rowJIDs(currentList(_converse))).toContain(LOUNGE);
+        }),
+    );
+
+    it(
         'keeps a closed 1:1 chat in the list, and reopens it when its row is clicked',
         mock.initConverse(converse, ['chatBoxesFetched'], SETTINGS, async function (_converse) {
             await mock.waitForRoster(_converse, 'current', 1);

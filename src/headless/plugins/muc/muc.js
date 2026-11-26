@@ -80,6 +80,10 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
             has_activity: false, // XEP-437
             hidden: isUniView() && !api.settings.get('singleton'),
             hidden_occupants: !!api.settings.get('hide_muc_participants'),
+            // Set when the server reports status 201, i.e. this client just
+            // created the room. The recent list keeps such a room visible
+            // even before it has a message.
+            is_new_room: false,
             message_type: 'groupchat',
             name: '',
             // For group chats, we distinguish between generally unread
@@ -3181,6 +3185,9 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
 
         const locked_room = attrs.codes.includes('201');
         if (locked_room) {
+            // The server says this client created the room now. Mark it so the
+            // recent list can keep it visible while it still has no messages.
+            this.save({ is_new_room: true });
             if (this.get('auto_configure')) {
                 await this.autoConfigureChatRoom().then(() => this.refreshDiscoInfo());
             } else if (api.settings.get('muc_instant_rooms')) {
