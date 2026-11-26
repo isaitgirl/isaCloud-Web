@@ -313,6 +313,28 @@ describe('A bookmark', function () {
         );
 
         it(
+            "doesn't hide a room that is already open when its bookmark is added",
+            mock.initConverse(converse, [], { open_last_conversation: false }, async function (_converse) {
+                const { state } = _converse;
+                await mock.waitForRoster(_converse, 'current', 0);
+                await mock.waitUntilBookmarksReturned(_converse);
+                const open_bookmarked_room = vi.spyOn(state.bookmarks, 'openBookmarkedRoom');
+
+                // Entering a room without a bookmark creates one with autojoin
+                // (`enteredNewRoom`), after the room was already shown.
+                const jid = 'theplay@conference.shakespeare.lit';
+                const muc = await mock.openAndEnterMUC(_converse, jid, 'romeo', [], [], true, { name: 'The Play' });
+                expect(muc.get('hidden')).toBe(false);
+
+                await u.waitUntil(() => open_bookmarked_room.mock.calls.length);
+                const bookmark = await open_bookmarked_room.mock.results[0].value;
+                expect(bookmark.get('jid')).toBe(jid);
+                expect(bookmark.get('autojoin')).toBe(true);
+                expect(muc.get('hidden')).toBe(false);
+            }),
+        );
+
+        it(
             'has autojoin set to false upon leaving',
             mock.initConverse(converse, [], {}, async function (_converse) {
                 await mock.waitForRoster(_converse, 'current', 0);

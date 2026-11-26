@@ -60,6 +60,7 @@ MAIN_SPECS=(
 HEADLESS_SPECS=(
     src/headless/plugins/muc/tests/messages.js
     src/headless/plugins/muc/tests/muc.js
+    src/headless/plugins/bookmarks/tests/bookmarks.js # isaCloud: autojoin escondido só para sala que não existe
     src/headless/plugins/reactions/tests/
     src/headless/shared/connection/tests/resource.js # isaCloud: resource isaCloudWeb-
     src/headless/plugins/chat/tests/mam-dedupe.js # isaCloud: dedupe de replay de MAM

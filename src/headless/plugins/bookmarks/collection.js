@@ -130,12 +130,17 @@ class Bookmarks extends Collection {
      */
     async openBookmarkedRoom(bookmark) {
         if (api.settings.get('muc_respect_autojoin') && bookmark.get('autojoin')) {
+            const jid = bookmark.get('jid');
             const open_last_conversation = api.settings.get('open_last_conversation');
-            const groupchat = await api.rooms.create(bookmark.get('jid'), {
+            // isaCloud: only a room that isn't open yet joins hidden. The bookmark
+            // created on `enteredNewRoom` arrives after the room was shown, and
+            // passing `hidden` here would hide the room the user just opened.
+            const hide = !open_last_conversation && !(await api.rooms.get(jid));
+            const groupchat = await api.rooms.create(jid, {
                 nick: bookmark.get('nick'),
                 password: bookmark.get('password'),
                 // The room still joins; it just doesn't take the foreground on the empty home state.
-                ...(open_last_conversation ? {} : { hidden: true }),
+                ...(hide ? { hidden: true } : {}),
             });
             if (open_last_conversation) groupchat.maybeShow();
         }
