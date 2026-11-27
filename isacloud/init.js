@@ -16,4 +16,12 @@ if (navigator.storage?.persist) {
 }
 
 const el = document.getElementById('converse-config');
-converse.initialize(el ? JSON.parse(el.textContent) : {});
+const config = el ? JSON.parse(el.textContent) : {};
+
+// Shareable links point at the page the user is on, so a mirror hostname (for
+// networks that block the main one) hands out links to itself instead of to a
+// host those networks refuse to open. The page config can still pin the URL,
+// or set it to "" to turn shareable links off.
+config.shareable_link_url ??= `${location.origin}/`;
+
+converse.initialize(config);
