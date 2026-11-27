@@ -1,6 +1,20 @@
 {
   "releases": [
     {
+      "version": "v15-46",
+      "date": "27/11/2026",
+      "items": [
+        {
+          "title": "🔎 Busca de participantes sempre à mão",
+          "text": "o filtro da lista de participantes já abre aberto, inclusive em grupos pequenos. O antigo “X” virou uma setinha para recolher a lista, e o menu do grupo traz a lista de volta quando quiser."
+        },
+        {
+          "title": "🧭 Menu do grupo mais completo",
+          "text": "convidar alguém, mostrar ou esconder o filtro e esconder a lista de participantes agora ficam no mesmo menu do grupo/canal. O filtro por status saiu das listas de contatos e de participantes; a busca por nome continua."
+        }
+      ]
+    },
+    {
       "version": "v15-45",
       "date": "27/11/2026",
       "items": [

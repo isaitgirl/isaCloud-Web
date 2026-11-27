@@ -1,12 +1,21 @@
 # Novidades do isaCloud Web 💬💜
 
-Versão atual: **v15-45** · atualizada em **27/11/2026**
+Versão atual: **v15-46** · atualizada em **27/11/2026**
 
 O isaCloud Web é o chat da comunidade isaCloud: conversa boa, segurança de
 verdade e um cantinho com a nossa cara. Aqui está tudo o que já chegou em
 <https://chat.isacloud.cc>, release por release.
 
 ## 📅 Todas as releases
+
+### v15-46 — 27/11/2026
+
+- 🔎 **Busca de participantes sempre à mão:** o filtro da lista de participantes já abre
+  aberto, inclusive em grupos pequenos. O antigo “X” virou uma setinha para recolher a lista,
+  e o menu do grupo traz a lista de volta quando quiser.
+- 🧭 **Menu do grupo mais completo:** convidar alguém, mostrar ou esconder o filtro e esconder
+  a lista de participantes agora ficam no mesmo menu do grupo/canal. O filtro por status saiu
+  das listas de contatos e de participantes; a busca por nome continua.
 
 ### v15-45 — 27/11/2026
 

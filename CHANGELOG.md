@@ -7,6 +7,19 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
+## v15-46 — 2026-11-27 (`67433d778`)
+
+- `feat(muc)`: menu da lista de participantes unificado ao menu do grupo/canal. “Convidar
+  alguém”, “Mostrar/ocultar filtro” e “Ocultar participantes” agora ficam no cabeçalho da
+  conversa; a lista perde o dropdown próprio e o X vira uma seta de recolher
+  (`fa-angle-double-right`). O filtro de participantes abre por padrão, inclusive em salas
+  com menos de cinco participantes (`always_visible` no `converse-list-filter`).
+- `refactor(filters)`: o filtro por status (chat state) saiu das listas de contatos e de
+  participantes. Restam a busca por nome/JID e, nos contatos, o filtro por grupo. Filtros
+  salvos com `type: 'state'` migram para `items`; o select, o CSS e as i18n que só serviam
+  ao status foram removidos, e os specs de roster/ocupantes foram atualizados.
+- `test`: a suíte reduzida cobre o filtro aberto por padrão e o menu unificado.
+
 ## v15-45 — 2026-11-27 (`b6c4dcfeb`)
 
 - `feat(isacloud)`: grupos e canais criados pelo modal vão para o serviço MUC do domínio da
