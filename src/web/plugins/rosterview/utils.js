@@ -162,42 +162,22 @@ function getFilterCriteria(contact) {
 
 /**
  * @param {RosterContact|Profile} contact
- * @param {string} groupname
  * @returns {boolean}
  */
-export function isContactFiltered(contact, groupname) {
+export function isContactFiltered(contact) {
     const filter = _converse.state.roster_filter;
-    const type = filter.get('type');
-    const q = type === 'state' ? filter.get('state').toLowerCase() : filter.get('text').toLowerCase();
+    if (filter.get('type') !== 'items') return false;
 
-    if (!q) return false;
-
-    if (type === 'state') {
-        const sticky_groups = [_converse.labels.HEADER_REQUESTING_CONTACTS, _converse.labels.HEADER_UNREAD];
-        if (sticky_groups.includes(groupname)) {
-            // When filtering by chat state, we still want to
-            // show sticky groups, even though they don't
-            // match the state in question.
-            return false;
-        } else if (q === 'unread_messages') {
-            return contact.get('num_unread') === 0;
-        } else if (q === 'online') {
-            return ['offline', 'unavailable', 'dnd', 'away', 'xa'].includes(contact.getStatus());
-        } else {
-            return !contact.getStatus().includes(q);
-        }
-    } else if (type === 'items') {
-        return !getFilterCriteria(contact).includes(q);
-    }
+    const q = filter.get('text')?.toLowerCase();
+    return !!q && !getFilterCriteria(contact).includes(q);
 }
 
 /**
  * @param {RosterContact} contact
- * @param {string} groupname
  * @param {import('@converse/headless').Model} model
  * @returns {boolean}
  */
-export function shouldShowContact(contact, groupname, model) {
+export function shouldShowContact(contact, model) {
     if (!model.get('filter_visible')) return true;
 
     const chat_status = contact.getStatus();
@@ -208,11 +188,11 @@ export function shouldShowContact(contact, groupname, model) {
             contact.get('subscription') === 'from' ||
             contact.get('requesting') === true
         ) {
-            return !isContactFiltered(contact, groupname);
+            return !isContactFiltered(contact);
         }
         return false;
     }
-    return !isContactFiltered(contact, groupname);
+    return !isContactFiltered(contact);
 }
 
 /**

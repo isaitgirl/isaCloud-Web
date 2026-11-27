@@ -33,6 +33,7 @@ export type DefaultMUCAttributes = {
     bookmarked?: boolean;
     chat_state: typeof CHAT_STATES;
     closed: boolean;
+    filter_visible: boolean;
     has_activity: boolean; // XEP-437
     hidden: boolean;
     hidden_occupants: boolean;

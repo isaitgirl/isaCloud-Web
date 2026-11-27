@@ -378,14 +378,6 @@ describe('The Contacts Roster', function () {
                 expect(Math.abs(row(icons) - row(input))).toBeLessThan(5);
                 expect(input.getBoundingClientRect().left).toBeGreaterThanOrEqual(icons.getBoundingClientRect().right);
                 expect(input.getBoundingClientRect().width).toBeGreaterThan(form.clientWidth / 2);
-
-                // In status mode the select takes the input's place, without an empty gap before it.
-                /** @type {HTMLElement} */ (form.querySelector('converse-icon[data-type="state"]')).click();
-                const select = form.querySelector('select.state-type');
-                await u.waitUntil(() => u.isVisible(select));
-                expect(u.isVisible(form.querySelector('.btn-group'))).toBe(false);
-                expect(Math.abs(row(icons) - row(select))).toBeLessThan(5);
-                expect(select.getBoundingClientRect().left - icons.getBoundingClientRect().right).toBeLessThan(10);
             }),
         );
 
@@ -518,65 +510,6 @@ describe('The Contacts Roster', function () {
                 await u.waitUntil(() => !isHidden(rosterview.querySelector('.items-filter-form .clear-input')), 900);
                 rosterview.querySelector('.clear-input').click();
                 await u.waitUntil(() => document.querySelector('.items-filter').value == '');
-            }),
-        );
-
-        it(
-            'can be used to filter contacts by their chat state',
-            mock.initConverse(converse, [], {}, async function (_converse) {
-                await mock.openControlBox(_converse);
-                await mock.waitForRoster(_converse, 'all');
-
-                let jid = mock.cur_names[3].replace(/ /g, '.').toLowerCase() + '@montague.lit';
-                _converse.roster.get(jid).presence.set('presence', 'online');
-
-                jid = mock.cur_names[4].replace(/ /g, '.').toLowerCase() + '@montague.lit';
-                _converse.roster.get(jid).presence.set({ show: 'dnd', presence: 'online' });
-
-                await mock.openControlBox(_converse);
-                const rosterview = document.querySelector('converse-roster');
-
-                const filter_toggle = await u.waitUntil(() => rosterview.querySelector('.toggle-filter'));
-                filter_toggle.click();
-
-                const button = await u.waitUntil(() => rosterview.querySelector('converse-icon[data-type="state"]'));
-                button.click();
-
-                const filter = rosterview.querySelector('.state-type');
-                filter.value = '';
-                u.triggerEvent(filter, 'change');
-
-                const roster = rosterview.querySelector('.roster-contacts');
-                await u.waitUntil(() => sizzle('li', roster).filter(u.isVisible).length === 21, 900);
-                expect(sizzle('ul.roster-group-contacts', roster).filter(u.isVisible).length).toBe(6);
-
-                filter.value = 'online';
-                u.triggerEvent(filter, 'change');
-                await u.waitUntil(() => sizzle('li', roster).filter(u.isVisible).length === 2, 900);
-
-                const contacts = sizzle('li', roster).filter(u.isVisible);
-                expect(contacts.pop().querySelector('.contact-name').textContent.trim()).toBe('Romeo Montague (me)');
-                expect(contacts.pop().querySelector('.contact-name').textContent.trim()).toBe('Lord Montague');
-
-                const groups = sizzle('ul.roster-group-contacts', roster).filter(u.isVisible);
-                expect(groups.pop().parentElement.firstElementChild.textContent.trim()).toBe('Ungrouped');
-                expect(groups.pop().parentElement.firstElementChild.textContent.trim()).toBe('Family');
-
-                filter.value = 'dnd';
-                u.triggerEvent(filter, 'change');
-
-                await u.waitUntil(
-                    () =>
-                        sizzle('li', roster)
-                            .filter(u.isVisible)
-                            .pop()
-                            .querySelector('.contact-name')
-                            .textContent.trim() === 'Friar Laurence',
-                    900,
-                );
-                const ul = sizzle('ul.roster-group-contacts', roster).filter(u.isVisible).pop();
-                expect(ul.parentElement.firstElementChild.textContent.trim()).toBe('friends & acquaintances');
-                expect(sizzle('ul.roster-group-contacts', roster).filter(u.isVisible).length).toBe(1);
             }),
         );
     });

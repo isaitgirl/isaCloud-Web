@@ -8,16 +8,7 @@ import { api } from '@converse/headless';
 export default (el) => {
     const i18n_placeholder = __('Filter');
     const title_contact_filter = __('Filter by name');
-    const title_status_filter = __('Filter by status');
-    const label_any = __('Any');
-    const label_online = __('Online');
-    const label_chatty = __('Chatty');
-    const label_busy = __('Busy');
-    const label_away = __('Away');
-    const label_xa = __('Extended Away');
-    const label_offline = __('Offline');
 
-    const chat_state = el.model.get('state');
     const filter_text = el.model.get('text');
     const filter_type = el.model.get('type');
 
@@ -36,15 +27,8 @@ export default (el) => {
                     data-type="items"
                     title="${title_contact_filter}"
                 ></converse-icon>
-                <converse-icon
-                    size="1em"
-                    @click=${(ev) => el.changeTypeFilter(ev)}
-                    class="fa fa-circle clickable ${filter_type === 'state' ? 'selected' : ''}"
-                    data-type="state"
-                    title="${title_status_filter}"
-                ></converse-icon>
             </div>
-            <div class="btn-group ${filter_type === 'state' ? 'hidden' : ''}">
+            <div class="btn-group">
                 <input
                     .value="${filter_text || ''}"
                     @keydown=${(ev) => el.liveFilter(ev)}
@@ -58,18 +42,6 @@ export default (el) => {
                 >
                 </converse-icon>
             </div>
-            <select
-                class="form-control state-type ${filter_type !== 'state' ? 'hidden' : ''}"
-                @change=${(ev) => el.changeChatStateFilter(ev)}
-            >
-                <option value="">${label_any}</option>
-                <option ?selected=${chat_state === 'online'} value="online">${label_online}</option>
-                <option ?selected=${chat_state === 'chat'} value="chat">${label_chatty}</option>
-                <option ?selected=${chat_state === 'dnd'} value="dnd">${label_busy}</option>
-                <option ?selected=${chat_state === 'away'} value="away">${label_away}</option>
-                <option ?selected=${chat_state === 'xa'} value="xa">${label_xa}</option>
-                <option ?selected=${chat_state === 'offline'} value="offline">${label_offline}</option>
-            </select>
         </div>
     </form>`;
 };

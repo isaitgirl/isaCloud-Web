@@ -14,23 +14,12 @@ import tplOccupantsFilter from './occupants-filter.js';
  */
 function isOccupantFiltered(el, occ) {
     if (!el.model.get('filter_visible')) return false;
+    if (el.filter.get('type') !== 'items') return false;
 
-    const type = el.filter.get('type');
-    const q = type === 'state' ? el.filter.get('state').toLowerCase() : el.filter.get('text').toLowerCase();
-
+    const q = el.filter.get('text')?.toLowerCase();
     if (!q) return false;
 
-    if (type === 'state') {
-        const presence = occ.get('presence');
-        if (q === 'online') {
-            return ['offline', 'unavailable'].includes(presence);
-        } else if (q === 'offline') {
-            return presence === 'online';
-        }
-        return !occ.get('show')?.includes(q);
-    } else if (type === 'items') {
-        return !occ.getDisplayName().toLowerCase().includes(q);
-    }
+    return !occ.getDisplayName().toLowerCase().includes(q);
 }
 
 /**
@@ -38,64 +27,8 @@ function isOccupantFiltered(el, occ) {
  */
 export default (el) => {
     const i18n_participants = el.model.occupants === 1 ? __('Participant') : __('Participants');
-    const i18n_close = __('Hide');
-    const i18n_show_filter = __('Show filter');
-    const i18n_hide_filter = __('Hide filter');
+    const i18n_hide_participants = __('Hide participants');
     const is_filter_visible = el.model.get('filter_visible');
-    const i18n_invite = __('Invite someone');
-    const i18n_invite_title = __('Invite someone to join this groupchat');
-
-    const btns = /** @type {TemplateResult[]} */ [];
-
-    if (el.model.invitesAllowed()) {
-        btns.push(html`
-            <a
-                href="#"
-                class="dropdown-item open-invite-modal"
-                role="button"
-                title="${i18n_invite_title}"
-                @click=${(/** @type {MouseEvent} */ ev) => el.showInviteModal(ev)}
-            >
-                <converse-icon size="1em" class="fa fa-user-plus"></converse-icon>
-                ${i18n_invite}
-            </a>
-        `);
-    }
-
-    if (el.model.occupants.length > 5) {
-        btns.push(html`
-            <a
-                href="#"
-                class="dropdown-item toggle-filter"
-                role="button"
-                @click=${(/** @type {MouseEvent} */ ev) => el.toggleFilter(ev)}
-            >
-                <converse-icon size="1em" class="fa fa-filter"></converse-icon>
-                ${is_filter_visible ? i18n_hide_filter : i18n_show_filter}
-            </a>
-        `);
-    }
-
-    if (btns.length) {
-        btns.push(html`
-            <a
-                href="#"
-                class="dropdown-item"
-                role="button"
-                @click=${(/** @type {MouseEvent} */ ev) => el.closeSidebar(ev)}
-            >
-                <converse-icon size="1em" class="fa fa-times"></converse-icon>
-                ${i18n_close}
-            </a>
-        `);
-    } else {
-        // Only a single button is shown, not a dropdown.
-        btns.push(
-            html` <i class="hide-occupants" @click=${(/** @type {MouseEvent} */ ev) => el.closeSidebar(ev)}>
-                <converse-icon class="fa fa-times" size="1em"></converse-icon>
-            </i>`,
-        );
-    }
 
     const is_stale = el.isStale();
     const i18n_stale = __('As last seen. You are not in this groupchat while offline.');
@@ -106,14 +39,14 @@ export default (el) => {
                     <span class="occupants-heading sidebar-heading"
                         >${el.model.occupants.length} ${i18n_participants}</span
                     >
-                    ${
-                        btns.length === 1
-                            ? btns[0]
-                            : html`<converse-dropdown
-                                  class="chatbox-btn btn-group dropstart"
-                                  .items=${btns}
-                              ></converse-dropdown>`
-                    }
+                    <i
+                        class="hide-occupants"
+                        title="${i18n_hide_participants}"
+                        aria-label="${i18n_hide_participants}"
+                        @click=${(/** @type {MouseEvent} */ ev) => el.closeSidebar(ev)}
+                    >
+                        <converse-icon class="fa fa-angle-double-right" size="1em"></converse-icon>
+                    </i>
                 </div>
                 ${is_stale ? html`<p class="occupants-stale-note" role="note">${i18n_stale}</p>` : ''}
             </div>
@@ -121,6 +54,7 @@ export default (el) => {
                 ${
                     is_filter_visible
                         ? html` <converse-list-filter
+                              .always_visible=${true}
                               @update=${() => el.requestUpdate()}
                               .promise=${el.model.initialized}
                               .items=${el.model.occupants}

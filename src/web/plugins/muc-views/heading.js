@@ -1,6 +1,7 @@
-import { _converse, api, converse } from '@converse/headless';
+import { _converse, api, converse, u } from '@converse/headless';
 import './modals/config.js';
 import './modals/muc-details.js';
+import './modals/muc-invite.js';
 import './modals/nickname.js';
 import { CustomElement } from 'shared/components/element.js';
 import { __ } from 'i18n';
@@ -21,6 +22,9 @@ export default class MUCHeading extends CustomElement {
         this.listenTo(this.model, 'change', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:add', () => this.requestUpdate());
         this.listenTo(this.model, 'vcard:change', () => this.requestUpdate());
+
+        // Whether invitations are allowed depends on the room's features.
+        this.listenTo(this.model.features, 'change:open', () => this.requestUpdate());
 
         this.user_settings = await _converse.api.user.settings.getModel();
         this.listenTo(this.user_settings, 'change:mucs_with_hidden_subject', () => this.requestUpdate());
@@ -65,6 +69,22 @@ export default class MUCHeading extends CustomElement {
     showNicknameModal(ev) {
         ev.preventDefault();
         api.modal.show('converse-muc-nickname-modal', { model: this.model }, ev);
+    }
+
+    /**
+     * @param {Event} ev
+     */
+    showInviteModal(ev) {
+        ev.preventDefault();
+        api.modal.show('converse-muc-invite-modal', { muc: this.model }, ev);
+    }
+
+    /**
+     * @param {Event} ev
+     */
+    toggleFilter(ev) {
+        ev?.preventDefault?.();
+        u.safeSave(this.model, { 'filter_visible': !this.model.get('filter_visible') });
     }
 
     /**
@@ -158,6 +178,27 @@ export default class MUCHeading extends CustomElement {
                 'name': 'toggle-topic',
             });
         }
+
+        if (this.model.invitesAllowed()) {
+            buttons.push({
+                'i18n_text': __('Invite someone'),
+                'i18n_title': __('Invite someone to join this groupchat'),
+                'handler': /** @param {Event} ev */ (ev) => this.showInviteModal(ev),
+                'a_class': 'open-invite-modal',
+                'icon_class': 'fa-user-plus',
+                'name': 'invite',
+            });
+        }
+
+        const i18n_filter = this.model.get('filter_visible') ? __('Hide filter') : __('Show filter');
+        buttons.push({
+            'i18n_text': i18n_filter,
+            'i18n_title': i18n_filter,
+            'handler': /** @param {Event} ev */ (ev) => this.toggleFilter(ev),
+            'a_class': 'toggle-filter',
+            'icon_class': 'fa-filter',
+            'name': 'toggle-filter',
+        });
 
         buttons.push({
             'i18n_text': this.model.get('hidden_occupants') ? __('Show participants') : __('Hide participants'),
