@@ -4,7 +4,6 @@ import { CustomElement } from 'shared/components/element.js';
 import { ConnectionStateController } from 'shared/connection-state.js';
 import tplMUCOccupants from './templates/muc-occupants.js';
 import 'shared/autocomplete/index.js';
-import './modals/muc-invite.js';
 import './occupant.js';
 
 import 'shared/styles/status.scss';
@@ -68,18 +67,6 @@ export default class MUCOccupants extends CustomElement {
     /**
      * @param {MouseEvent} ev
      */
-    showInviteModal(ev) {
-        ev.preventDefault();
-        api.modal.show('converse-muc-invite-modal', { muc: this.model }, ev);
-    }
-
-    /** @param {MouseEvent} ev */
-    toggleFilter(ev) {
-        ev?.preventDefault?.();
-        u.safeSave(this.model, { 'filter_visible': !this.model.get('filter_visible') });
-    }
-
-    /** @param {MouseEvent} ev */
     closeSidebar(ev) {
         ev?.preventDefault?.();
         u.safeSave(this.model, { 'hidden_occupants': true });

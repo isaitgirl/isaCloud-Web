@@ -6,7 +6,6 @@ class RosterFilter extends Model {
         this.set({
             text: '',
             type: 'items',
-            state: 'online',
         });
     }
 }

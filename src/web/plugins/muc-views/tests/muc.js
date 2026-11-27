@@ -1752,17 +1752,17 @@ describe('Groupchats', function () {
                     // Happens in headless chrome due to smaller viewport size
                     view.model.save('hidden_occupants', false);
                 }
-                await u.waitUntil(() => view.querySelector('.open-invite-modal'));
+                await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .open-invite-modal'));
 
                 // Members can't invite if the room isn't open
                 view.model.getOwnOccupant().set('affiliation', 'member');
 
-                await u.waitUntil(() => view.querySelector('.open-invite-modal') === null);
+                await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .open-invite-modal') === null);
 
                 view.model.features.set('open', 'true');
-                await u.waitUntil(() => view.querySelector('.open-invite-modal'));
+                await u.waitUntil(() => view.querySelector('.chatbox-title__buttons .open-invite-modal'));
 
-                view.querySelector('.open-invite-modal').click();
+                view.querySelector('.chatbox-title__buttons .open-invite-modal').click();
                 const modal = _converse.api.modal.get('converse-muc-invite-modal');
                 await u.waitUntil(() => u.isVisible(modal), 1000);
 

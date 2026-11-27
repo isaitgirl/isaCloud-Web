@@ -77,6 +77,7 @@ class MUC extends ModelWithVCard(ModelWithMessages(ColorAwareModel(ChatBoxBase))
         return {
             chat_state: undefined,
             closed: false,
+            filter_visible: true,
             has_activity: false, // XEP-437
             hidden: isUniView() && !api.settings.get('singleton'),
             hidden_occupants: !!api.settings.get('hide_muc_participants'),

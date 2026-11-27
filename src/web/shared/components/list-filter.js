@@ -10,6 +10,7 @@ import './styles/list-filter.scss';
 export default class ListFilter extends CustomElement {
     constructor() {
         super();
+        this.always_visible = false;
         this.items = null;
         this.model = null;
         this.template = null;
@@ -18,6 +19,7 @@ export default class ListFilter extends CustomElement {
 
     static get properties() {
         return {
+            always_visible: { type: Boolean },
             items: { type: Array },
             model: { type: Object },
             promise: { type: Promise },
@@ -26,6 +28,11 @@ export default class ListFilter extends CustomElement {
     }
 
     initialize() {
+        if (this.model?.get('type') === 'state') {
+            // Migrate filters persisted before the chat state filter was removed.
+            this.model.save({ 'type': 'items' });
+        }
+
         this.liveFilter = debounce((ev) => this.model.save({ 'text': ev.target.value }), 250);
 
         this.listenTo(this.items, 'add', () => this.requestUpdate());
@@ -52,26 +59,14 @@ export default class ListFilter extends CustomElement {
     /**
      * @param {Event} ev
      */
-    changeChatStateFilter(ev) {
-        ev && ev.preventDefault();
-        const state = /** @type {HTMLInputElement} */ (this.querySelector('.state-type')).value;
-        this.model.save({ state });
-    }
-
-    /**
-     * @param {Event} ev
-     */
     changeTypeFilter(ev) {
         ev && ev.preventDefault();
         const target = /** @type {HTMLInputElement} */ (ev.target);
         const type = /** @type {HTMLElement} */ (target.closest('converse-icon'))?.dataset.type || 'items';
-        if (type === 'state') {
-            const state = /** @type {HTMLInputElement} */ (this.querySelector('.state-type')).value;
-            this.model.save({ type, state });
-        } else {
-            const text = /** @type {HTMLInputElement} */ (this.querySelector('.items-filter')).value;
-            this.model.save({ type, text });
-        }
+        if (type !== 'items' && type !== 'groups') return;
+
+        const text = /** @type {HTMLInputElement} */ (this.querySelector('.items-filter')).value;
+        this.model.save({ type, text });
     }
 
     /**
@@ -90,14 +85,14 @@ export default class ListFilter extends CustomElement {
      * @returns {boolean}
      */
     isActive() {
-        return this.model.get('type') === 'state' || this.model.get('text');
+        return !!this.model.get('text');
     }
 
     /**
      * @returns {boolean}
      */
     shouldBeVisible() {
-        return this.items?.length >= 5 || this.isActive();
+        return this.always_visible || this.items?.length >= 5 || this.isActive();
     }
 
     /**

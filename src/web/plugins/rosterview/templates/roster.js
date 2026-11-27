@@ -188,7 +188,7 @@ export default (el) => {
                 (n) => n,
                 (name) => {
                     const contacts = contacts_map[name].filter((c) =>
-                        shouldShowContact(c, name, /** @type {import('@converse/skeletor').Model} */ (el.model)),
+                        shouldShowContact(c, /** @type {import('@converse/skeletor').Model} */ (el.model)),
                     );
                     contacts.sort(contactsComparator);
                     return contacts.length ? tplGroup({ contacts, name }) : '';

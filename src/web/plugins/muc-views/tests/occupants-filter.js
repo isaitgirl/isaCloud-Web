@@ -5,7 +5,7 @@ const { u, stx } = converse.env;
 
 describe('The MUC occupants filter', function () {
     it(
-        'can be used to filter which occupants are shown',
+        'is open by default and can be used to filter which occupants are shown',
         mock.initConverse(converse, [], {}, async function (_converse) {
             const muc_jid = 'lounge@montague.lit';
             const members = [
@@ -24,8 +24,14 @@ describe('The MUC occupants filter', function () {
             const view = _converse.chatboxviews.get(muc_jid);
             await u.waitUntil(() => view.model.occupants.length === 3);
 
-            let filter_el = view.querySelector('converse-list-filter');
-            expect(filter_el).toBe(null);
+            if (view.model.get('hidden_occupants')) {
+                // Happens in headless chrome due to smaller viewport size
+                view.model.save('hidden_occupants', false);
+            }
+
+            // Open by default, even before the list has more than five occupants.
+            let filter_el = await u.waitUntil(() => view.querySelector('converse-list-filter'));
+            expect(u.isVisible(filter_el.firstElementChild)).toBe(true);
 
             for (let i = 0; i < mock.chatroom_names.length; i++) {
                 const name = mock.chatroom_names[i];
@@ -44,10 +50,6 @@ describe('The MUC occupants filter', function () {
                 _converse.api.connection.get()._dataRecv(mock.createRequest(_converse, presence));
             }
 
-            if (view.model.get('hidden_occupants')) {
-                // Happens in headless chrome due to smaller viewport size
-                view.model.save('hidden_occupants', false);
-            }
             const occupants = await u.waitUntil(() => view.querySelector('.occupant-list'));
             await u.waitUntil(() => occupants.querySelectorAll('li').length > 3);
             expect(occupants.querySelectorAll('li').length).toBe(3 + mock.chatroom_names.length);
@@ -59,47 +61,40 @@ describe('The MUC occupants filter', function () {
                 expect(occupants.querySelectorAll('li .occupant-nick')[index].textContent.trim()).toBe(name);
             });
 
-            const dropdown = await u.waitUntil(() => view.querySelector('.occupants-header converse-dropdown'));
+            // The participants sidebar has no menu of its own anymore, and its
+            // close control is a collapse arrow instead of an X.
+            expect(view.querySelector('.occupants-header converse-dropdown')).toBe(null);
+            expect(view.querySelector('.occupants-header .hide-occupants .fa-angle-double-right')).not.toBe(null);
 
-            expect(view.querySelector('converse-list-filter')).toBe(null);
-
-            dropdown.click();
-            dropdown.querySelector('.toggle-filter').click();
-
-            filter_el = await u.waitUntil(() => view.querySelector('converse-list-filter'));
-            expect(u.isVisible(filter_el.firstElementChild)).toBe(true);
-
-            const filter = filter_el.querySelector('.items-filter');
+            const filter = view.querySelector('converse-list-filter .items-filter');
             filter.value = 'j';
             u.triggerEvent(filter, 'keydown', 'KeyboardEvent');
             await u.waitUntil(() => [...view.querySelectorAll('li')].filter(u.isVisible).length === 1);
 
-            filter_el.querySelector('.fa-times').click();
+            view.querySelector('converse-list-filter .fa-times').click();
             await u.waitUntil(
                 () => [...view.querySelectorAll('li')].filter(u.isVisible).length === 3 + mock.chatroom_names.length,
             );
 
-            filter_el.querySelector('.fa-circle').click();
-            const state_select = view.querySelector('.state-type');
-            state_select.value = 'dnd';
-            u.triggerEvent(state_select, 'change');
-            expect(state_select.value).toBe('dnd');
-            expect(state_select.options[state_select.selectedIndex].textContent).toBe('Busy');
-            await u.waitUntil(() => [...view.querySelectorAll('li')].filter(u.isVisible).length === 0);
-
-            state_select.value = 'offline';
-            u.triggerEvent(state_select, 'change');
-            await u.waitUntil(() => [...view.querySelectorAll('li')].filter(u.isVisible).length === 2);
-            const offline_nicks = [...view.querySelectorAll('li')]
-                .filter(u.isVisible)
-                .map((li) => li.querySelector('.occupant-nick').textContent.trim());
-            expect(offline_nicks.sort()).toEqual(['juliet', 'tybalt']);
-
-            state_select.value = 'online';
-            u.triggerEvent(state_select, 'change');
-            await u.waitUntil(
-                () => [...view.querySelectorAll('li')].filter(u.isVisible).length === 1 + mock.chatroom_names.length,
+            // The heading menu toggles the filter, which is open by default.
+            let dropdown = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons converse-dropdown'));
+            dropdown.click();
+            let toggle_filter = await u.waitUntil(() =>
+                view.querySelector('.chatbox-title__buttons converse-dropdown .toggle-filter'),
             );
+            expect(toggle_filter.textContent.trim()).toBe('Hide filter');
+            toggle_filter.click();
+            await u.waitUntil(() => view.querySelector('converse-list-filter') === null);
+
+            dropdown = await u.waitUntil(() => view.querySelector('.chatbox-title__buttons converse-dropdown'));
+            dropdown.click();
+            toggle_filter = await u.waitUntil(() =>
+                view.querySelector('.chatbox-title__buttons converse-dropdown .toggle-filter'),
+            );
+            expect(toggle_filter.textContent.trim()).toBe('Show filter');
+            toggle_filter.click();
+            filter_el = await u.waitUntil(() => view.querySelector('converse-list-filter'));
+            expect(u.isVisible(filter_el.firstElementChild)).toBe(true);
         }),
     );
 });
