@@ -7,7 +7,7 @@ A versão segue o formato `v15-<build>`. O build começa em **0** no primeiro
 commit do fork (`3ecd1c1bc`) e aumenta de **1 em 1 a cada publicação**. A
 release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
 
-## Preparação da próxima release (branch `feat/grupos-por-dominio`)
+## v15-45 — 2026-11-27 (`b6c4dcfeb`)
 
 - `feat(isacloud)`: grupos e canais criados pelo modal vão para o serviço MUC do domínio da
   conta (`isacloud.im` → `conference.isacloud.cc`, `voz.social.br` →
@@ -24,6 +24,12 @@ release atual fica registrada em [RELEASE-ISACLOUD.md](RELEASE-ISACLOUD.md).
   sala com MAM vazio só nesse caso; bookmark/autojoin continuam iguais.
 - `fix(i18n)`: “Invite someone” estava `#, fuzzy` no `.po` e caía no inglês; agora é
   “Convidar alguém”.
+- `feat(isacloud)`: `shareable_link_url` deixa de ser fixo em `chat.isacloud.cc`. O
+  `isacloud/init.js` preenche com a origem da página quando ela não define um valor, então
+  um host alternativo (`acesso.isacloud.com.br`) gera e reconhece os próprios links de
+  convite. Um valor explícito na página continua valendo, e `""` segue desligando os links.
+- `fix(build)`: o `init.js` entra no `?v=` do build (`isacloud/build.sh` e
+  `deploy-custom.sh`), então uma mudança no bootstrap não fica presa no cache do navegador.
 - `test`: o spec do modal de canal, o de i18n, o de OMEMO e o do recente entraram na suíte
   reduzida.
 

@@ -1,6 +1,32 @@
 {
   "releases": [
     {
+      "version": "v15-45",
+      "date": "27/11/2026",
+      "items": [
+        {
+          "title": "🔗 Convite que abre para quem recebe",
+          "text": "o link copiado de uma conversa ou sala agora usa o endereço por onde você entrou no chat, então continua funcionando para quem está numa rede que bloqueia o endereço antigo."
+        },
+        {
+          "title": "🗂️ Cada grupo no seu espaço",
+          "text": "ao criar um grupo ou canal, ele vai automaticamente para o espaço certo da sua conta, sem precisar escolher servidor."
+        },
+        {
+          "title": "🔐 OMEMO já ligado",
+          "text": "grupos privados recém-criados abrem com a criptografia ativa por padrão."
+        },
+        {
+          "title": "💬 Grupo novo nas Conversas",
+          "text": "mesmo sem nenhuma mensagem, o grupo que você acabou de criar fica na lista de conversas recentes."
+        },
+        {
+          "title": "🇧🇷 Convidar alguém",
+          "text": "o menu dos participantes agora fala “Convidar alguém” em português."
+        }
+      ]
+    },
+    {
       "version": "v15-44",
       "date": "26/11/2026",
       "items": [
